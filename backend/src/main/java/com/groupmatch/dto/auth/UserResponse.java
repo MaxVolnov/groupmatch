@@ -9,8 +9,9 @@ public record UserResponse(
         UUID id,
         String email,
         String displayName,
-        String tzid,
+        String tzId,
         String plan,
+        String role,
         Instant createdAt
 ) {
     public static UserResponse from(User user) {
@@ -18,8 +19,9 @@ public record UserResponse(
                 user.getId(),
                 user.getEmail(),
                 user.getDisplayName(),
-                user.getTzid(),
-                user.getPlan(),
+                user.getTzId(),
+                user.getPlan().name(),
+                user.getRole().name(),
                 user.getCreatedAt()
         );
     }
