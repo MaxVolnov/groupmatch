@@ -1,20 +1,53 @@
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { SignIn } from '@/pages/SignIn'
+import { SignUp } from '@/pages/SignUp'
+import { Dashboard } from '@/pages/Dashboard'
+import { GroupPage } from '@/pages/GroupPage'
+import { JoinInvite } from '@/pages/JoinInvite'
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { retry: 1, staleTime: 30_000 },
+  },
+})
+
 function App() {
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          GroupMatch
-        </h1>
-        <p className="text-gray-600">
-          Find the perfect time for your group meetings
-        </p>
-        <div className="mt-8">
-          <span className="inline-block bg-green-100 text-green-800 px-4 py-2 rounded-full text-sm font-medium">
-            🚀 Setup Complete
-          </span>
-        </div>
-      </div>
-    </div>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/signin" element={<SignIn />} />
+          <Route path="/signup" element={<SignUp />} />
+          <Route
+            path="/join/:token"
+            element={
+              <ProtectedRoute>
+                <JoinInvite />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/groups/:id"
+            element={
+              <ProtectedRoute>
+                <GroupPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </QueryClientProvider>
   )
 }
 
