@@ -80,6 +80,36 @@ public class GlobalExceptionHandler {
                 new ErrorResponse("member_banned", ex.getMessage(), null, Instant.now()));
     }
 
+    @ExceptionHandler(SlotNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleSlotNotFound(SlotNotFoundException ex) {
+        return ResponseEntity.status(NOT_FOUND).body(
+                new ErrorResponse("slot_not_found", ex.getMessage(), null, Instant.now()));
+    }
+
+    @ExceptionHandler(InviteNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleInviteNotFound(InviteNotFoundException ex) {
+        return ResponseEntity.status(NOT_FOUND).body(
+                new ErrorResponse("invite_not_found", ex.getMessage(), null, Instant.now()));
+    }
+
+    @ExceptionHandler(InviteInvalidException.class)
+    public ResponseEntity<ErrorResponse> handleInviteInvalid(InviteInvalidException ex) {
+        return ResponseEntity.status(GONE).body(
+                new ErrorResponse("invite_invalid", ex.getMessage(), null, Instant.now()));
+    }
+
+    @ExceptionHandler(MeetingNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleMeetingNotFound(MeetingNotFoundException ex) {
+        return ResponseEntity.status(NOT_FOUND).body(
+                new ErrorResponse("meeting_not_found", ex.getMessage(), null, Instant.now()));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
+        return ResponseEntity.status(BAD_REQUEST).body(
+                new ErrorResponse("invalid_argument", ex.getMessage(), null, Instant.now()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();

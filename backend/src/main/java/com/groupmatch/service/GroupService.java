@@ -6,6 +6,7 @@ import com.groupmatch.dto.group.GroupRequest;
 import com.groupmatch.dto.group.GroupResponse;
 import com.groupmatch.dto.group.MemberResponse;
 import com.groupmatch.exception.*;
+import com.groupmatch.repository.AvailabilityRepository;
 import com.groupmatch.repository.GrpMemberRepository;
 import com.groupmatch.repository.GroupRepository;
 import com.groupmatch.repository.UserRepository;
@@ -26,6 +27,7 @@ public class GroupService {
     private final GroupRepository groupRepository;
     private final GrpMemberRepository grpMemberRepository;
     private final UserRepository userRepository;
+    private final AvailabilityRepository availabilityRepository;
 
     @Transactional
     public GroupResponse createGroup(UUID callerId, Plan callerPlan, GroupRequest req) {
@@ -159,11 +161,13 @@ public class GroupService {
         }
 
         if (callerId.equals(targetId)) {
-            // voluntary leave
+            // voluntary leave — slots are kept for heatmap history
             target.setStatus(MemberStatus.LEFT);
         } else {
             requireOwner(groupId, callerId);
+            // ban by owner — delete the member's slots per spec
             target.setStatus(MemberStatus.BANNED);
+            availabilityRepository.deleteByGroupIdAndUserId(groupId, targetId);
         }
         grpMemberRepository.save(target);
     }
