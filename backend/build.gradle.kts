@@ -55,7 +55,7 @@ dependencies {
     testImplementation(platform("org.testcontainers:testcontainers-bom:1.19.3"))
     testImplementation("org.testcontainers:junit-jupiter")
     testImplementation("org.testcontainers:postgresql")
-    testImplementation("org.testcontainers:redis")
+    testImplementation("org.testcontainers:testcontainers")
 }
 
 tasks.withType<Test> {
