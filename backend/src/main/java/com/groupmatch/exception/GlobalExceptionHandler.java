@@ -11,6 +11,8 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.springframework.http.HttpStatus.*;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     
@@ -36,6 +38,48 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
     
+    @ExceptionHandler(GroupNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleGroupNotFound(GroupNotFoundException ex) {
+        return ResponseEntity.status(NOT_FOUND).body(
+                new ErrorResponse("group_not_found", ex.getMessage(), null, Instant.now()));
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleUserNotFound(UserNotFoundException ex) {
+        return ResponseEntity.status(NOT_FOUND).body(
+                new ErrorResponse("user_not_found", ex.getMessage(), null, Instant.now()));
+    }
+
+    @ExceptionHandler(NotGroupMemberException.class)
+    public ResponseEntity<ErrorResponse> handleNotGroupMember(NotGroupMemberException ex) {
+        return ResponseEntity.status(FORBIDDEN).body(
+                new ErrorResponse("not_group_member", ex.getMessage(), null, Instant.now()));
+    }
+
+    @ExceptionHandler(NotGroupOwnerException.class)
+    public ResponseEntity<ErrorResponse> handleNotGroupOwner(NotGroupOwnerException ex) {
+        return ResponseEntity.status(FORBIDDEN).body(
+                new ErrorResponse("not_group_owner", ex.getMessage(), null, Instant.now()));
+    }
+
+    @ExceptionHandler(PlanLimitExceededException.class)
+    public ResponseEntity<ErrorResponse> handlePlanLimit(PlanLimitExceededException ex) {
+        return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(
+                new ErrorResponse("plan_limit_exceeded", ex.getMessage(), null, Instant.now()));
+    }
+
+    @ExceptionHandler(MemberAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleMemberAlreadyExists(MemberAlreadyExistsException ex) {
+        return ResponseEntity.status(CONFLICT).body(
+                new ErrorResponse("member_already_exists", ex.getMessage(), null, Instant.now()));
+    }
+
+    @ExceptionHandler(MemberBannedException.class)
+    public ResponseEntity<ErrorResponse> handleMemberBanned(MemberBannedException ex) {
+        return ResponseEntity.status(FORBIDDEN).body(
+                new ErrorResponse("member_banned", ex.getMessage(), null, Instant.now()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
