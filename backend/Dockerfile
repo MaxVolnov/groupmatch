@@ -1,18 +1,16 @@
 # ─── Stage 1: Build ───────────────────────────────────────────────────────────
-FROM eclipse-temurin:21-jdk-alpine AS build
+# Используем официальный образ с Gradle — не нужен gradle-wrapper.jar в репо
+FROM gradle:8.5-jdk21-alpine AS build
 
 WORKDIR /app
 
-# Копируем Gradle wrapper и конфиги отдельно — кэшируем зависимости
-COPY gradlew .
-COPY gradle/ gradle/
+# Копируем только конфиги зависимостей — Docker кэширует этот слой
 COPY build.gradle.kts settings.gradle.kts ./
+RUN gradle dependencies --no-daemon --quiet || true
 
-RUN chmod +x gradlew && ./gradlew dependencies --no-daemon --quiet
-
-# Копируем исходники и собираем JAR
+# Копируем исходники и собираем fat JAR (без запуска тестов)
 COPY src/ src/
-RUN ./gradlew bootJar --no-daemon --quiet -x test
+RUN gradle bootJar --no-daemon --quiet -x test
 
 # ─── Stage 2: Runtime ─────────────────────────────────────────────────────────
 FROM eclipse-temurin:21-jre-alpine AS runtime
@@ -25,7 +23,6 @@ USER appuser
 
 COPY --from=build /app/build/libs/*.jar app.jar
 
-# Actuator health
 EXPOSE 8080
 
 ENTRYPOINT ["java", \
