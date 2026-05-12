@@ -1,6 +1,6 @@
 # ─── Stage 1: Build ───────────────────────────────────────────────────────────
 # Используем официальный образ с Gradle — не нужен gradle-wrapper.jar в репо
-FROM gradle:8.5-jdk21-alpine AS build
+FROM gradle:jdk25-alpine AS build
 
 WORKDIR /app
 
@@ -13,7 +13,7 @@ COPY src/ src/
 RUN gradle bootJar --no-daemon --quiet -x test
 
 # ─── Stage 2: Runtime ─────────────────────────────────────────────────────────
-FROM eclipse-temurin:21-jre-alpine AS runtime
+FROM eclipse-temurin:25-jre-alpine AS runtime
 
 WORKDIR /app
 
