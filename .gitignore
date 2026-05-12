@@ -1,16 +1,10 @@
-# Compiled class file
+# ─── Java compiled ────────────────────────────────────────────────────────────
 *.class
-
-# Log file
-*.log
-
-# BlueJ files
 *.ctxt
+hs_err_pid*
+replay_pid*
 
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
-# Package Files #
+# Build artifacts (keep wrapper JAR!)
 *.jar
 *.war
 *.nar
@@ -18,7 +12,48 @@
 *.zip
 *.tar.gz
 *.rar
+target/
+build/
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
-replay_pid*
+# Gradle cache & daemon (НЕ gradle/ — там живёт wrapper)
+.gradle/
+.gradletasknamecache
+
+# Разрешаем gradle wrapper JAR явно (negation работает после *.jar)
+!backend/gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.jar
+
+# ─── IDE ──────────────────────────────────────────────────────────────────────
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+*.swo
+
+# ─── macOS ────────────────────────────────────────────────────────────────────
+.DS_Store
+
+# ─── Environment ──────────────────────────────────────────────────────────────
+.env
+.env.local
+*.log
+
+# ─── Node ─────────────────────────────────────────────────────────────────────
+node_modules/
+dist/
+.next/
+.turbo/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ─── Database ─────────────────────────────────────────────────────────────────
+*.sql.gz
+*.dump
+
+# ─── Secrets ──────────────────────────────────────────────────────────────────
+secrets/
+*.pem
+*.key
