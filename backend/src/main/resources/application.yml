@@ -15,7 +15,7 @@ spring:
   
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: none
     show-sql: false
     properties:
       hibernate:
@@ -23,10 +23,12 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         jdbc:
           time_zone: UTC
-  
+
   flyway:
     enabled: true
     baseline-on-migrate: true
+    baseline-version: 0
+    validate-on-migrate: false
     locations: classpath:db/migration
   
   redis:
