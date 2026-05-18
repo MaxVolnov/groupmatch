@@ -16,6 +16,8 @@ import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
+import org.springframework.security.web.firewall.StrictHttpFirewall;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -103,6 +105,15 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         // Argon2id: memory=65536 (64MB), iterations=3, parallelism=4
         return Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8();
+    }
+
+    // Spring Security 7 StrictHttpFirewall rejects unknown Host headers by default.
+    // The app runs behind Railway's proxy, so allow any hostname — JWT secures the API.
+    @Bean
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        StrictHttpFirewall firewall = new StrictHttpFirewall();
+        firewall.setAllowedHostnames(hostname -> true);
+        return web -> web.httpFirewall(firewall);
     }
 
     @Bean
