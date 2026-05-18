@@ -25,11 +25,7 @@ spring:
           time_zone: UTC
 
   flyway:
-    enabled: true
-    baseline-on-migrate: true
-    baseline-version: 0
-    validate-on-migrate: false
-    locations: classpath:db/migration
+    enabled: false
   
   redis:
     url: ${SPRING_REDIS_URL:redis://localhost:6379}
