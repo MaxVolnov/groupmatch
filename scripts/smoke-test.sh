@@ -37,7 +37,7 @@ echo "── 1. POST /api/v1/auth/signup ─────────────
 RESP=$(curl -s -w "\n%{http_code}" -X POST "${BASE_URL}/api/v1/auth/signup" \
   -H "Content-Type: application/json" \
   -d "{\"email\":\"${EMAIL}\",\"password\":\"${PASSWORD}\",\"displayName\":\"${DISPLAY_NAME}\"}")
-BODY=$(echo "$RESP" | head -n -1)
+BODY=$(echo "$RESP" | sed '$d')
 STATUS=$(echo "$RESP" | tail -n 1)
 check "signup" 201 "$STATUS"
 
@@ -48,7 +48,7 @@ echo "── 2. POST /api/v1/auth/signin ─────────────
 RESP=$(curl -s -w "\n%{http_code}" -X POST "${BASE_URL}/api/v1/auth/signin" \
   -H "Content-Type: application/json" \
   -d "{\"email\":\"${EMAIL}\",\"password\":\"${PASSWORD}\"}")
-BODY=$(echo "$RESP" | head -n -1)
+BODY=$(echo "$RESP" | sed '$d')
 STATUS=$(echo "$RESP" | tail -n 1)
 check "signin" 200 "$STATUS"
 ACCESS_TOKEN=$(echo "$BODY" | jq -r '.accessToken')
@@ -66,7 +66,7 @@ RESP=$(curl -s -w "\n%{http_code}" -X POST "${BASE_URL}/api/v1/groups" \
   -H "Content-Type: application/json" \
   -H "$(auth_header)" \
   -d "{\"title\":\"Smoke Test Group ${TIMESTAMP}\",\"description\":\"Auto-created by smoke test\",\"tzId\":\"Europe/Moscow\"}")
-BODY=$(echo "$RESP" | head -n -1)
+BODY=$(echo "$RESP" | sed '$d')
 STATUS=$(echo "$RESP" | tail -n 1)
 check "create group" 201 "$STATUS"
 GROUP_ID=$(echo "$BODY" | jq -r '.id')
@@ -108,7 +108,7 @@ RESP=$(curl -s -w "\n%{http_code}" -X POST "${BASE_URL}/api/v1/groups/${GROUP_ID
   -H "Content-Type: application/json" \
   -H "$(auth_header)" \
   -d "{\"startsAt\":\"${STARTS_AT}\",\"endsAt\":\"${ENDS_AT}\"}")
-BODY=$(echo "$RESP" | head -n -1)
+BODY=$(echo "$RESP" | sed '$d')
 STATUS=$(echo "$RESP" | tail -n 1)
 check "add availability" 201 "$STATUS"
 echo "   slot: $STARTS_AT → $ENDS_AT"
