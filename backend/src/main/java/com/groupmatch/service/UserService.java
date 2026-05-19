@@ -20,14 +20,14 @@ public class UserService {
     @Transactional(readOnly = true)
     public UserResponse getMe(UUID userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException(userId));
         return UserResponse.from(user);
     }
 
     @Transactional
     public UserResponse updateMe(UUID userId, UpdateProfileRequest req) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException(userId));
 
         if (req.displayName() != null) {
             user.setDisplayName(req.displayName());
