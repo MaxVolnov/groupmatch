@@ -70,8 +70,7 @@ jobs:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/groupmatch_test
           SPRING_DATASOURCE_USERNAME: dev
           SPRING_DATASOURCE_PASSWORD: devpass
-          SPRING_REDIS_HOST: localhost
-          SPRING_REDIS_PORT: 6379
+          SPRING_REDIS_URL: redis://localhost:6379
           JWT_SECRET: ci-test-secret-key-minimum-256-bits-long-padding-here-x
 
       - name: Upload test report
