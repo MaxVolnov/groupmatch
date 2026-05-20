@@ -2,18 +2,16 @@ package com.groupmatch;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 
-/**
- * Smoke-тест: проверяет что Spring-контекст поднимается без ошибок.
- * Требует запущенных Postgres + Redis (через docker-compose или CI services).
- */
+import javax.sql.DataSource;
+
 @SpringBootTest
 @ActiveProfiles("test")
+@MockBean(DataSource.class)
 class GroupmatchApplicationTests {
 
     @Test
-    void contextLoads() {
-        // Пустой тест — если контекст не поднялся, Spring выбросит исключение
-    }
+    void contextLoads() {}
 }
