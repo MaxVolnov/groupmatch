@@ -58,6 +58,8 @@ app:
     signup: 5
     signin: 10
     refresh: 20
+  cache:
+    heatmap-ttl-minutes: 60
 
 logging:
   level:
