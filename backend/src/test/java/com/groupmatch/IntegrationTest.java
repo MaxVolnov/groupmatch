@@ -1,14 +1,21 @@
 package com.groupmatch;
 
-import org.junit.jupiter.api.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.web.client.RestTemplate;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -43,11 +50,10 @@ class IntegrationTest {
                 "redis://" + redis.getHost() + ":" + redis.getMappedPort(6379));
     }
 
-    @Autowired
-    TestRestTemplate rest;
-
     @LocalServerPort
     int port;
+
+    final RestTemplate rest = new RestTemplate();
 
     // Shared state passed between ordered tests
     static String accessToken;
@@ -69,12 +75,16 @@ class IntegrationTest {
     @Test
     @Order(1)
     void signup() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
         var body = Map.of(
                 "email", "integration@groupmatch-test.io",
                 "password", "IntTest1!",
                 "displayName", "Integration Tester"
         );
-        ResponseEntity<Map> resp = rest.postForEntity(url("/api/v1/auth/signup"), body, Map.class);
+        ResponseEntity<Map> resp = rest.exchange(
+                url("/api/v1/auth/signup"), HttpMethod.POST,
+                new HttpEntity<>(body, headers), Map.class);
 
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(resp.getBody()).containsKey("id");
@@ -85,11 +95,15 @@ class IntegrationTest {
     @Test
     @Order(2)
     void signin() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
         var body = Map.of(
                 "email", "integration@groupmatch-test.io",
                 "password", "IntTest1!"
         );
-        ResponseEntity<Map> resp = rest.postForEntity(url("/api/v1/auth/signin"), body, Map.class);
+        ResponseEntity<Map> resp = rest.exchange(
+                url("/api/v1/auth/signin"), HttpMethod.POST,
+                new HttpEntity<>(body, headers), Map.class);
 
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
         accessToken = (String) resp.getBody().get("accessToken");
