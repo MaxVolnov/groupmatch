@@ -29,6 +29,7 @@ public class AvailabilityService {
     private final GrpMemberRepository grpMemberRepository;
     private final GroupRepository groupRepository;
     private final UserRepository userRepository;
+    private final HeatmapCacheService heatmapCacheService;
 
     @Transactional
     public AvailabilityResponse addSlot(UUID groupId, UUID callerId, Plan callerPlan,
@@ -50,6 +51,7 @@ public class AvailabilityService {
 
         Availability slot = availabilityRepository.save(
                 new Availability(groupId, callerId, req.startsAt(), req.endsAt(), req.note()));
+        bumpVersion(group);
         return toResponse(slot);
     }
 
@@ -84,6 +86,7 @@ public class AvailabilityService {
         slot.setStartsAt(req.startsAt());
         slot.setEndsAt(req.endsAt());
         slot.setNote(req.note());
+        bumpVersion(group);
         return toResponse(availabilityRepository.save(slot));
     }
 
@@ -104,6 +107,7 @@ public class AvailabilityService {
         }
 
         availabilityRepository.delete(slot);
+        bumpVersion(group);
     }
 
     @Transactional(readOnly = true)
@@ -114,14 +118,17 @@ public class AvailabilityService {
 
         int granularity = (granularityMinutes != null && granularityMinutes > 0)
                 ? granularityMinutes : DEFAULT_GRANULARITY_MINUTES;
-
         if (from == null) from = Instant.now().truncatedTo(ChronoUnit.DAYS);
         if (to == null) to = from.plus(7L, ChronoUnit.DAYS);
+
+        Optional<HeatmapResponse> cached = heatmapCacheService.get(groupId, group.getVersion(), from, to, granularity);
+        if (cached.isPresent()) {
+            return cached.get();
+        }
 
         List<Availability> slots = availabilityRepository
                 .findByGroupIdAndStartsAtLessThanAndEndsAtGreaterThan(groupId, to, from);
 
-        // Fetch user display names if showParticipants
         Map<UUID, String> userNames = Collections.emptyMap();
         if (group.isShowParticipants() && !slots.isEmpty()) {
             Set<UUID> userIds = slots.stream().map(Availability::getUserId).collect(Collectors.toSet());
@@ -132,7 +139,9 @@ public class AvailabilityService {
         List<HeatmapSlot> heatmapSlots = computeBuckets(slots, from, to, granularity,
                 group.isShowParticipants(), userNames);
 
-        return new HeatmapResponse(heatmapSlots, granularity, from, to);
+        HeatmapResponse response = new HeatmapResponse(heatmapSlots, granularity, from, to);
+        heatmapCacheService.put(groupId, group.getVersion(), from, to, granularity, response);
+        return response;
     }
 
     // --- private helpers ---
@@ -183,6 +192,11 @@ public class AvailabilityService {
     private Group loadGroup(UUID groupId) {
         return groupRepository.findById(groupId)
                 .orElseThrow(() -> new GroupNotFoundException(groupId));
+    }
+
+    private void bumpVersion(Group group) {
+        group.setVersion(group.getVersion() + 1);
+        groupRepository.save(group);
     }
 
     private void validateSlotTimes(Instant startsAt, Instant endsAt) {
