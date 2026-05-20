@@ -1,5 +1,6 @@
 package com.groupmatch.config;
 
+import com.groupmatch.filter.RateLimitFilter;
 import com.groupmatch.security.JwtAuthenticationFilter;
 import com.groupmatch.security.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
@@ -61,6 +62,7 @@ public class SecurityConfig {
     @Value("${app.cors.allowed-origins}")
     private String allowedOrigins;
 
+    private final RateLimitFilter rateLimitFilter;
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsServiceImpl userDetailsService;
 
@@ -87,6 +89,7 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authenticationProvider())
+            .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
