@@ -2,14 +2,14 @@ package com.groupmatch;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import javax.sql.DataSource;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@MockBean(DataSource.class)
+@MockitoBean(types = DataSource.class)
 class GroupmatchApplicationTests {
 
     @Test
