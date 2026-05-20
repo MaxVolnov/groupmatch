@@ -54,12 +54,10 @@ jobs:
           java-version: "25"
           distribution: temurin
 
-      # Устанавливает Gradle 9.5 напрямую — gradle-wrapper.jar не нужен.
-      # Версия должна совпадать с distributionUrl в gradle-wrapper.properties.
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
-          gradle-version: "9.5"
+          gradle-version: "9.5.0"
 
       - name: Compile
         run: gradle compileJava compileTestJava --no-daemon
