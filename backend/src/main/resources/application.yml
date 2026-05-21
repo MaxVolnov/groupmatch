@@ -27,8 +27,9 @@ spring:
   flyway:
     enabled: false
   
-  redis:
-    url: ${SPRING_REDIS_URL:redis://localhost:6379}
+  data:
+    redis:
+      url: ${SPRING_REDIS_URL:redis://localhost:6379}
 
 server:
   port: 8080

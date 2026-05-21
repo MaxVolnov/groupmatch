@@ -3,8 +3,9 @@ spring:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/groupmatch}
     username: ${SPRING_DATASOURCE_USERNAME:dev}
     password: ${SPRING_DATASOURCE_PASSWORD:devpass}
-  redis:
-    url: ${SPRING_REDIS_URL:redis://localhost:6379}
+  data:
+    redis:
+      url: ${SPRING_REDIS_URL:redis://localhost:6379}
   flyway:
     enabled: false
   jpa:
