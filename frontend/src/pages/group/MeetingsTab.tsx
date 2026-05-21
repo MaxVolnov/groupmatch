@@ -22,6 +22,17 @@ function defaultDatetime(offsetHours: number): string {
   return DateTime.now().plus({ hours: offsetHours }).toFormat("yyyy-MM-dd'T'HH:mm")
 }
 
+async function downloadIcs(groupId: string, meetingId: string) {
+  const data = await meetingsApi.exportIcs(groupId, meetingId)
+  const blob = new Blob([data], { type: 'text/calendar' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'meeting.ics'
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 function fmtRange(startsAt: string, endsAt: string): string {
   const s = DateTime.fromISO(startsAt).toLocal()
   const e = DateTime.fromISO(endsAt).toLocal()
@@ -142,16 +153,25 @@ export function MeetingsTab({ group, currentUserId }: Props) {
                 <p className="mt-1 text-sm text-gray-400">{m.description}</p>
               )}
             </div>
-            {isOwner && (
+            <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => del.mutate(m.id)}
-                loading={del.isPending}
+                onClick={() => downloadIcs(group.id, m.id)}
               >
-                Delete
+                Export .ics
               </Button>
-            )}
+              {isOwner && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => del.mutate(m.id)}
+                  loading={del.isPending}
+                >
+                  Delete
+                </Button>
+              )}
+            </div>
           </div>
         ))}
       </div>

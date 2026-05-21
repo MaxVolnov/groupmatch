@@ -26,13 +26,15 @@ public class HeatmapCacheService {
 
     public Optional<HeatmapResponse> get(UUID groupId, int version, Instant from, Instant to, int granularity) {
         String key = cacheKey(groupId, version, from, to, granularity);
+        log.debug("Cache GET: key={}", key);
         try {
             String json = redis.opsForValue().get(key);
+            log.debug("Cache {}: key={}", json != null ? "HIT" : "MISS", key);
             if (json != null) {
                 return Optional.of(objectMapper.readValue(json, HeatmapResponse.class));
             }
         } catch (Exception e) {
-            log.warn("Heatmap cache read failed for {}: {}", key, e.getMessage());
+            log.error("Heatmap cache read failed for key={}", key, e);
         }
         return Optional.empty();
     }
@@ -42,8 +44,9 @@ public class HeatmapCacheService {
         try {
             String json = objectMapper.writeValueAsString(response);
             redis.opsForValue().set(key, json, Duration.ofMinutes(ttlMinutes));
+            log.debug("Cache PUT: key={}, ttl={}min", key, ttlMinutes);
         } catch (Exception e) {
-            log.warn("Heatmap cache write failed for {}: {}", key, e.getMessage());
+            log.error("Heatmap cache write failed for key={}", key, e);
         }
     }
 

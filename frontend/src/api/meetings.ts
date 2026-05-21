@@ -27,4 +27,13 @@ export const meetingsApi = {
     IS_MOCK
       ? mockApi.meetings.delete(groupId, meetingId)
       : api.delete(`/groups/${groupId}/meetings/${meetingId}`).then(() => undefined),
+
+  exportIcs: (groupId: string, meetingId: string): Promise<string> =>
+    IS_MOCK
+      ? Promise.resolve('BEGIN:VCALENDAR\r\nVERSION:2.0\r\nEND:VCALENDAR\r\n')
+      : api
+          .get<string>(`/groups/${groupId}/meetings/${meetingId}/export.ics`, {
+            responseType: 'text',
+          })
+          .then((r) => r.data),
 }

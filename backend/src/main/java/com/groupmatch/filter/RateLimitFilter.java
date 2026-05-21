@@ -6,9 +6,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -16,7 +15,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Component
+@Slf4j
 public class RateLimitFilter extends OncePerRequestFilter {
 
     private final int signupCapacity;
@@ -27,10 +26,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private final Map<String, Bucket> signinBuckets = new ConcurrentHashMap<>();
     private final Map<String, Bucket> refreshBuckets = new ConcurrentHashMap<>();
 
-    public RateLimitFilter(
-            @Value("${app.rate-limit.signup:5}") int signupCapacity,
-            @Value("${app.rate-limit.signin:10}") int signinCapacity,
-            @Value("${app.rate-limit.refresh:20}") int refreshCapacity) {
+    public RateLimitFilter(int signupCapacity, int signinCapacity, int refreshCapacity) {
         this.signupCapacity = signupCapacity;
         this.signinCapacity = signinCapacity;
         this.refreshCapacity = refreshCapacity;
@@ -64,11 +60,14 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
 
         String ip = resolveClientIp(request);
+        log.debug("RateLimit check: ip={}, path={}", ip, path);
+
         Bucket bucket = bucketMap.computeIfAbsent(ip, k -> newBucket(capacity));
 
         if (bucket.tryConsume(1)) {
             filterChain.doFilter(request, response);
         } else {
+            log.debug("RateLimit exceeded: ip={}, path={}", ip, path);
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
             response.setContentType("application/json");
             response.getWriter().write("{\"error\":\"Too many requests. Please try again later.\"}");

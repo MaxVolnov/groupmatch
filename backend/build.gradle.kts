@@ -45,6 +45,9 @@ dependencies {
     // Rate limiting
     implementation("com.bucket4j:bucket4j-core:8.10.1")
 
+    // Jackson Java time support (Instant serialization in Redis heatmap cache)
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+
     // Password hashing (Argon2)
     implementation("org.springframework.security:spring-security-crypto")
     implementation("org.bouncycastle:bcprov-jdk18on:1.78.1")
