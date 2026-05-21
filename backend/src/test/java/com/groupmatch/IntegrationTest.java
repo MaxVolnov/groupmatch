@@ -55,6 +55,7 @@ class IntegrationTest {
 
     final RestTemplate rest = new RestTemplate();
 
+    // Shared state passed between ordered tests
     static String accessToken;
     static String groupId;
 
@@ -68,6 +69,8 @@ class IntegrationTest {
         h.setContentType(MediaType.APPLICATION_JSON);
         return h;
     }
+
+    // ── 1. signup ────────────────────────────────────────────────────────────
 
     @Test
     @Order(1)
@@ -87,6 +90,8 @@ class IntegrationTest {
         assertThat(resp.getBody()).containsKey("id");
     }
 
+    // ── 2. signin ────────────────────────────────────────────────────────────
+
     @Test
     @Order(2)
     void signin() {
@@ -105,6 +110,8 @@ class IntegrationTest {
         assertThat(accessToken).isNotBlank();
     }
 
+    // ── 3. create group ──────────────────────────────────────────────────────
+
     @Test
     @Order(3)
     void createGroup() {
@@ -121,6 +128,8 @@ class IntegrationTest {
         assertThat(groupId).isNotBlank();
     }
 
+    // ── 4. add availability slot ─────────────────────────────────────────────
+
     @Test
     @Order(4)
     void addAvailability() {
@@ -136,6 +145,8 @@ class IntegrationTest {
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(resp.getBody()).containsKey("id");
     }
+
+    // ── 5. get heatmap ───────────────────────────────────────────────────────
 
     @Test
     @Order(5)
