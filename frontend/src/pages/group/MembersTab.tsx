@@ -34,28 +34,28 @@ function InviteSection({ group }: { group: GroupResponse }) {
   const baseUrl = window.location.origin
 
   return (
-    <div className="mt-6 border-t pt-6">
+    <div className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-6">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="font-medium text-gray-900">Invite links</h3>
+        <h3 className="font-medium text-gray-900 dark:text-gray-100">Invite links</h3>
         <Button size="sm" loading={create.isPending} onClick={() => create.mutate()}>
           + New link
         </Button>
       </div>
       {create.error && <ErrorMessage error={create.error} />}
       {invites && invites.length === 0 && (
-        <p className="text-sm text-gray-500">No active invite links.</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">No active invite links.</p>
       )}
       <div className="flex flex-col gap-2">
         {invites?.map((inv) => (
-          <div key={inv.id} className="flex items-center gap-2 rounded-lg border bg-gray-50 p-3">
-            <code className="flex-1 min-w-0 truncate text-xs text-gray-700">
+          <div key={inv.id} className="flex items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 p-3">
+            <code className="flex-1 min-w-0 truncate text-xs text-gray-700 dark:text-gray-300">
               {baseUrl}/join/{inv.token}
             </code>
-            <span className="shrink-0 text-xs text-gray-400">
+            <span className="shrink-0 text-xs text-gray-400 dark:text-gray-500">
               {inv.maxUses === 0 ? '∞' : `${inv.currentUses}/${inv.maxUses}`}
             </span>
             <button
-              className="flex items-center justify-center min-h-[44px] min-w-[44px] text-gray-400 hover:text-indigo-600 transition-colors"
+              className="flex items-center justify-center min-h-[44px] min-w-[44px] text-gray-400 dark:text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
               onClick={() => {
                 navigator.clipboard.writeText(`${baseUrl}/join/${inv.token}`)
               }}
@@ -64,7 +64,7 @@ function InviteSection({ group }: { group: GroupResponse }) {
               📋
             </button>
             <button
-              className="flex items-center justify-center min-h-[44px] min-w-[44px] text-gray-400 hover:text-red-600 transition-colors"
+              className="flex items-center justify-center min-h-[44px] min-w-[44px] text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
               onClick={() => revoke.mutate(inv.id)}
               title="Revoke"
             >
@@ -115,16 +115,16 @@ export function MembersTab({ group, currentUserId }: Props) {
         </div>
       )}
 
-      <div className="divide-y rounded-xl border bg-white">
+      <div className="divide-y divide-gray-200 dark:divide-gray-700 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
         {members?.map((m) => (
           <div key={m.userId} className="flex items-center justify-between px-4 py-3">
             <div>
-              <span className="font-medium text-gray-900">{m.displayName}</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100">{m.displayName}</span>
               <span
                 className={`ml-2 rounded-full px-2 py-0.5 text-xs font-medium ${
                   m.role === 'OWNER'
-                    ? 'bg-indigo-100 text-indigo-700'
-                    : 'bg-gray-100 text-gray-600'
+                    ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
                 }`}
               >
                 {m.role}

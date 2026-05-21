@@ -14,13 +14,13 @@ interface Props {
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 function intensityClass(count: number, max: number): string {
-  if (count === 0 || max === 0) return 'bg-gray-100'
+  if (count === 0 || max === 0) return 'bg-gray-100 dark:bg-gray-700'
   const ratio = count / max
-  if (ratio >= 0.8) return 'bg-green-500'
-  if (ratio >= 0.6) return 'bg-green-400'
-  if (ratio >= 0.4) return 'bg-green-300'
-  if (ratio >= 0.2) return 'bg-green-200'
-  return 'bg-green-100'
+  if (ratio >= 0.8) return 'bg-green-500 dark:bg-green-500'
+  if (ratio >= 0.6) return 'bg-green-400 dark:bg-green-600'
+  if (ratio >= 0.4) return 'bg-green-300 dark:bg-green-700'
+  if (ratio >= 0.2) return 'bg-green-200 dark:bg-green-800'
+  return 'bg-green-100 dark:bg-green-900'
 }
 
 function buildGrid(slots: HeatmapSlot[], from: DateTime): {
@@ -84,7 +84,7 @@ export function HeatmapTab({ groupId }: Props) {
         <Button variant="secondary" size="sm" onClick={() => setWeekOffset((w) => w - 1)}>
           ← Prev
         </Button>
-        <span className="text-sm font-medium text-gray-700">
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
           {monday.toFormat('dd MMM')} – {sunday.minus({ days: 1 }).toFormat('dd MMM yyyy')}
         </span>
         <Button variant="secondary" size="sm" onClick={() => setWeekOffset((w) => w + 1)}>
@@ -101,18 +101,18 @@ export function HeatmapTab({ groupId }: Props) {
       {error && <ErrorMessage error={error} />}
 
       {!isLoading && !error && (
-        <div className="overflow-x-auto rounded-xl border bg-white -mx-4 sm:mx-0">
+        <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 -mx-4 sm:mx-0">
           <table className="min-w-full border-collapse text-xs">
             <thead>
               <tr>
-                <th className="w-10 border-b border-r bg-gray-50 py-2 px-1 text-right text-gray-400 font-normal sticky left-0 z-10" />
+                <th className="w-10 border-b border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 py-2 px-1 text-right text-gray-400 dark:text-gray-500 font-normal sticky left-0 z-10" />
                 {DAYS.map((d, i) => (
                   <th
                     key={d}
-                    className="min-w-[40px] border-b border-r bg-gray-50 py-2 px-1 font-medium text-gray-700 text-center"
+                    className="min-w-[40px] border-b border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 py-2 px-1 font-medium text-gray-700 dark:text-gray-300 text-center"
                   >
                     <div>{d}</div>
-                    <div className="text-gray-400 font-normal">
+                    <div className="text-gray-400 dark:text-gray-500 font-normal">
                       {monday.plus({ days: i }).toFormat('dd/MM')}
                     </div>
                   </th>
@@ -122,15 +122,15 @@ export function HeatmapTab({ groupId }: Props) {
             <tbody>
               {grid.map((row, rowIdx) => (
                 <tr key={rowIdx} className="h-4">
-                  <td className="border-b border-r px-1 text-right text-gray-400 align-top leading-4 sticky left-0 bg-white z-10 min-w-[40px]">
+                  <td className="border-b border-r border-gray-100 dark:border-gray-700/50 px-1 text-right text-gray-400 dark:text-gray-500 align-top leading-4 sticky left-0 bg-white dark:bg-gray-800 z-10 min-w-[40px]">
                     {timeLabels[rowIdx]}
                   </td>
                   {row.map((slot, colIdx) => (
                     <td
                       key={colIdx}
                       title={slot ? `${slot.count} available${slot.displayNames ? ': ' + slot.displayNames.join(', ') : ''}` : ''}
-                      className={`min-w-[40px] border-b border-r cursor-default transition-colors ${
-                        slot ? intensityClass(slot.count, maxCount) : 'bg-white'
+                      className={`min-w-[40px] border-b border-r border-gray-100 dark:border-gray-700/30 cursor-default transition-colors ${
+                        slot ? intensityClass(slot.count, maxCount) : 'bg-white dark:bg-gray-800'
                       }`}
                     />
                   ))}
@@ -139,7 +139,7 @@ export function HeatmapTab({ groupId }: Props) {
             </tbody>
           </table>
           {maxCount > 0 && (
-            <div className="flex flex-wrap items-center gap-2 px-4 py-2 text-xs text-gray-500">
+            <div className="flex flex-wrap items-center gap-2 px-4 py-2 text-xs text-gray-500 dark:text-gray-400">
               <span>0</span>
               {[0.2, 0.4, 0.6, 0.8, 1].map((r) => (
                 <span
@@ -151,7 +151,7 @@ export function HeatmapTab({ groupId }: Props) {
             </div>
           )}
           {maxCount === 0 && (
-            <p className="px-4 py-4 text-sm text-gray-500">No availability for this week.</p>
+            <p className="px-4 py-4 text-sm text-gray-500 dark:text-gray-400">No availability for this week.</p>
           )}
         </div>
       )}
