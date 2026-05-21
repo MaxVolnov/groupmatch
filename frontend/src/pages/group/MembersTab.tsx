@@ -48,14 +48,14 @@ function InviteSection({ group }: { group: GroupResponse }) {
       <div className="flex flex-col gap-2">
         {invites?.map((inv) => (
           <div key={inv.id} className="flex items-center gap-2 rounded-lg border bg-gray-50 p-3">
-            <code className="flex-1 truncate text-xs text-gray-700">
+            <code className="flex-1 min-w-0 truncate text-xs text-gray-700">
               {baseUrl}/join/{inv.token}
             </code>
             <span className="shrink-0 text-xs text-gray-400">
               {inv.maxUses === 0 ? '∞' : `${inv.currentUses}/${inv.maxUses}`}
             </span>
             <button
-              className="text-xs text-gray-400 hover:text-red-600"
+              className="flex items-center justify-center min-h-[44px] min-w-[44px] text-gray-400 hover:text-indigo-600 transition-colors"
               onClick={() => {
                 navigator.clipboard.writeText(`${baseUrl}/join/${inv.token}`)
               }}
@@ -64,7 +64,7 @@ function InviteSection({ group }: { group: GroupResponse }) {
               📋
             </button>
             <button
-              className="text-xs text-gray-400 hover:text-red-600"
+              className="flex items-center justify-center min-h-[44px] min-w-[44px] text-gray-400 hover:text-red-600 transition-colors"
               onClick={() => revoke.mutate(inv.id)}
               title="Revoke"
             >

@@ -116,7 +116,7 @@ export function Dashboard() {
         <div className="rounded-xl border-2 border-dashed border-gray-200 py-16 text-center">
           <p className="text-gray-500">No groups yet.</p>
           <button
-            className="mt-2 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+            className="mt-2 inline-flex items-center justify-center min-h-[44px] px-4 text-sm font-medium text-indigo-600 hover:text-indigo-700"
             onClick={() => setShowCreate(true)}
           >
             Create your first group →

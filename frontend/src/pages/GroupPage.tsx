@@ -69,13 +69,13 @@ export function GroupPage() {
             ← Groups
           </Link>
         </div>
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{group.title}</h1>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold text-gray-900 truncate">{group.title}</h1>
             {group.description && (
               <p className="mt-1 text-gray-500">{group.description}</p>
             )}
-            <div className="mt-2 flex gap-3 text-xs text-gray-400">
+            <div className="mt-2 flex flex-wrap gap-3 text-xs text-gray-400">
               <span>{group.tzId}</span>
               {group.locked && <span>🔒 Locked</span>}
               {group.showParticipants && <span>👥 Names visible</span>}
@@ -91,6 +91,7 @@ export function GroupPage() {
                   deleteGroup.mutate()
                 }
               }}
+              className="sm:shrink-0 w-full sm:w-auto justify-center"
             >
               Delete group
             </Button>
@@ -98,14 +99,14 @@ export function GroupPage() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="mb-6 border-b">
-        <nav className="flex gap-1">
+      {/* Tabs — scrollable on mobile */}
+      <div className="mb-6 border-b overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+        <nav className="flex gap-1 min-w-max sm:min-w-0">
           {TABS.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 ${
+              className={`whitespace-nowrap px-4 py-2.5 text-sm font-medium transition-colors border-b-2 min-h-[44px] ${
                 tab === t.id
                   ? 'border-indigo-600 text-indigo-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'

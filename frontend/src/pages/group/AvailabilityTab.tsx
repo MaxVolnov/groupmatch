@@ -134,7 +134,7 @@ export function AvailabilityTab({ groupId, callerPlan }: Props) {
                 {s.note && <p className="text-xs text-gray-500 mt-0.5">{s.note}</p>}
               </div>
               <button
-                className="ml-4 shrink-0 text-gray-300 hover:text-red-500"
+                className="ml-2 shrink-0 flex items-center justify-center min-h-[44px] min-w-[44px] text-gray-300 hover:text-red-500 transition-colors"
                 onClick={() => del.mutate(s.id)}
                 title="Delete"
               >
