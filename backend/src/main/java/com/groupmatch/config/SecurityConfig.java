@@ -3,7 +3,6 @@ package com.groupmatch.config;
 import com.groupmatch.filter.RateLimitFilter;
 import com.groupmatch.security.JwtAuthenticationFilter;
 import com.groupmatch.security.UserDetailsServiceImpl;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -55,8 +54,7 @@ import java.util.List;
  */
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity          // Активирует @PreAuthorize / @PostAuthorize
-@RequiredArgsConstructor
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Value("${app.cors.allowed-origins}")
@@ -71,23 +69,21 @@ public class SecurityConfig {
     @Value("${app.rate-limit.refresh:20}")
     private int rateLimitRefresh;
 
-    private final JwtAuthenticationFilter jwtAuthFilter;
-    private final UserDetailsServiceImpl userDetailsService;
-
     @Bean
     public RateLimitFilter rateLimitFilter() {
         return new RateLimitFilter(rateLimitSignup, rateLimitSignin, rateLimitRefresh);
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                                    JwtAuthenticationFilter jwtAuthFilter,
+                                                    DaoAuthenticationProvider authProvider) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Публичные эндпоинты
                 .requestMatchers(
                     "/api/v1/auth/signup",
                     "/api/v1/auth/signin",
@@ -95,23 +91,18 @@ public class SecurityConfig {
                     "/actuator/health",
                     "/actuator/info"
                 ).permitAll()
-                // Только ADMIN
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-                // Всё остальное — любой аутентифицированный пользователь.
-                // Тонкая проверка (OWNER vs MEMBER) — через @PreAuthorize в сервисах.
                 .anyRequest().authenticated()
             )
-            .authenticationProvider(authenticationProvider())
+            .authenticationProvider(authProvider)
             .addFilterBefore(rateLimitFilter(), UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    /** Используется AuthenticationManager при signin через UserDetailsService. */
     @Bean
-    public DaoAuthenticationProvider authenticationProvider() {
-        // Spring Security 7: UserDetailsService is a required constructor argument
+    public DaoAuthenticationProvider authenticationProvider(UserDetailsServiceImpl userDetailsService) {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
