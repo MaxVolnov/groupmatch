@@ -46,7 +46,6 @@ class IntegrationTest {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
-        // Spring Boot 4: Redis config moved to spring.data.redis.*
         registry.add("spring.data.redis.url", () ->
                 "redis://" + redis.getHost() + ":" + redis.getMappedPort(6379));
     }
