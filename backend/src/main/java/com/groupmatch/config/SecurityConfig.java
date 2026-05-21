@@ -62,9 +62,22 @@ public class SecurityConfig {
     @Value("${app.cors.allowed-origins}")
     private String allowedOrigins;
 
-    private final RateLimitFilter rateLimitFilter;
+    @Value("${app.rate-limit.signup:5}")
+    private int rateLimitSignup;
+
+    @Value("${app.rate-limit.signin:10}")
+    private int rateLimitSignin;
+
+    @Value("${app.rate-limit.refresh:20}")
+    private int rateLimitRefresh;
+
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsServiceImpl userDetailsService;
+
+    @Bean
+    public RateLimitFilter rateLimitFilter() {
+        return new RateLimitFilter(rateLimitSignup, rateLimitSignin, rateLimitRefresh);
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -89,7 +102,7 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authenticationProvider())
-            .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(rateLimitFilter(), UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
