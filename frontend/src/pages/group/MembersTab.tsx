@@ -16,6 +16,8 @@ interface Props {
 
 function InviteSection({ group }: { group: GroupResponse }) {
   const qc = useQueryClient()
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+
   const { data: invites } = useQuery({
     queryKey: ['invites', group.id],
     queryFn: () => invitesApi.list(group.id),
@@ -31,7 +33,7 @@ function InviteSection({ group }: { group: GroupResponse }) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['invites', group.id] }),
   })
 
-  const baseUrl = window.location.origin
+  const baseUrl = `${window.location.origin}${import.meta.env.BASE_URL}`.replace(/\/$/, '')
 
   return (
     <div className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-6">
@@ -58,10 +60,12 @@ function InviteSection({ group }: { group: GroupResponse }) {
               className="flex items-center justify-center min-h-[44px] min-w-[44px] text-gray-400 dark:text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
               onClick={() => {
                 navigator.clipboard.writeText(`${baseUrl}/join/${inv.token}`)
+                setCopiedId(inv.id)
+                setTimeout(() => setCopiedId(null), 2000)
               }}
               title="Copy link"
             >
-              📋
+              {copiedId === inv.id ? '✓' : '📋'}
             </button>
             <button
               className="flex items-center justify-center min-h-[44px] min-w-[44px] text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
