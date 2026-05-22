@@ -13,12 +13,10 @@ interface Props {
   callerPlan: Plan
 }
 
-// Convert datetime-local string to ISO UTC
 function toIso(local: string): string {
   return DateTime.fromISO(local, { zone: 'local' }).toUTC().toISO()!
 }
 
-// Format an ISO UTC instant for display
 function fmtRange(startsAt: string, endsAt: string): string {
   const s = DateTime.fromISO(startsAt).toLocal()
   const e = DateTime.fromISO(endsAt).toLocal()
@@ -28,7 +26,6 @@ function fmtRange(startsAt: string, endsAt: string): string {
   return `${s.toFormat('dd MMM HH:mm')} – ${e.toFormat('dd MMM HH:mm')}`
 }
 
-// Initialise datetime-local input to "now + offset hours"
 function defaultDatetime(offsetHours: number): string {
   return DateTime.now().plus({ hours: offsetHours }).toFormat("yyyy-MM-dd'T'HH:mm")
 }
@@ -78,8 +75,8 @@ export function AvailabilityTab({ groupId, callerPlan }: Props) {
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       {/* Add slot form */}
-      <div className="rounded-xl border bg-white p-5">
-        <h3 className="mb-4 font-medium text-gray-900">Add availability</h3>
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5">
+        <h3 className="mb-4 font-medium text-gray-900 dark:text-gray-100">Add availability</h3>
         <div className="flex flex-col gap-3">
           <Input
             label="From"
@@ -100,7 +97,7 @@ export function AvailabilityTab({ groupId, callerPlan }: Props) {
             placeholder="e.g. Preferred"
             maxLength={200}
           />
-          {formError && <p className="text-sm text-red-600">{formError}</p>}
+          {formError && <p className="text-sm text-red-600 dark:text-red-400">{formError}</p>}
           {add.error && <ErrorMessage error={add.error} />}
           <Button
             loading={add.isPending}
@@ -109,7 +106,7 @@ export function AvailabilityTab({ groupId, callerPlan }: Props) {
           >
             Add slot
           </Button>
-          <p className="text-xs text-gray-400 text-center">
+          <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
             {count} / {limit} slots used
           </p>
         </div>
@@ -117,24 +114,24 @@ export function AvailabilityTab({ groupId, callerPlan }: Props) {
 
       {/* My slots list */}
       <div>
-        <h3 className="mb-3 font-medium text-gray-900">My slots ({count})</h3>
+        <h3 className="mb-3 font-medium text-gray-900 dark:text-gray-100">My slots ({count})</h3>
         {count === 0 && (
-          <p className="text-sm text-gray-500">No slots yet. Add your available times.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">No slots yet. Add your available times.</p>
         )}
         <div className="flex flex-col gap-2">
           {slots?.map((s) => (
             <div
               key={s.id}
-              className="flex items-start justify-between rounded-lg border bg-white px-4 py-3"
+              className="flex items-start justify-between rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3"
             >
               <div>
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                   {fmtRange(s.startsAt, s.endsAt)}
                 </p>
-                {s.note && <p className="text-xs text-gray-500 mt-0.5">{s.note}</p>}
+                {s.note && <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{s.note}</p>}
               </div>
               <button
-                className="ml-4 shrink-0 text-gray-300 hover:text-red-500"
+                className="ml-2 shrink-0 flex items-center justify-center min-h-[44px] min-w-[44px] text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                 onClick={() => del.mutate(s.id)}
                 title="Delete"
               >

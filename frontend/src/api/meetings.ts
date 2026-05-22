@@ -16,4 +16,9 @@ export const meetingsApi = {
 
   delete: (groupId: string, meetingId: string) =>
     api.delete(`/groups/${groupId}/meetings/${meetingId}`),
+
+  exportIcs: (groupId: string, meetingId: string) =>
+    api.get<string>(`/groups/${groupId}/meetings/${meetingId}/export.ics`, {
+      responseType: 'text',
+    }).then((r) => r.data),
 }
