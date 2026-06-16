@@ -1,7 +1,7 @@
 import { useState, useEffect, ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/auth'
-import { useThemeStore, type Theme } from '@/store/theme'
+import { useThemeStore, applyTheme, type Theme } from '@/store/theme'
 import { Button } from './Button'
 
 interface LayoutProps {
@@ -14,19 +14,6 @@ const THEME_ICON: Record<Theme, string> = {
   light: '☀️',
   dark: '🌙',
   system: '💻',
-}
-
-function applyTheme(theme: Theme) {
-  const root = document.documentElement
-  if (theme === 'dark') {
-    root.classList.add('dark')
-  } else if (theme === 'light') {
-    root.classList.remove('dark')
-  } else {
-    window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? root.classList.add('dark')
-      : root.classList.remove('dark')
-  }
 }
 
 function ThemeToggle() {
