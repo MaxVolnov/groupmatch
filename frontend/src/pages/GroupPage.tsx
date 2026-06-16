@@ -11,6 +11,7 @@ import { MembersTab } from './group/MembersTab'
 import { AvailabilityTab } from './group/AvailabilityTab'
 import { HeatmapTab } from './group/HeatmapTab'
 import { MeetingsTab } from './group/MeetingsTab'
+import { EditGroupModal } from './group/EditGroupModal'
 
 type Tab = 'members' | 'availability' | 'heatmap' | 'meetings'
 
@@ -27,6 +28,7 @@ export function GroupPage() {
   const qc = useQueryClient()
   const { userId, plan } = useAuthStore()
   const [tab, setTab] = useState<Tab>('heatmap')
+  const [showEdit, setShowEdit] = useState(false)
 
   const { data: group, isLoading, error } = useQuery({
     queryKey: ['group', id],
@@ -82,19 +84,29 @@ export function GroupPage() {
             </div>
           </div>
           {isOwner && (
-            <Button
-              variant="danger"
-              size="sm"
-              loading={deleteGroup.isPending}
-              onClick={() => {
-                if (confirm('Delete this group? This cannot be undone.')) {
-                  deleteGroup.mutate()
-                }
-              }}
-              className="sm:shrink-0 w-full sm:w-auto justify-center"
-            >
-              Delete group
-            </Button>
+            <div className="flex flex-wrap gap-2 sm:shrink-0">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowEdit(true)}
+                className="flex-1 sm:flex-none justify-center"
+              >
+                Edit group
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                loading={deleteGroup.isPending}
+                onClick={() => {
+                  if (confirm('Delete this group? This cannot be undone.')) {
+                    deleteGroup.mutate()
+                  }
+                }}
+                className="flex-1 sm:flex-none justify-center"
+              >
+                Delete group
+              </Button>
+            </div>
           )}
         </div>
       </div>
@@ -129,6 +141,8 @@ export function GroupPage() {
       {tab === 'meetings' && userId && (
         <MeetingsTab group={group} currentUserId={userId} />
       )}
+
+      <EditGroupModal group={group} open={showEdit} onClose={() => setShowEdit(false)} />
     </Layout>
   )
 }
