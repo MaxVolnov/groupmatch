@@ -1,8 +1,9 @@
 package com.groupmatch.config;
 
+import com.groupmatch.filter.RateLimitFilter;
 import com.groupmatch.security.JwtAuthenticationFilter;
 import com.groupmatch.security.UserDetailsServiceImpl;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -16,10 +17,13 @@ import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
+import org.springframework.security.web.firewall.StrictHttpFirewall;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -50,22 +54,36 @@ import java.util.List;
  */
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity          // Активирует @PreAuthorize / @PostAuthorize
-@RequiredArgsConstructor
+@EnableMethodSecurity
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthFilter;
-    private final UserDetailsServiceImpl userDetailsService;
+    @Value("${app.cors.allowed-origins}")
+    private String allowedOrigins;
+
+    @Value("${app.rate-limit.signup:5}")
+    private int rateLimitSignup;
+
+    @Value("${app.rate-limit.signin:10}")
+    private int rateLimitSignin;
+
+    @Value("${app.rate-limit.refresh:20}")
+    private int rateLimitRefresh;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public RateLimitFilter rateLimitFilter() {
+        return new RateLimitFilter(rateLimitSignup, rateLimitSignin, rateLimitRefresh);
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                                    JwtAuthenticationFilter jwtAuthFilter,
+                                                    DaoAuthenticationProvider authProvider) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Публичные эндпоинты
                 .requestMatchers(
                     "/api/v1/auth/signup",
                     "/api/v1/auth/signin",
@@ -73,23 +91,19 @@ public class SecurityConfig {
                     "/actuator/health",
                     "/actuator/info"
                 ).permitAll()
-                // Только ADMIN
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-                // Всё остальное — любой аутентифицированный пользователь.
-                // Тонкая проверка (OWNER vs MEMBER) — через @PreAuthorize в сервисах.
                 .anyRequest().authenticated()
             )
-            .authenticationProvider(authenticationProvider())
+            .authenticationProvider(authProvider)
+            .addFilterBefore(rateLimitFilter(), UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    /** Используется AuthenticationManager при signin через UserDetailsService. */
     @Bean
-    public DaoAuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(userDetailsService);
+    public DaoAuthenticationProvider authenticationProvider(UserDetailsServiceImpl userDetailsService) {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
     }
@@ -105,11 +119,19 @@ public class SecurityConfig {
         return Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8();
     }
 
+    // Spring Security 7 StrictHttpFirewall rejects unknown Host headers by default.
+    // The app runs behind Railway's proxy, so allow any hostname — JWT secures the API.
+    @Bean
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        StrictHttpFirewall firewall = new StrictHttpFirewall();
+        firewall.setAllowedHostnames(hostname -> true);
+        return web -> web.httpFirewall(firewall);
+    }
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // dev: localhost:3000; prod — переопределить через env/profile
-        configuration.setAllowedOrigins(List.of("http://localhost:3000"));
+        configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

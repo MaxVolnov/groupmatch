@@ -9,6 +9,7 @@ import { Spinner } from '@/components/Spinner'
 import { ErrorMessage } from '@/components/ErrorMessage'
 import type { GroupResponse } from '@/types'
 import { Layout } from '@/components/Layout'
+import { TIMEZONES, getBrowserTimezone } from '@/utils/timezones'
 
 function GroupCard({ group }: { group: GroupResponse }) {
   return (
@@ -39,13 +40,15 @@ function CreateGroupModal({ open, onClose }: { open: boolean; onClose: () => voi
   const qc = useQueryClient()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+  const [tzId, setTzId] = useState(getBrowserTimezone)
 
   const create = useMutation({
-    mutationFn: () => groupsApi.create({ title, description: description || undefined }),
+    mutationFn: () => groupsApi.create({ title, description: description || undefined, tzId }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['groups'] })
       setTitle('')
       setDescription('')
+      setTzId(getBrowserTimezone())
       onClose()
     },
   })
@@ -85,6 +88,18 @@ function CreateGroupModal({ open, onClose }: { open: boolean; onClose: () => voi
           placeholder="What's this group for?"
           maxLength={1000}
         />
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-gray-700">Timezone</label>
+          <select
+            value={tzId}
+            onChange={(e) => setTzId(e.target.value)}
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            {TIMEZONES.map((tz) => (
+              <option key={tz.value} value={tz.value}>{tz.label}</option>
+            ))}
+          </select>
+        </div>
         {create.error && <ErrorMessage error={create.error} />}
       </div>
     </Modal>

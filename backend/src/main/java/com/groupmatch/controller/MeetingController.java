@@ -6,7 +6,9 @@ import com.groupmatch.security.UserPrincipal;
 import com.groupmatch.service.MeetingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -55,5 +57,16 @@ public class MeetingController {
                        @PathVariable UUID groupId,
                        @PathVariable UUID meetingId) {
         meetingService.deleteMeeting(meetingId, groupId, principal.getId());
+    }
+
+    @GetMapping("/{meetingId}/export.ics")
+    public ResponseEntity<String> exportIcs(@AuthenticationPrincipal UserPrincipal principal,
+                                            @PathVariable UUID groupId,
+                                            @PathVariable UUID meetingId) {
+        String ics = meetingService.exportIcs(meetingId, groupId, principal.getId());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_TYPE, "text/calendar; charset=UTF-8")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"meeting.ics\"")
+                .body(ics);
     }
 }

@@ -176,6 +176,25 @@ export function MeetingsTab({ group, currentUserId }: Props) {
                 )}
               </div>
             </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => downloadIcs(group.id, m.id)}
+              >
+                Export .ics
+              </Button>
+              {isOwner && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => del.mutate(m.id)}
+                  loading={del.isPending}
+                >
+                  Delete
+                </Button>
+              )}
+            </div>
           </div>
         ))}
       </div>

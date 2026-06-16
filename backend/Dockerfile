@@ -1,23 +1,24 @@
 # ─── Stage 1: Build ───────────────────────────────────────────────────────────
-# Используем официальный образ с Gradle — не нужен gradle-wrapper.jar в репо
-FROM gradle:8.5-jdk21-alpine AS build
+# Railway builds from repo root, so all COPY paths are relative to root
+FROM gradle:jdk25-alpine AS build
 
 WORKDIR /app
 
-# Копируем только конфиги зависимостей — Docker кэширует этот слой
-COPY build.gradle.kts settings.gradle.kts ./
+# Copy gradle configs — cached layer for dependencies
+COPY backend/build.gradle.kts backend/settings.gradle.kts ./
+COPY backend/gradle gradle/
+COPY backend/gradlew ./
 RUN gradle dependencies --no-daemon --quiet || true
 
-# Копируем исходники и собираем fat JAR (без запуска тестов)
-COPY src/ src/
+# Copy sources and build fat JAR (skip tests)
+COPY backend/src/ src/
 RUN gradle bootJar --no-daemon --quiet -x test
 
 # ─── Stage 2: Runtime ─────────────────────────────────────────────────────────
-FROM eclipse-temurin:21-jre-alpine AS runtime
+FROM eclipse-temurin:25-jre-alpine AS runtime
 
 WORKDIR /app
 
-# Не запускаем под root
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
 
