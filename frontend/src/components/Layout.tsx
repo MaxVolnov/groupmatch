@@ -72,7 +72,12 @@ export function Layout({ children }: LayoutProps) {
               <>
                 {/* Desktop */}
                 <div className="hidden sm:flex items-center gap-3">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">{displayName ?? email}</span>
+                  <Link
+                    to="/profile"
+                    className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                  >
+                    {displayName ?? email}
+                  </Link>
                   <Button variant="secondary" size="sm" onClick={handleLogout}>
                     Sign out
                   </Button>
@@ -100,7 +105,13 @@ export function Layout({ children }: LayoutProps) {
         {/* Mobile dropdown */}
         {isAuthenticated && menuOpen && (
           <div className="sm:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-4 flex flex-col gap-3">
-            <span className="text-sm text-gray-600 dark:text-gray-400">{displayName ?? email}</span>
+            <Link
+              to="/profile"
+              onClick={() => setMenuOpen(false)}
+              className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+            >
+              {displayName ?? email}
+            </Link>
             <Button variant="secondary" size="sm" onClick={handleLogout} className="w-full justify-center">
               Sign out
             </Button>
