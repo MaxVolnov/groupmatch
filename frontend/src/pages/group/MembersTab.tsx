@@ -5,7 +5,7 @@ import { invitesApi } from '@/api/invites'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
 import { Modal } from '@/components/Modal'
-import { Spinner } from '@/components/Spinner'
+import { Skeleton } from '@/components/Skeleton'
 import { ErrorMessage } from '@/components/ErrorMessage'
 import type { GroupResponse } from '@/types'
 
@@ -45,7 +45,7 @@ function InviteSection({ group }: { group: GroupResponse }) {
       </div>
       {create.error && <ErrorMessage error={create.error} />}
       {invites && invites.length === 0 && (
-        <p className="text-sm text-gray-500 dark:text-gray-400">No active invite links.</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">🔗 No active invite links.</p>
       )}
       <div className="flex flex-col gap-2">
         {invites?.map((inv) => (
@@ -81,6 +81,22 @@ function InviteSection({ group }: { group: GroupResponse }) {
   )
 }
 
+function MembersSkeletonList() {
+  return (
+    <div className="divide-y divide-gray-200 dark:divide-gray-700 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-5 w-14 rounded-full" />
+          </div>
+          <Skeleton className="h-8 w-12" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export function MembersTab({ group, currentUserId }: Props) {
   const qc = useQueryClient()
   const isOwner = group.ownerId === currentUserId
@@ -106,7 +122,7 @@ export function MembersTab({ group, currentUserId }: Props) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['members', group.id] }),
   })
 
-  if (isLoading) return <div className="flex justify-center py-8"><Spinner /></div>
+  if (isLoading) return <MembersSkeletonList />
   if (error) return <ErrorMessage error={error} />
 
   return (

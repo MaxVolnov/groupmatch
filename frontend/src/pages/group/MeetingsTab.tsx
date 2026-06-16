@@ -4,7 +4,7 @@ import { meetingsApi } from '@/api/meetings'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
 import { Modal } from '@/components/Modal'
-import { Spinner } from '@/components/Spinner'
+import { Skeleton } from '@/components/Skeleton'
 import { ErrorMessage } from '@/components/ErrorMessage'
 import type { GroupResponse } from '@/types'
 import { DateTime } from 'luxon'
@@ -42,6 +42,26 @@ function fmtRange(startsAt: string, endsAt: string): string {
   return `${s.toFormat('dd MMM HH:mm')} – ${e.toFormat('dd MMM HH:mm')}`
 }
 
+function MeetingSkeletonList() {
+  return (
+    <div className="flex flex-col gap-3">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div key={i} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-5 py-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0 flex-1">
+              <Skeleton className="h-5 w-1/2 mb-2" />
+              <Skeleton className="h-4 w-2/3" />
+            </div>
+            <div className="flex items-center gap-2 sm:shrink-0">
+              <Skeleton className="h-9 w-24" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function CreateMeetingModal({
   groupId,
   open,
@@ -56,6 +76,15 @@ function CreateMeetingModal({
   const [description, setDescription] = useState('')
   const [startsAt, setStartsAt] = useState(defaultDatetime(24))
   const [endsAt, setEndsAt] = useState(defaultDatetime(25))
+
+  const onStartsAtChange = (value: string) => {
+    setStartsAt(value)
+    const newStart = DateTime.fromISO(value)
+    const currentEnd = DateTime.fromISO(endsAt)
+    if (!currentEnd.isValid || currentEnd <= newStart) {
+      setEndsAt(newStart.plus({ hours: 1 }).toFormat("yyyy-MM-dd'T'HH:mm"))
+    }
+  }
 
   const create = useMutation({
     mutationFn: () =>
@@ -103,8 +132,18 @@ function CreateMeetingModal({
           onChange={(e) => setDescription(e.target.value)}
           maxLength={2000}
         />
-        <Input label="Starts at" type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
-        <Input label="Ends at" type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} />
+        <Input
+          label="Starts at"
+          type="datetime-local"
+          value={startsAt}
+          onChange={(e) => onStartsAtChange(e.target.value)}
+        />
+        <Input
+          label="Ends at"
+          type="datetime-local"
+          value={endsAt}
+          onChange={(e) => setEndsAt(e.target.value)}
+        />
         {create.error && <ErrorMessage error={create.error} />}
       </div>
     </Modal>
@@ -126,7 +165,7 @@ export function MeetingsTab({ group, currentUserId }: Props) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['meetings', group.id] }),
   })
 
-  if (isLoading) return <div className="flex justify-center py-8"><Spinner /></div>
+  if (isLoading) return <MeetingSkeletonList />
   if (error) return <ErrorMessage error={error} />
 
   return (
@@ -140,7 +179,10 @@ export function MeetingsTab({ group, currentUserId }: Props) {
       )}
 
       {meetings && meetings.length === 0 && (
-        <p className="text-sm text-gray-500 dark:text-gray-400">No meetings scheduled yet.</p>
+        <div className="py-12 text-center">
+          <p className="text-3xl mb-3">📅</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">No meetings scheduled yet.</p>
+        </div>
       )}
 
       <div className="flex flex-col gap-3">

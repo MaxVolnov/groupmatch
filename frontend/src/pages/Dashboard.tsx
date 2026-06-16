@@ -5,7 +5,7 @@ import { groupsApi } from '@/api/groups'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
 import { Modal } from '@/components/Modal'
-import { Spinner } from '@/components/Spinner'
+import { Skeleton } from '@/components/Skeleton'
 import { ErrorMessage } from '@/components/ErrorMessage'
 import type { GroupResponse } from '@/types'
 import { Layout } from '@/components/Layout'
@@ -33,6 +33,24 @@ function GroupCard({ group }: { group: GroupResponse }) {
         {group.showParticipants && <span>👥 Names visible</span>}
       </div>
     </Link>
+  )
+}
+
+function GroupCardSkeleton() {
+  return (
+    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm">
+      <div className="flex items-start justify-between">
+        <div className="flex-1 min-w-0">
+          <Skeleton className="h-5 w-2/3 mb-2" />
+          <Skeleton className="h-4 w-full mb-1" />
+          <Skeleton className="h-4 w-4/5" />
+        </div>
+        <Skeleton className="ml-4 shrink-0 h-5 w-20 rounded-full" />
+      </div>
+      <div className="mt-3 flex gap-3">
+        <Skeleton className="h-3 w-16" />
+      </div>
+    </div>
   )
 }
 
@@ -121,14 +139,17 @@ export function Dashboard() {
       </div>
 
       {isLoading && (
-        <div className="flex justify-center py-16">
-          <Spinner size="lg" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <GroupCardSkeleton key={i} />
+          ))}
         </div>
       )}
       {error && <ErrorMessage error={error} />}
 
       {groups && groups.length === 0 && (
         <div className="rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 py-16 text-center">
+          <p className="text-3xl mb-3">📋</p>
           <p className="text-gray-500 dark:text-gray-400">No groups yet.</p>
           <button
             className="mt-2 inline-flex items-center justify-center min-h-[44px] px-4 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
