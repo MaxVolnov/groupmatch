@@ -14,20 +14,20 @@ function GroupCard({ group }: { group: GroupResponse }) {
   return (
     <Link
       to={`/groups/${group.id}`}
-      className="block rounded-xl border bg-white p-5 shadow-sm hover:shadow-md transition-shadow"
+      className="block rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm hover:shadow-md transition-shadow"
     >
       <div className="flex items-start justify-between">
         <div>
-          <h3 className="font-semibold text-gray-900">{group.title}</h3>
+          <h3 className="font-semibold text-gray-900 dark:text-gray-100">{group.title}</h3>
           {group.description && (
-            <p className="mt-1 text-sm text-gray-500 line-clamp-2">{group.description}</p>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">{group.description}</p>
           )}
         </div>
-        <span className="ml-4 shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
+        <span className="ml-4 shrink-0 rounded-full bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:text-indigo-300">
           {group.tzId}
         </span>
       </div>
-      <div className="mt-3 flex gap-3 text-xs text-gray-400">
+      <div className="mt-3 flex gap-3 text-xs text-gray-400 dark:text-gray-500">
         {group.locked && <span>🔒 Locked</span>}
         {group.showParticipants && <span>👥 Names visible</span>}
       </div>
@@ -101,7 +101,7 @@ export function Dashboard() {
   return (
     <Layout>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">My Groups</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">My Groups</h1>
         <Button onClick={() => setShowCreate(true)}>+ New group</Button>
       </div>
 
@@ -113,10 +113,10 @@ export function Dashboard() {
       {error && <ErrorMessage error={error} />}
 
       {groups && groups.length === 0 && (
-        <div className="rounded-xl border-2 border-dashed border-gray-200 py-16 text-center">
-          <p className="text-gray-500">No groups yet.</p>
+        <div className="rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 py-16 text-center">
+          <p className="text-gray-500 dark:text-gray-400">No groups yet.</p>
           <button
-            className="mt-2 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+            className="mt-2 inline-flex items-center justify-center min-h-[44px] px-4 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
             onClick={() => setShowCreate(true)}
           >
             Create your first group →

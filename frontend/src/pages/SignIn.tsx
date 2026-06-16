@@ -35,9 +35,9 @@ export function SignIn() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-sm rounded-xl bg-white p-8 shadow-md">
-        <h1 className="mb-6 text-center text-2xl font-bold text-gray-900">Sign in</h1>
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
+      <div className="w-full max-w-sm rounded-xl bg-white dark:bg-gray-800 p-8 shadow-md">
+        <h1 className="mb-6 text-center text-2xl font-bold text-gray-900 dark:text-gray-100">Sign in</h1>
         <form onSubmit={submit} className="flex flex-col gap-4">
           <Input
             label="Email"
@@ -55,14 +55,14 @@ export function SignIn() {
             required
             autoComplete="current-password"
           />
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
           <Button type="submit" loading={loading} className="mt-2 w-full justify-center">
             Sign in
           </Button>
         </form>
-        <p className="mt-4 text-center text-sm text-gray-600">
+        <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
           No account?{' '}
-          <Link to="/signup" className="font-medium text-indigo-600 hover:text-indigo-700">
+          <Link to="/signup" className="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300">
             Sign up
           </Link>
         </p>
