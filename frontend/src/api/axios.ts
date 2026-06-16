@@ -47,6 +47,7 @@ api.interceptors.response.use(
       queue.forEach((q) => q.reject(e))
       queue = []
       useAuthStore.getState().logout()
+      window.location.href = `${import.meta.env.BASE_URL}signin`
       return Promise.reject(e)
     } finally {
       refreshing = false
