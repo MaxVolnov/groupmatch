@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { availabilityApi } from '@/api/availability'
 import { Button } from '@/components/Button'
 import { Spinner } from '@/components/Spinner'
+import { Skeleton } from '@/components/Skeleton'
 import { ErrorMessage } from '@/components/ErrorMessage'
 import type { HeatmapSlot } from '@/types'
 import { DateTime } from 'luxon'
@@ -58,6 +59,7 @@ function buildGrid(slots: HeatmapSlot[], from: DateTime): {
 
 export function HeatmapTab({ groupId }: Props) {
   const [weekOffset, setWeekOffset] = useState(0)
+  const [initialLoaded, setInitialLoaded] = useState(false)
 
   const monday = DateTime.now().startOf('week').plus({ weeks: weekOffset })
   const sunday = monday.plus({ days: 7 })
@@ -71,6 +73,7 @@ export function HeatmapTab({ groupId }: Props) {
         sunday.toUTC().toISO()!,
         30,
       ),
+    select: (d) => { setInitialLoaded(true); return d },
   })
 
   const { grid, timeLabels, maxCount } = data
@@ -95,12 +98,14 @@ export function HeatmapTab({ groupId }: Props) {
             Today
           </Button>
         )}
+        {isLoading && initialLoaded && <Spinner size="sm" />}
       </div>
 
-      {isLoading && <div className="flex justify-center py-8"><Spinner /></div>}
       {error && <ErrorMessage error={error} />}
 
-      {!isLoading && !error && (
+      {isLoading && !initialLoaded ? (
+        <Skeleton className="h-96 w-full" />
+      ) : !error && (
         <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 -mx-4 sm:mx-0">
           <table className="min-w-full border-collapse text-xs">
             <thead>
