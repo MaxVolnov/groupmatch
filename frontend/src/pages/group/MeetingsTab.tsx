@@ -1,9 +1,6 @@
-import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { meetingsApi } from '@/api/meetings'
 import { Button } from '@/components/Button'
-import { Input } from '@/components/Input'
-import { Modal } from '@/components/Modal'
 import { Skeleton } from '@/components/Skeleton'
 import { ErrorMessage } from '@/components/ErrorMessage'
 import type { GroupResponse } from '@/types'
@@ -12,14 +9,7 @@ import { DateTime } from 'luxon'
 interface Props {
   group: GroupResponse
   currentUserId: string
-}
-
-function toIso(local: string): string {
-  return DateTime.fromISO(local, { zone: 'local' }).toUTC().toISO()!
-}
-
-function defaultDatetime(offsetHours: number): string {
-  return DateTime.now().plus({ hours: offsetHours }).toFormat("yyyy-MM-dd'T'HH:mm")
+  onScheduleClick: () => void
 }
 
 async function downloadIcs(groupId: string, meetingId: string) {
@@ -62,97 +52,8 @@ function MeetingSkeletonList() {
   )
 }
 
-function CreateMeetingModal({
-  groupId,
-  open,
-  onClose,
-}: {
-  groupId: string
-  open: boolean
-  onClose: () => void
-}) {
-  const qc = useQueryClient()
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [startsAt, setStartsAt] = useState(defaultDatetime(24))
-  const [endsAt, setEndsAt] = useState(defaultDatetime(25))
-
-  const onStartsAtChange = (value: string) => {
-    setStartsAt(value)
-    const newStart = DateTime.fromISO(value)
-    const currentEnd = DateTime.fromISO(endsAt)
-    if (!currentEnd.isValid || currentEnd <= newStart) {
-      setEndsAt(newStart.plus({ hours: 1 }).toFormat("yyyy-MM-dd'T'HH:mm"))
-    }
-  }
-
-  const create = useMutation({
-    mutationFn: () =>
-      meetingsApi.create(groupId, {
-        title,
-        description: description || undefined,
-        startsAt: toIso(startsAt),
-        endsAt: toIso(endsAt),
-      }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['meetings', groupId] })
-      setTitle('')
-      setDescription('')
-      onClose()
-    },
-  })
-
-  return (
-    <Modal
-      title="Schedule meeting"
-      open={open}
-      onClose={onClose}
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button loading={create.isPending} disabled={!title.trim()} onClick={() => create.mutate()}>
-            Schedule
-          </Button>
-        </>
-      }
-    >
-      <div className="flex flex-col gap-3">
-        <Input
-          label="Title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Sprint planning"
-          minLength={3}
-          maxLength={100}
-          required
-        />
-        <Input
-          label="Description (optional)"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          maxLength={2000}
-        />
-        <Input
-          label="Starts at"
-          type="datetime-local"
-          value={startsAt}
-          onChange={(e) => onStartsAtChange(e.target.value)}
-        />
-        <Input
-          label="Ends at"
-          type="datetime-local"
-          value={endsAt}
-          onChange={(e) => setEndsAt(e.target.value)}
-        />
-        {create.error && <ErrorMessage error={create.error} />}
-      </div>
-    </Modal>
-  )
-}
-
-export function MeetingsTab({ group, currentUserId }: Props) {
+export function MeetingsTab({ group, currentUserId, onScheduleClick }: Props) {
   const isOwner = group.ownerId === currentUserId
-  const [showCreate, setShowCreate] = useState(false)
   const qc = useQueryClient()
 
   const { data: meetings, isLoading, error } = useQuery({
@@ -172,7 +73,7 @@ export function MeetingsTab({ group, currentUserId }: Props) {
     <div>
       {isOwner && (
         <div className="mb-4 flex justify-end">
-          <Button size="sm" onClick={() => setShowCreate(true)}>
+          <Button size="sm" onClick={onScheduleClick}>
             + Schedule meeting
           </Button>
         </div>
@@ -221,12 +122,6 @@ export function MeetingsTab({ group, currentUserId }: Props) {
           </div>
         ))}
       </div>
-
-      <CreateMeetingModal
-        groupId={group.id}
-        open={showCreate}
-        onClose={() => setShowCreate(false)}
-      />
     </div>
   )
 }
