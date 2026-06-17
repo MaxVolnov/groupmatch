@@ -161,4 +161,24 @@ class IntegrationTest {
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(resp.getBody()).containsKey("slots");
     }
+
+    // ── 6. submit feedback ───────────────────────────────────────────────────
+
+    @Test
+    @Order(6)
+    void submitFeedback() {
+        var body = Map.of(
+                "category", "BUG",
+                "message", "This is a test bug report from the integration test suite."
+        );
+        ResponseEntity<Map> resp = rest.exchange(
+                url("/api/v1/feedback"), HttpMethod.POST,
+                new HttpEntity<>(body, authHeaders()), Map.class);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(resp.getBody()).containsKey("id");
+        assertThat(resp.getBody().get("category")).isEqualTo("BUG");
+        assertThat(resp.getBody().get("message")).isEqualTo(
+                "This is a test bug report from the integration test suite.");
+    }
 }

@@ -138,6 +138,22 @@ export interface MeetingRequest {
   endsAt: string
 }
 
+// ── Feedback ──────────────────────────────────────────────────────────────────
+
+export type FeedbackCategory = 'BUG' | 'FEATURE_REQUEST' | 'OTHER'
+
+export interface FeedbackRequest {
+  category: FeedbackCategory
+  message: string
+}
+
+export interface FeedbackResponse {
+  id: string
+  category: FeedbackCategory
+  message: string
+  createdAt: string
+}
+
 // ── Error ─────────────────────────────────────────────────────────────────────
 
 export interface ApiError {

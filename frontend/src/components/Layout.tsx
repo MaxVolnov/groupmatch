@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/auth'
 import { useThemeStore, applyTheme, type Theme } from '@/store/theme'
 import { Button } from './Button'
+import { FeedbackModal } from './FeedbackModal'
 
 interface LayoutProps {
   children: ReactNode
@@ -46,6 +47,7 @@ export function Layout({ children }: LayoutProps) {
   const { isAuthenticated, displayName, email, logout } = useAuthStore()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [showFeedback, setShowFeedback] = useState(false)
 
   const handleLogout = () => {
     setMenuOpen(false)
@@ -78,6 +80,12 @@ export function Layout({ children }: LayoutProps) {
                   >
                     {displayName ?? email}
                   </Link>
+                  <button
+                    onClick={() => setShowFeedback(true)}
+                    className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                  >
+                    💬 Feedback
+                  </button>
                   <Button variant="secondary" size="sm" onClick={handleLogout}>
                     Sign out
                   </Button>
@@ -112,6 +120,12 @@ export function Layout({ children }: LayoutProps) {
             >
               {displayName ?? email}
             </Link>
+            <button
+              onClick={() => { setMenuOpen(false); setShowFeedback(true) }}
+              className="text-left text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+            >
+              💬 Feedback
+            </button>
             <Button variant="secondary" size="sm" onClick={handleLogout} className="w-full justify-center">
               Sign out
             </Button>
@@ -120,6 +134,8 @@ export function Layout({ children }: LayoutProps) {
       </nav>
 
       <main className="mx-auto max-w-6xl px-4 py-6 md:py-8">{children}</main>
+
+      <FeedbackModal open={showFeedback} onClose={() => setShowFeedback(false)} />
     </div>
   )
 }
