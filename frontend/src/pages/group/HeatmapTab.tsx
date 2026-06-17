@@ -10,6 +10,8 @@ import { DateTime } from 'luxon'
 
 interface Props {
   groupId: string
+  isOwner: boolean
+  onCreateMeeting: (slot: HeatmapSlot) => void
 }
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -57,7 +59,7 @@ function buildGrid(slots: HeatmapSlot[], from: DateTime): {
   return { grid, timeLabels, maxCount }
 }
 
-export function HeatmapTab({ groupId }: Props) {
+export function HeatmapTab({ groupId, isOwner, onCreateMeeting }: Props) {
   const [weekOffset, setWeekOffset] = useState(0)
   const [initialLoaded, setInitialLoaded] = useState(false)
 
@@ -130,15 +132,26 @@ export function HeatmapTab({ groupId }: Props) {
                   <td className="border-b border-r border-gray-100 dark:border-gray-700/50 px-1 text-right text-gray-400 dark:text-gray-500 align-top leading-4 sticky left-0 bg-white dark:bg-gray-800 z-10 min-w-[40px]">
                     {timeLabels[rowIdx]}
                   </td>
-                  {row.map((slot, colIdx) => (
-                    <td
-                      key={colIdx}
-                      title={slot ? `${slot.count} available${slot.displayNames ? ': ' + slot.displayNames.join(', ') : ''}` : ''}
-                      className={`min-w-[40px] border-b border-r border-gray-100 dark:border-gray-700/30 cursor-default transition-colors ${
-                        slot ? intensityClass(slot.count, maxCount) : 'bg-white dark:bg-gray-800'
-                      }`}
-                    />
-                  ))}
+                  {row.map((slot, colIdx) => {
+                    const isClickable = slot !== null && slot.count > 0 && isOwner
+                    const baseClass = 'min-w-[40px] border-b border-r border-gray-100 dark:border-gray-700/30 transition-colors'
+                    const colorClass = slot ? intensityClass(slot.count, maxCount) : 'bg-white dark:bg-gray-800'
+                    const interactClass = isClickable
+                      ? 'cursor-pointer hover:ring-2 hover:ring-indigo-400 hover:ring-inset'
+                      : 'cursor-default'
+                    const titleText = slot
+                      ? `${slot.count} available${slot.displayNames ? ': ' + slot.displayNames.join(', ') : ''}${isClickable ? ' — click to schedule a meeting' : ''}`
+                      : ''
+
+                    return (
+                      <td
+                        key={colIdx}
+                        title={titleText}
+                        className={`${baseClass} ${colorClass} ${interactClass}`}
+                        onClick={isClickable ? () => onCreateMeeting(slot) : undefined}
+                      />
+                    )
+                  })}
                 </tr>
               ))}
             </tbody>

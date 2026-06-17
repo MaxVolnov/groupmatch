@@ -6,6 +6,7 @@ import { SignUp } from '@/pages/SignUp'
 import { Dashboard } from '@/pages/Dashboard'
 import { GroupPage } from '@/pages/GroupPage'
 import { JoinInvite } from '@/pages/JoinInvite'
+import { Profile } from '@/pages/Profile'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,6 +42,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <GroupPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
               </ProtectedRoute>
             }
           />
