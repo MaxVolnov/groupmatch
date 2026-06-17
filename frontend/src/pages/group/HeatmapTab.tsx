@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { availabilityApi } from '@/api/availability'
 import { Button } from '@/components/Button'
@@ -75,8 +75,11 @@ export function HeatmapTab({ groupId, isOwner, onCreateMeeting }: Props) {
         sunday.toUTC().toISO()!,
         30,
       ),
-    select: (d) => { setInitialLoaded(true); return d },
   })
+
+  useEffect(() => {
+    if (data) setInitialLoaded(true)
+  }, [data])
 
   const { grid, timeLabels, maxCount } = data
     ? buildGrid(data.slots, monday)
