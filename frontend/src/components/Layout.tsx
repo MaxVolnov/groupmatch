@@ -1,8 +1,9 @@
 import { useState, useEffect, ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/auth'
-import { useThemeStore, type Theme } from '@/store/theme'
+import { useThemeStore, applyTheme, type Theme } from '@/store/theme'
 import { Button } from './Button'
+import { FeedbackModal } from './FeedbackModal'
 
 interface LayoutProps {
   children: ReactNode
@@ -14,19 +15,6 @@ const THEME_ICON: Record<Theme, string> = {
   light: '☀️',
   dark: '🌙',
   system: '💻',
-}
-
-function applyTheme(theme: Theme) {
-  const root = document.documentElement
-  if (theme === 'dark') {
-    root.classList.add('dark')
-  } else if (theme === 'light') {
-    root.classList.remove('dark')
-  } else {
-    window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? root.classList.add('dark')
-      : root.classList.remove('dark')
-  }
 }
 
 function ThemeToggle() {
@@ -59,6 +47,7 @@ export function Layout({ children }: LayoutProps) {
   const { isAuthenticated, displayName, email, logout } = useAuthStore()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [showFeedback, setShowFeedback] = useState(false)
 
   const handleLogout = () => {
     setMenuOpen(false)
@@ -85,7 +74,18 @@ export function Layout({ children }: LayoutProps) {
               <>
                 {/* Desktop */}
                 <div className="hidden sm:flex items-center gap-3">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">{displayName ?? email}</span>
+                  <Link
+                    to="/profile"
+                    className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                  >
+                    {displayName ?? email}
+                  </Link>
+                  <button
+                    onClick={() => setShowFeedback(true)}
+                    className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                  >
+                    💬 Feedback
+                  </button>
                   <Button variant="secondary" size="sm" onClick={handleLogout}>
                     Sign out
                   </Button>
@@ -113,7 +113,19 @@ export function Layout({ children }: LayoutProps) {
         {/* Mobile dropdown */}
         {isAuthenticated && menuOpen && (
           <div className="sm:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-4 flex flex-col gap-3">
-            <span className="text-sm text-gray-600 dark:text-gray-400">{displayName ?? email}</span>
+            <Link
+              to="/profile"
+              onClick={() => setMenuOpen(false)}
+              className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+            >
+              {displayName ?? email}
+            </Link>
+            <button
+              onClick={() => { setMenuOpen(false); setShowFeedback(true) }}
+              className="text-left text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+            >
+              💬 Feedback
+            </button>
             <Button variant="secondary" size="sm" onClick={handleLogout} className="w-full justify-center">
               Sign out
             </Button>
@@ -122,6 +134,8 @@ export function Layout({ children }: LayoutProps) {
       </nav>
 
       <main className="mx-auto max-w-6xl px-4 py-6 md:py-8">{children}</main>
+
+      <FeedbackModal open={showFeedback} onClose={() => setShowFeedback(false)} />
     </div>
   )
 }

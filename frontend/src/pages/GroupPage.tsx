@@ -11,6 +11,10 @@ import { MembersTab } from './group/MembersTab'
 import { AvailabilityTab } from './group/AvailabilityTab'
 import { HeatmapTab } from './group/HeatmapTab'
 import { MeetingsTab } from './group/MeetingsTab'
+import { EditGroupModal } from './group/EditGroupModal'
+import { CreateMeetingModal } from './group/CreateMeetingModal'
+import type { HeatmapSlot } from '@/types'
+import { DateTime } from 'luxon'
 
 type Tab = 'members' | 'availability' | 'heatmap' | 'meetings'
 
@@ -27,6 +31,9 @@ export function GroupPage() {
   const qc = useQueryClient()
   const { userId, plan } = useAuthStore()
   const [tab, setTab] = useState<Tab>('heatmap')
+  const [showEdit, setShowEdit] = useState(false)
+  const [showCreateMeeting, setShowCreateMeeting] = useState(false)
+  const [meetingPrefill, setMeetingPrefill] = useState<{ startsAt: string; endsAt: string } | undefined>(undefined)
 
   const { data: group, isLoading, error } = useQuery({
     queryKey: ['group', id],
@@ -41,6 +48,24 @@ export function GroupPage() {
       navigate('/')
     },
   })
+
+  const openCreateMeeting = (prefill?: { startsAt: string; endsAt: string }) => {
+    setMeetingPrefill(prefill)
+    setShowCreateMeeting(true)
+  }
+
+  const closeCreateMeeting = () => {
+    setShowCreateMeeting(false)
+    setMeetingPrefill(undefined)
+  }
+
+  const handleHeatmapSlotClick = (slot: HeatmapSlot) => {
+    const start = DateTime.fromISO(slot.startsAt)
+    openCreateMeeting({
+      startsAt: slot.startsAt,
+      endsAt: start.plus({ hours: 1 }).toUTC().toISO()!,
+    })
+  }
 
   if (isLoading) {
     return (
@@ -82,19 +107,29 @@ export function GroupPage() {
             </div>
           </div>
           {isOwner && (
-            <Button
-              variant="danger"
-              size="sm"
-              loading={deleteGroup.isPending}
-              onClick={() => {
-                if (confirm('Delete this group? This cannot be undone.')) {
-                  deleteGroup.mutate()
-                }
-              }}
-              className="sm:shrink-0 w-full sm:w-auto justify-center"
-            >
-              Delete group
-            </Button>
+            <div className="flex flex-wrap gap-2 sm:shrink-0">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowEdit(true)}
+                className="flex-1 sm:flex-none justify-center"
+              >
+                Edit group
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                loading={deleteGroup.isPending}
+                onClick={() => {
+                  if (confirm('Delete this group? This cannot be undone.')) {
+                    deleteGroup.mutate()
+                  }
+                }}
+                className="flex-1 sm:flex-none justify-center"
+              >
+                Delete group
+              </Button>
+            </div>
           )}
         </div>
       </div>
@@ -125,10 +160,21 @@ export function GroupPage() {
       {tab === 'availability' && plan && (
         <AvailabilityTab groupId={group.id} callerPlan={plan} />
       )}
-      {tab === 'heatmap' && <HeatmapTab groupId={group.id} />}
-      {tab === 'meetings' && userId && (
-        <MeetingsTab group={group} currentUserId={userId} />
+      {tab === 'heatmap' && (
+        <HeatmapTab groupId={group.id} isOwner={isOwner} onCreateMeeting={handleHeatmapSlotClick} />
       )}
+      {tab === 'meetings' && userId && (
+        <MeetingsTab group={group} currentUserId={userId} onScheduleClick={() => openCreateMeeting()} />
+      )}
+
+      <EditGroupModal group={group} open={showEdit} onClose={() => setShowEdit(false)} />
+      <CreateMeetingModal
+        groupId={group.id}
+        open={showCreateMeeting}
+        onClose={closeCreateMeeting}
+        initialStartsAt={meetingPrefill?.startsAt}
+        initialEndsAt={meetingPrefill?.endsAt}
+      />
     </Layout>
   )
 }

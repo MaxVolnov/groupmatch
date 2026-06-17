@@ -5,6 +5,8 @@
 import type {
   AuthResponse,
   AvailabilityResponse,
+  FeedbackCategory,
+  FeedbackResponse,
   GroupResponse,
   HeatmapResponse,
   HeatmapSlot,
@@ -365,6 +367,38 @@ export const mockApi = {
       }
     },
   },
+
+  feedback: {
+    create: async (data: { category: string; message: string }): Promise<FeedbackResponse> => {
+      await delay(300)
+      return {
+        id: `feedback-${Date.now()}`,
+        category: data.category as FeedbackCategory,
+        message: data.message,
+        createdAt: new Date().toISOString(),
+      }
+    },
+  },
+
+  me: (() => {
+    const profile: UserResponse = {
+      id: MOCK_USER_ID,
+      email: 'demo@groupmatch.app',
+      displayName: 'Demo User',
+      tzId: 'Europe/London',
+      plan: 'PRO',
+      role: 'USER',
+      createdAt: '2025-01-01T00:00:00Z',
+    }
+    return {
+      get: async (): Promise<UserResponse> => { await delay(); return { ...profile } },
+      update: async (data: { displayName?: string; tzId?: string }): Promise<UserResponse> => {
+        await delay(300)
+        Object.assign(profile, data)
+        return { ...profile }
+      },
+    }
+  })(),
 
   meetings: {
     list: async (groupId: string): Promise<MeetingResponse[]> => {

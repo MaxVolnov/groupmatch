@@ -21,11 +21,11 @@ export function JoinInvite() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <div className="rounded-xl bg-white p-8 shadow-md text-center">
-          <p className="text-lg font-semibold text-red-600 mb-2">Unable to join</p>
-          <p className="text-sm text-gray-600 mb-4">{error}</p>
-          <a href="/" className="text-indigo-600 hover:underline text-sm">
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="rounded-xl bg-white dark:bg-gray-800 p-8 shadow-md text-center">
+          <p className="text-lg font-semibold text-red-600 dark:text-red-400 mb-2">Unable to join</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{error}</p>
+          <a href="/" className="text-indigo-600 dark:text-indigo-400 hover:underline text-sm">
             Go to dashboard
           </a>
         </div>
@@ -34,10 +34,10 @@ export function JoinInvite() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
       <div className="flex flex-col items-center gap-3">
         <Spinner size="lg" />
-        <p className="text-sm text-gray-600">Joining group…</p>
+        <p className="text-sm text-gray-600 dark:text-gray-400">Joining group…</p>
       </div>
     </div>
   )
