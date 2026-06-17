@@ -31,14 +31,13 @@
 
 | Service | URL |
 |---|---|
-| Frontend | https://groupmatch.app |
-| API | https://api.groupmatch.app |
+| Frontend | https://maxvolnov.github.io/groupmatch/ |
 
 ## Local development
 
 ### Prerequisites
 
-- Node.js 22+
+- Node.js 20+
 - Java 25 (or JDK compatible with Spring Boot 4)
 - Docker (for PostgreSQL via Testcontainers or a local instance)
 
@@ -46,12 +45,11 @@
 
 ```bash
 cd frontend
-cp .env.example .env.local   # set VITE_API_URL or leave blank for mock mode
 npm install
 npm run dev                  # http://localhost:5173
 ```
 
-Set `VITE_MOCK=true` in `.env.local` to run entirely in-browser with mock data (no backend needed).
+Set `VITE_MOCK_API=true` in `.env.local` to run entirely in-browser with mock data (no backend needed). Set `VITE_API_URL` to point at a local backend instance.
 
 ### Backend
 
@@ -65,12 +63,12 @@ Environment variables expected by the backend:
 
 | Variable | Description |
 |---|---|
-| `DB_URL` | JDBC URL, e.g. `jdbc:postgresql://localhost:5432/groupmatch` |
-| `DB_USERNAME` | Database user |
-| `DB_PASSWORD` | Database password |
+| `SPRING_DATASOURCE_URL` | JDBC URL, e.g. `jdbc:postgresql://localhost:5432/groupmatch` |
+| `SPRING_DATASOURCE_USERNAME` | Database user |
+| `SPRING_DATASOURCE_PASSWORD` | Database password |
 | `JWT_SECRET` | 256-bit secret for signing JWTs |
-| `JWT_EXPIRY_SECONDS` | Access token lifetime (default 900) |
-| `JWT_REFRESH_EXPIRY_SECONDS` | Refresh token lifetime (default 604800) |
+| `SPRING_REDIS_URL` | Redis URL, e.g. `redis://localhost:6379` |
+| `CORS_ALLOWED_ORIGINS` | Comma-separated allowed origins, e.g. `http://localhost:5173` |
 
 ### Running tests
 
@@ -102,6 +100,7 @@ groupmatch/
 
 ## Contributing
 
-1. Create a feature branch from `main`.
-2. Make changes, add tests where appropriate.
-3. Open a pull request — CI must pass before merge.
+- `feature/*` branches cut from `develop`; open a PR back into `develop`
+- `hotfix/*` branches cut from `main`; PR into both `main` and `develop`
+- `develop` → `main` is merged on release
+- CI (lint, type-check, tests, build) must pass before any merge
