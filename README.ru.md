@@ -31,14 +31,13 @@
 
 | Сервис | URL |
 |---|---|
-| Фронтенд | https://groupmatch.app |
-| API | https://api.groupmatch.app |
+| Фронтенд | https://maxvolnov.github.io/groupmatch/ |
 
 ## Локальная разработка
 
 ### Необходимое ПО
 
-- Node.js 22+
+- Node.js 20+
 - Java 25 (или JDK, совместимый со Spring Boot 4)
 - Docker (для PostgreSQL через Testcontainers или локальный инстанс)
 
@@ -46,12 +45,11 @@
 
 ```bash
 cd frontend
-cp .env.example .env.local   # укажите VITE_API_URL или оставьте пустым для mock-режима
 npm install
 npm run dev                  # http://localhost:5173
 ```
 
-Установите `VITE_MOCK=true` в `.env.local` для работы только в браузере с mock-данными (бэкенд не нужен).
+Установите `VITE_MOCK_API=true` в `.env.local` для работы только в браузере с mock-данными (бэкенд не нужен). Установите `VITE_API_URL` для подключения к локальному бэкенду.
 
 ### Бэкенд
 
@@ -65,12 +63,12 @@ cd backend
 
 | Переменная | Описание |
 |---|---|
-| `DB_URL` | JDBC URL, например `jdbc:postgresql://localhost:5432/groupmatch` |
-| `DB_USERNAME` | Пользователь БД |
-| `DB_PASSWORD` | Пароль БД |
+| `SPRING_DATASOURCE_URL` | JDBC URL, например `jdbc:postgresql://localhost:5432/groupmatch` |
+| `SPRING_DATASOURCE_USERNAME` | Пользователь БД |
+| `SPRING_DATASOURCE_PASSWORD` | Пароль БД |
 | `JWT_SECRET` | 256-битный секрет для подписи JWT |
-| `JWT_EXPIRY_SECONDS` | Время жизни access-токена (по умолчанию 900) |
-| `JWT_REFRESH_EXPIRY_SECONDS` | Время жизни refresh-токена (по умолчанию 604800) |
+| `SPRING_REDIS_URL` | URL Redis, например `redis://localhost:6379` |
+| `CORS_ALLOWED_ORIGINS` | Разрешённые origins через запятую, например `http://localhost:5173` |
 
 ### Запуск тестов
 
@@ -102,6 +100,7 @@ groupmatch/
 
 ## Участие в разработке
 
-1. Создайте ветку от `main`.
-2. Внесите изменения, добавьте тесты там, где это уместно.
-3. Откройте pull request — CI должен пройти перед слиянием.
+- Ветки `feature/*` создаются от `develop`; PR открывается обратно в `develop`
+- Ветки `hotfix/*` создаются от `main`; PR в `main` и в `develop`
+- `develop` → `main` мержится при релизе
+- CI (lint, type-check, тесты, сборка) должен пройти перед любым слиянием
