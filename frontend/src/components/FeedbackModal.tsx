@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { feedbackApi } from '@/api/feedback'
 import { Button } from './Button'
@@ -20,11 +20,13 @@ const CATEGORIES: { value: FeedbackCategory; label: string }[] = [
 export function FeedbackModal({ open, onClose }: Props) {
   const [category, setCategory] = useState<FeedbackCategory>('OTHER')
   const [message, setMessage] = useState('')
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const submit = useMutation({
     mutationFn: () => feedbackApi.create({ category, message }),
     onSuccess: () => {
-      setTimeout(() => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+      timeoutRef.current = setTimeout(() => {
         onClose()
         setCategory('OTHER')
         setMessage('')
@@ -34,10 +36,14 @@ export function FeedbackModal({ open, onClose }: Props) {
   })
 
   useEffect(() => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current)
     if (!open) return
     setCategory('OTHER')
     setMessage('')
     submit.reset()
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
