@@ -12,6 +12,13 @@ _Nothing yet._
 
 ---
 
+## [0.4.1] — 2026-06-17
+
+### Fixed
+- Group page crashed with a blank white screen on every visit (`Minified React error #301: Too many re-renders`) — caused by calling `setInitialLoaded` inside the `select` callback of the heatmap `useQuery`, which executes synchronously during render. Moved the side effect into a `useEffect`.
+
+---
+
 ## [0.4.0] — 2026-06-17
 
 ### Added
