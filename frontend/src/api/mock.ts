@@ -5,6 +5,8 @@
 import type {
   AuthResponse,
   AvailabilityResponse,
+  FeedbackCategory,
+  FeedbackResponse,
   GroupResponse,
   HeatmapResponse,
   HeatmapSlot,
@@ -362,6 +364,18 @@ export const mockApi = {
         createdAt: new Date().toISOString(),
         expiresAt: DateTime.now().plus({ days: 30 }).toUTC().toISO()!,
         maxUses: 0, currentUses: 1, revoked: false,
+      }
+    },
+  },
+
+  feedback: {
+    create: async (data: { category: string; message: string }): Promise<FeedbackResponse> => {
+      await delay(300)
+      return {
+        id: `feedback-${Date.now()}`,
+        category: data.category as FeedbackCategory,
+        message: data.message,
+        createdAt: new Date().toISOString(),
       }
     },
   },
