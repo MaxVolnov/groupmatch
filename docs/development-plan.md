@@ -90,6 +90,12 @@ This document tracks the phase-by-phase roadmap for GroupMatch.
 
 ---
 
+## Tech Debt
+
+- Wire up `eslint-plugin-react-hooks` properly — the plugin is not in `.eslintrc.cjs` yet, so `exhaustive-deps` is currently unenforced. Enabling it will surface real violations in existing `useEffect` hooks across `GroupPage.tsx`, `HeatmapTab.tsx`, `Dashboard.tsx` and others; audit and fix them as a dedicated task before enabling `--max-warnings 0` in CI for this rule.
+
+---
+
 ## Backlog / Nice-to-have
 
 - Recurring availability patterns (e.g. "every Monday 09:00–17:00")
