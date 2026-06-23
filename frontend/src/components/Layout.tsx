@@ -92,9 +92,10 @@ export function Layout({ children }: LayoutProps) {
                   {role === 'ADMIN' && (
                     <Link
                       to="/admin"
-                      className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-violet-600 hover:bg-violet-500 text-white transition-colors"
                     >
-                      Admin
+                      <span>⚙️</span>
+                      <span>Admin</span>
                     </Link>
                   )}
                   <button
@@ -141,10 +142,11 @@ export function Layout({ children }: LayoutProps) {
             {role === 'ADMIN' && (
               <Link
                 to="/admin"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold bg-violet-600 hover:bg-violet-500 text-white transition-colors"
                 onClick={() => setMenuOpen(false)}
-                className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
               >
-                Admin
+                <span>⚙️</span>
+                <span>Admin Panel</span>
               </Link>
             )}
             <button
