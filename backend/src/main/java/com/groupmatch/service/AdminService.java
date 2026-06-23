@@ -4,6 +4,7 @@ import com.groupmatch.domain.Feedback;
 import com.groupmatch.domain.FeedbackCategory;
 import com.groupmatch.domain.Group;
 import com.groupmatch.domain.MemberStatus;
+import com.groupmatch.domain.Plan;
 import com.groupmatch.domain.Role;
 import com.groupmatch.domain.User;
 import com.groupmatch.dto.admin.AdminFeedbackPageResponse;
@@ -56,6 +57,25 @@ public class AdminService {
                 result.getTotalPages(),
                 result.getTotalElements()
         );
+    }
+
+    @Transactional
+    public void changeUserRole(UUID userId, Role newRole, UUID requesterId) {
+        if (userId.equals(requesterId)) throw new ForbiddenException("Cannot change own role");
+        User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+        Role oldRole = user.getRole();
+        user.setRole(newRole);
+        userRepository.save(user);
+        log.info("User role changed. userId={}, {} -> {}, by={}", userId, oldRole, newRole, requesterId);
+    }
+
+    @Transactional
+    public void changeUserPlan(UUID userId, Plan newPlan) {
+        User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+        Plan oldPlan = user.getPlan();
+        user.setPlan(newPlan);
+        userRepository.save(user);
+        log.info("User plan changed. userId={}, {} -> {}", userId, oldPlan, newPlan);
     }
 
     @Transactional

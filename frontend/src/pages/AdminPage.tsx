@@ -67,6 +67,18 @@ function UsersTab({ currentUserId }: { currentUserId: string }) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
   })
 
+  const changeRole = useMutation({
+    mutationFn: ({ id, role }: { id: string; role: 'USER' | 'ADMIN' }) =>
+      adminApi.changeUserRole(id, role),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
+  })
+
+  const changePlan = useMutation({
+    mutationFn: ({ id, plan }: { id: string; plan: 'FREE' | 'PRO' }) =>
+      adminApi.changeUserPlan(id, plan),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
+  })
+
   const canActOn = (u: AdminUser) => u.id !== currentUserId && u.role !== 'ADMIN'
 
   return (
@@ -136,26 +148,58 @@ function UsersTab({ currentUserId }: { currentUserId: string }) {
                       )}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      {canActOn(u) && (
-                        u.isBanned ? (
+                      <div className="flex items-center justify-end gap-1 flex-wrap">
+                        {/* Role toggle */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={u.id === currentUserId}
+                          loading={changeRole.isPending && changeRole.variables?.id === u.id}
+                          onClick={() => changeRole.mutate({
+                            id: u.id,
+                            role: u.role === 'ADMIN' ? 'USER' : 'ADMIN',
+                          })}
+                        >
+                          {u.role === 'ADMIN' ? 'Revoke Admin' : 'Make Admin'}
+                        </Button>
+
+                        {/* Plan toggle */}
+                        {u.plan !== 'TEAM' && (
                           <Button
                             variant="ghost"
                             size="sm"
-                            loading={unban.isPending && unban.variables === u.id}
-                            onClick={() => unban.mutate(u.id)}
+                            loading={changePlan.isPending && changePlan.variables?.id === u.id}
+                            onClick={() => changePlan.mutate({
+                              id: u.id,
+                              plan: u.plan === 'FREE' ? 'PRO' : 'FREE',
+                            })}
                           >
-                            Unban
+                            {u.plan === 'FREE' ? '→ PRO' : '→ FREE'}
                           </Button>
-                        ) : (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setBanTarget(u)}
-                          >
-                            Ban
-                          </Button>
-                        )
-                      )}
+                        )}
+
+                        {/* Ban / Unban */}
+                        {canActOn(u) && (
+                          u.isBanned ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              loading={unban.isPending && unban.variables === u.id}
+                              onClick={() => unban.mutate(u.id)}
+                            >
+                              Unban
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setBanTarget(u)}
+                            >
+                              Ban
+                            </Button>
+                          )
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

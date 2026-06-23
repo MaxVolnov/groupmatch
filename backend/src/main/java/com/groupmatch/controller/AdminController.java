@@ -5,6 +5,8 @@ import com.groupmatch.dto.admin.AdminFeedbackPageResponse;
 import com.groupmatch.dto.admin.AdminGroupPageResponse;
 import com.groupmatch.dto.admin.AdminUsersPageResponse;
 import com.groupmatch.dto.admin.BanUserRequest;
+import com.groupmatch.dto.admin.ChangeRoleRequest;
+import com.groupmatch.dto.admin.ChangePlanRequest;
 import com.groupmatch.security.UserPrincipal;
 import com.groupmatch.service.AdminService;
 import jakarta.validation.Valid;
@@ -42,6 +44,27 @@ public class AdminController {
             @RequestParam(defaultValue = "20") int size
     ) {
         return ResponseEntity.ok(adminService.getUsers(search, page, size));
+    }
+
+    @PatchMapping("/users/{id}/role")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> changeUserRole(
+            @PathVariable UUID id,
+            @Valid @RequestBody ChangeRoleRequest request,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        adminService.changeUserRole(id, request.role(), principal.getId());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/users/{id}/plan")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> changeUserPlan(
+            @PathVariable UUID id,
+            @Valid @RequestBody ChangePlanRequest request
+    ) {
+        adminService.changeUserPlan(id, request.plan());
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/users/{id}/ban")
