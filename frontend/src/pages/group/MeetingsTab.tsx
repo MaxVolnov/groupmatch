@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { meetingsApi } from '@/api/meetings'
 import { Button } from '@/components/Button'
@@ -55,6 +56,7 @@ function MeetingSkeletonList() {
 export function MeetingsTab({ group, currentUserId, onScheduleClick }: Props) {
   const isOwner = group.ownerId === currentUserId
   const qc = useQueryClient()
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const { data: meetings, isLoading, error } = useQuery({
     queryKey: ['meetings', group.id],
@@ -63,7 +65,9 @@ export function MeetingsTab({ group, currentUserId, onScheduleClick }: Props) {
 
   const del = useMutation({
     mutationFn: (meetingId: string) => meetingsApi.delete(group.id, meetingId),
+    onMutate: (meetingId) => setDeletingId(meetingId),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['meetings', group.id] }),
+    onSettled: () => setDeletingId(null),
   })
 
   if (isLoading) return <MeetingSkeletonList />
@@ -111,7 +115,7 @@ export function MeetingsTab({ group, currentUserId, onScheduleClick }: Props) {
                     variant="ghost"
                     size="sm"
                     onClick={() => del.mutate(m.id)}
-                    loading={del.isPending}
+                    loading={deletingId === m.id}
                     className="flex-1 sm:flex-none justify-center"
                   >
                     Delete
