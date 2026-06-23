@@ -51,6 +51,12 @@ public class User {
     @Column(name = "is_guest", nullable = false)
     private boolean guest = false;
 
+    @Column(name = "is_banned", nullable = false)
+    private boolean banned = false;
+
+    @Column(name = "ban_reason")
+    private String banReason;
+
     @Column(name = "is_blocked", nullable = false)
     private boolean blocked = false;
 

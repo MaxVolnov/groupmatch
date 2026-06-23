@@ -55,6 +55,10 @@ jwt:
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
+  admin:
+    email: ${ADMIN_EMAIL:}
+  guest:
+    retention-days: ${GUEST_RETENTION_DAYS:30}
   rate-limit:
     signup: 5
     signin: 10
