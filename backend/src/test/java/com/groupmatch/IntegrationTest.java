@@ -4,6 +4,7 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpEntity;
@@ -12,9 +13,11 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -26,6 +29,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
@@ -53,11 +57,18 @@ class IntegrationTest {
     @LocalServerPort
     int port;
 
-    final RestTemplate rest = new RestTemplate();
+    @Autowired
+    JdbcTemplate jdbcTemplate;
+
+    final RestTemplate rest = new RestTemplate(
+            new org.springframework.http.client.HttpComponentsClientHttpRequestFactory());
 
     // Shared state passed between ordered tests
     static String accessToken;
     static String groupId;
+    static String guestAccessToken;
+    static String adminAccessToken;
+    static String integrationUserId;
 
     private String url(String path) {
         return "http://localhost:" + port + path;
@@ -66,6 +77,13 @@ class IntegrationTest {
     private HttpHeaders authHeaders() {
         HttpHeaders h = new HttpHeaders();
         h.setBearerAuth(accessToken);
+        h.setContentType(MediaType.APPLICATION_JSON);
+        return h;
+    }
+
+    private HttpHeaders adminAuthHeaders() {
+        HttpHeaders h = new HttpHeaders();
+        h.setBearerAuth(adminAccessToken);
         h.setContentType(MediaType.APPLICATION_JSON);
         return h;
     }
@@ -88,6 +106,8 @@ class IntegrationTest {
 
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(resp.getBody()).containsKey("id");
+        integrationUserId = resp.getBody().get("id").toString();
+        assertThat(integrationUserId).isNotBlank();
     }
 
     // ── 2. signin ────────────────────────────────────────────────────────────
@@ -180,5 +200,99 @@ class IntegrationTest {
         assertThat(resp.getBody().get("category")).isEqualTo("BUG");
         assertThat(resp.getBody().get("message")).isEqualTo(
                 "This is a test bug report from the integration test suite.");
+    }
+
+    // ── 7. guest signup ──────────────────────────────────────────────────────
+
+    @Test
+    @Order(7)
+    void guestSignup() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        var body = Map.of("displayName", "Guest Tester");
+        ResponseEntity<Map> resp = rest.exchange(
+                url("/api/v1/auth/guest"), HttpMethod.POST,
+                new HttpEntity<>(body, headers), Map.class);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(resp.getBody()).containsKey("accessToken");
+        guestAccessToken = (String) resp.getBody().get("accessToken");
+        assertThat(guestAccessToken).isNotBlank();
+    }
+
+    // ── 8. signin with wrong password → 401 ─────────────────────────────────
+
+    @Test
+    @Order(8)
+    void signinWrongPassword() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        var body = Map.of(
+                "email", "integration@groupmatch-test.io",
+                "password", "WrongPassword999!"
+        );
+        try {
+            rest.exchange(url("/api/v1/auth/signin"), HttpMethod.POST,
+                    new HttpEntity<>(body, headers), Map.class);
+            fail("Expected 401");
+        } catch (HttpClientErrorException ex) {
+            assertThat(ex.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    // ── 9. ban user via admin, then signin → 403 ─────────────────────────────
+
+    @Test
+    @Order(9)
+    void bannedUserSigninForbidden() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        // 1. Register admin candidate
+        var adminSignupBody = Map.of(
+                "email", "admin@groupmatch-test.io",
+                "password", "AdminTest1!",
+                "displayName", "Admin Tester"
+        );
+        rest.exchange(url("/api/v1/auth/signup"), HttpMethod.POST,
+                new HttpEntity<>(adminSignupBody, headers), Map.class);
+
+        // 2. Promote to ADMIN via SQL (AdminPromotionRunner not active in tests)
+        jdbcTemplate.execute(
+                "UPDATE app_user SET role = 'ADMIN' WHERE email = 'admin@groupmatch-test.io'");
+
+        // 3. Signin as admin
+        var adminSigninBody = Map.of(
+                "email", "admin@groupmatch-test.io",
+                "password", "AdminTest1!"
+        );
+        ResponseEntity<Map> adminSigninResp = rest.exchange(
+                url("/api/v1/auth/signin"), HttpMethod.POST,
+                new HttpEntity<>(adminSigninBody, headers), Map.class);
+        assertThat(adminSigninResp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        adminAccessToken = (String) adminSigninResp.getBody().get("accessToken");
+        assertThat(adminAccessToken).isNotBlank();
+
+        // 4. Ban the integration user
+        var banBody = Map.of("reason", "test ban");
+        ResponseEntity<Void> banResp = rest.exchange(
+                url("/api/v1/admin/users/" + integrationUserId + "/ban"),
+                HttpMethod.PATCH,
+                new HttpEntity<>(banBody, adminAuthHeaders()),
+                Void.class);
+        assertThat(banResp.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+
+        // 5. Attempt signin as banned user → expect 403
+        var bannedSigninBody = Map.of(
+                "email", "integration@groupmatch-test.io",
+                "password", "IntTest1!"
+        );
+        try {
+            rest.exchange(url("/api/v1/auth/signin"), HttpMethod.POST,
+                    new HttpEntity<>(bannedSigninBody, headers), Map.class);
+            fail("Expected 403");
+        } catch (HttpClientErrorException ex) {
+            assertThat(ex.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
     }
 }

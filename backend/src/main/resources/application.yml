@@ -25,7 +25,8 @@ spring:
           time_zone: UTC
 
   flyway:
-    enabled: false
+    enabled: true
+    locations: classpath:db/migration
   
   data:
     redis:
