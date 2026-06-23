@@ -26,6 +26,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -69,6 +70,8 @@ class IntegrationTest {
     static String guestAccessToken;
     static String adminAccessToken;
     static String integrationUserId;
+    static String inviteToken;
+    static String secondUserAccessToken;
 
     private String url(String path) {
         return "http://localhost:" + port + path;
@@ -294,5 +297,107 @@ class IntegrationTest {
         } catch (HttpClientErrorException ex) {
             assertThat(ex.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         }
+    }
+
+    // ── 10. create invite ────────────────────────────────────────────────────
+
+    @Test
+    @Order(10)
+    void createInvite() {
+        var body = Map.of("maxUses", 0);
+        ResponseEntity<Map> resp = rest.exchange(
+                url("/api/v1/groups/" + groupId + "/invites"), HttpMethod.POST,
+                new HttpEntity<>(body, authHeaders()), Map.class);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(resp.getBody()).containsKey("token");
+        inviteToken = resp.getBody().get("token").toString();
+        assertThat(inviteToken).isNotBlank();
+    }
+
+    // ── 11. second user joins via invite ─────────────────────────────────────
+
+    @Test
+    @Order(11)
+    void secondUserJoinsViaInvite() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        // Signup second user
+        var signupBody = Map.of(
+                "email", "second@groupmatch-test.io",
+                "password", "Second1!",
+                "displayName", "Second User"
+        );
+        rest.exchange(url("/api/v1/auth/signup"), HttpMethod.POST,
+                new HttpEntity<>(signupBody, headers), Map.class);
+
+        // Signin second user
+        var signinBody = Map.of(
+                "email", "second@groupmatch-test.io",
+                "password", "Second1!"
+        );
+        ResponseEntity<Map> signinResp = rest.exchange(url("/api/v1/auth/signin"), HttpMethod.POST,
+                new HttpEntity<>(signinBody, headers), Map.class);
+        assertThat(signinResp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        secondUserAccessToken = (String) signinResp.getBody().get("accessToken");
+        assertThat(secondUserAccessToken).isNotBlank();
+
+        // Join via invite token
+        HttpHeaders secondHeaders = new HttpHeaders();
+        secondHeaders.setBearerAuth(secondUserAccessToken);
+        secondHeaders.setContentType(MediaType.APPLICATION_JSON);
+
+        ResponseEntity<Map> joinResp = rest.exchange(
+                url("/api/v1/invites/" + inviteToken + "/join"), HttpMethod.POST,
+                new HttpEntity<>(secondHeaders), Map.class);
+
+        assertThat(joinResp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(joinResp.getBody()).containsKey("groupId");
+    }
+
+    // ── 12. join same invite again is idempotent ──────────────────────────────
+
+    @Test
+    @Order(12)
+    void joinSameInviteAgainIsIdempotent() {
+        HttpHeaders secondHeaders = new HttpHeaders();
+        secondHeaders.setBearerAuth(secondUserAccessToken);
+        secondHeaders.setContentType(MediaType.APPLICATION_JSON);
+
+        ResponseEntity<Map> resp = rest.exchange(
+                url("/api/v1/invites/" + inviteToken + "/join"), HttpMethod.POST,
+                new HttpEntity<>(secondHeaders), Map.class);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    // ── 13. join with invalid token → 404 ────────────────────────────────────
+
+    @Test
+    @Order(13)
+    void joinInvalidTokenReturns404() {
+        try {
+            rest.exchange(url("/api/v1/invites/invalid-token-xyz/join"), HttpMethod.POST,
+                    new HttpEntity<>(authHeaders()), Map.class);
+            fail("Expected 404");
+        } catch (HttpClientErrorException ex) {
+            assertThat(ex.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    // ── 14. list invites ──────────────────────────────────────────────────────
+
+    @Test
+    @Order(14)
+    void listInvites() {
+        ResponseEntity<List> resp = rest.exchange(
+                url("/api/v1/groups/" + groupId + "/invites"), HttpMethod.GET,
+                new HttpEntity<>(authHeaders()), List.class);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(resp.getBody()).isNotEmpty();
+        assertThat(resp.getBody())
+                .anyMatch(item -> inviteToken.equals(((Map<?, ?>) item).get("token")));
     }
 }
