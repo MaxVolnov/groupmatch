@@ -47,7 +47,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         Map<String, Bucket> bucketMap;
         int capacity;
 
-        if ("/api/v1/auth/signup".equals(path)) {
+        if ("/api/v1/auth/signup".equals(path) || "/api/v1/auth/guest".equals(path)) {
             bucketMap = signupBuckets;
             capacity = signupCapacity;
         } else if ("/api/v1/auth/signin".equals(path)) {
