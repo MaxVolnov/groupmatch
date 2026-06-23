@@ -1,12 +1,13 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { AdminRoute, ProtectedRoute } from '@/components/ProtectedRoute'
 import { SignIn } from '@/pages/SignIn'
 import { SignUp } from '@/pages/SignUp'
 import { Dashboard } from '@/pages/Dashboard'
 import { GroupPage } from '@/pages/GroupPage'
 import { JoinInvite } from '@/pages/JoinInvite'
 import { Profile } from '@/pages/Profile'
+import AdminPage from '@/pages/AdminPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -44,6 +45,14 @@ function App() {
               <ProtectedRoute>
                 <Profile />
               </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminPage />
+              </AdminRoute>
             }
           />
           <Route path="*" element={<Navigate to="/" replace />} />
