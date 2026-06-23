@@ -7,7 +7,7 @@ import { Button } from '@/components/Button'
 import { Skeleton } from '@/components/Skeleton'
 import { ErrorMessage } from '@/components/ErrorMessage'
 import { BanModal } from '@/components/BanModal'
-import type { AdminUser } from '@/types/admin'
+import type { AdminFeedbackItem, AdminUser } from '@/types/admin'
 
 const TABS = ['Users', 'Feedback', 'Groups'] as const
 type Tab = typeof TABS[number]
@@ -197,6 +197,225 @@ function UsersTab({ currentUserId }: { currentUserId: string }) {
   )
 }
 
+// ── Feedback tab ──────────────────────────────────────────────────────────────
+
+const CATEGORY_OPTIONS = [
+  { value: '', label: 'All' },
+  { value: 'BUG', label: 'Bug' },
+  { value: 'FEATURE_REQUEST', label: 'Feature Request' },
+  { value: 'OTHER', label: 'Other' },
+] as const
+
+const RESOLVED_OPTIONS = [
+  { value: undefined as boolean | undefined, label: 'All' },
+  { value: false, label: 'Pending' },
+  { value: true, label: 'Resolved' },
+]
+
+function FeedbackCardSkeleton() {
+  return (
+    <div className="flex flex-col gap-2 p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-4 w-20" />
+        <Skeleton className="h-4 w-16" />
+      </div>
+      <Skeleton className="h-4 w-full" />
+      <Skeleton className="h-4 w-3/4" />
+      <div className="flex justify-between items-center mt-1">
+        <Skeleton className="h-3 w-32" />
+        <Skeleton className="h-7 w-20" />
+      </div>
+    </div>
+  )
+}
+
+function CategoryBadge({ category }: { category: AdminFeedbackItem['category'] }) {
+  const styles: Record<AdminFeedbackItem['category'], string> = {
+    BUG: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400',
+    FEATURE_REQUEST: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400',
+    OTHER: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400',
+  }
+  const labels: Record<AdminFeedbackItem['category'], string> = {
+    BUG: 'Bug',
+    FEATURE_REQUEST: 'Feature',
+    OTHER: 'Other',
+  }
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${styles[category]}`}>
+      {labels[category]}
+    </span>
+  )
+}
+
+function FeedbackCard({
+  item,
+  onResolve,
+  onUnresolve,
+  resolving,
+  unresolving,
+}: {
+  item: AdminFeedbackItem
+  onResolve: () => void
+  onUnresolve: () => void
+  resolving: boolean
+  unresolving: boolean
+}) {
+  const date = new Date(item.createdAt).toLocaleDateString(undefined, {
+    year: 'numeric', month: 'short', day: 'numeric',
+  })
+
+  return (
+    <div className={`p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col gap-2 ${item.resolved ? 'opacity-60' : ''}`}>
+      <div className="flex items-center gap-2 flex-wrap">
+        <CategoryBadge category={item.category} />
+        {item.resolved && (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400">
+            Resolved
+          </span>
+        )}
+      </div>
+      <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{item.message}</p>
+      <div className="flex items-center justify-between gap-2 flex-wrap mt-1">
+        <span className="text-xs text-gray-400 dark:text-gray-500">
+          {item.authorDisplayName ?? 'Unknown'} · {item.authorEmail ?? '—'} · {date}
+        </span>
+        {item.resolved ? (
+          <Button variant="ghost" size="sm" loading={unresolving} onClick={onUnresolve}>
+            Unresolve
+          </Button>
+        ) : (
+          <Button variant="ghost" size="sm" loading={resolving} onClick={onResolve}>
+            Resolve
+          </Button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function FeedbackTab() {
+  const [category, setCategory] = useState('')
+  const [resolved, setResolved] = useState<boolean | undefined>(undefined)
+  const [page, setPage] = useState(0)
+
+  const qc = useQueryClient()
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['admin', 'feedback', category, resolved, page],
+    queryFn: () => adminApi.getFeedback(category || undefined, resolved, page),
+  })
+
+  const resolve = useMutation({
+    mutationFn: (id: string) => adminApi.resolveFeedback(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'feedback'] }),
+  })
+
+  const unresolve = useMutation({
+    mutationFn: (id: string) => adminApi.unresolveFeedback(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'feedback'] }),
+  })
+
+  const handleCategoryChange = (value: string) => {
+    setCategory(value)
+    setPage(0)
+  }
+
+  const handleResolvedChange = (value: boolean | undefined) => {
+    setResolved(value)
+    setPage(0)
+  }
+
+  return (
+    <div>
+      {/* Filters */}
+      <div className="mb-4 flex flex-wrap gap-4">
+        <div className="flex gap-1">
+          {CATEGORY_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => handleCategoryChange(opt.value)}
+              className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+                category === opt.value
+                  ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 dark:border-indigo-400'
+                  : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-1">
+          {RESOLVED_OPTIONS.map((opt) => (
+            <button
+              key={String(opt.value)}
+              onClick={() => handleResolvedChange(opt.value)}
+              className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+                resolved === opt.value
+                  ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 dark:border-indigo-400'
+                  : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {error && <ErrorMessage error={error} />}
+
+      {isLoading ? (
+        <div className="flex flex-col gap-3">
+          {Array.from({ length: 4 }).map((_, i) => <FeedbackCardSkeleton key={i} />)}
+        </div>
+      ) : (
+        <>
+          {data?.items.length === 0 && (
+            <p className="py-8 text-center text-sm text-gray-400 dark:text-gray-500">No feedback found.</p>
+          )}
+          <div className="flex flex-col gap-3">
+            {data?.items.map((item) => (
+              <FeedbackCard
+                key={item.id}
+                item={item}
+                onResolve={() => resolve.mutate(item.id)}
+                onUnresolve={() => unresolve.mutate(item.id)}
+                resolving={resolve.isPending && resolve.variables === item.id}
+                unresolving={unresolve.isPending && unresolve.variables === item.id}
+              />
+            ))}
+          </div>
+
+          {data && data.totalPages > 1 && (
+            <div className="mt-4 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+              <span>
+                Page {data.page + 1} of {data.totalPages} — {data.totalElements} items
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={data.page === 0}
+                  onClick={() => setPage((p) => p - 1)}
+                >
+                  ← Prev
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={data.page + 1 >= data.totalPages}
+                  onClick={() => setPage((p) => p + 1)}
+                >
+                  Next →
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
 // ── AdminPage ─────────────────────────────────────────────────────────────────
 
 export default function AdminPage() {
@@ -212,7 +431,7 @@ export default function AdminPage() {
         <div className="mb-6 border-b border-gray-200 dark:border-gray-700">
           <nav className="flex gap-1">
             {TABS.map((tab) => {
-              const disabled = tab !== 'Users'
+              const disabled = tab === 'Groups'
               return (
                 <button
                   key={tab}
@@ -237,6 +456,7 @@ export default function AdminPage() {
         </div>
 
         {activeTab === 'Users' && <UsersTab currentUserId={userId ?? ''} />}
+        {activeTab === 'Feedback' && <FeedbackTab />}
       </div>
     </Layout>
   )

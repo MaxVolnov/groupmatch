@@ -1,11 +1,17 @@
 package com.groupmatch.service;
 
+import com.groupmatch.domain.Feedback;
+import com.groupmatch.domain.FeedbackCategory;
 import com.groupmatch.domain.Role;
 import com.groupmatch.domain.User;
+import com.groupmatch.dto.admin.AdminFeedbackPageResponse;
+import com.groupmatch.dto.admin.AdminFeedbackResponse;
 import com.groupmatch.dto.admin.AdminUserResponse;
 import com.groupmatch.dto.admin.AdminUsersPageResponse;
+import com.groupmatch.exception.FeedbackNotFoundException;
 import com.groupmatch.exception.ForbiddenException;
 import com.groupmatch.exception.UserNotFoundException;
+import com.groupmatch.repository.FeedbackRepository;
 import com.groupmatch.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +22,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Service
@@ -24,6 +31,9 @@ import java.util.UUID;
 public class AdminService {
 
     private final UserRepository userRepository;
+    private final FeedbackRepository feedbackRepository;
+
+    // ── Users ─────────────────────────────────────────────────────────────────
 
     public AdminUsersPageResponse getUsers(String search, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
@@ -66,6 +76,64 @@ public class AdminService {
         return new AdminUserResponse(
                 u.getId(), u.getEmail(), u.getDisplayName(),
                 u.getRole(), u.getPlan(), u.isGuest(), u.isBanned(), u.getCreatedAt()
+        );
+    }
+
+    // ── Feedback ──────────────────────────────────────────────────────────────
+
+    public AdminFeedbackPageResponse getFeedback(FeedbackCategory category, Boolean resolved, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<Feedback> result;
+        if (category != null && resolved != null) {
+            result = feedbackRepository.findByCategoryAndResolved(category, resolved, pageable);
+        } else if (category != null) {
+            result = feedbackRepository.findByCategory(category, pageable);
+        } else if (resolved != null) {
+            result = feedbackRepository.findByResolved(resolved, pageable);
+        } else {
+            result = feedbackRepository.findAll(pageable);
+        }
+        return new AdminFeedbackPageResponse(
+                result.getContent().stream().map(this::toFeedbackDto).toList(),
+                result.getNumber(),
+                result.getTotalPages(),
+                result.getTotalElements()
+        );
+    }
+
+    @Transactional
+    public void resolveFeedback(UUID id, UUID resolvedBy) {
+        Feedback feedback = feedbackRepository.findById(id)
+                .orElseThrow(() -> new FeedbackNotFoundException(id));
+        feedback.setResolved(true);
+        feedback.setResolvedAt(Instant.now());
+        feedback.setResolvedBy(resolvedBy);
+        feedbackRepository.save(feedback);
+        log.info("Feedback resolved. id={}, by={}", id, resolvedBy);
+    }
+
+    @Transactional
+    public void unresolveFeedback(UUID id) {
+        Feedback feedback = feedbackRepository.findById(id)
+                .orElseThrow(() -> new FeedbackNotFoundException(id));
+        feedback.setResolved(false);
+        feedback.setResolvedAt(null);
+        feedback.setResolvedBy(null);
+        feedbackRepository.save(feedback);
+        log.info("Feedback unresolved. id={}", id);
+    }
+
+    private AdminFeedbackResponse toFeedbackDto(Feedback f) {
+        User author = f.getUser();
+        return new AdminFeedbackResponse(
+                f.getId(),
+                f.getCategory().name(),
+                f.getMessage(),
+                author != null ? author.getEmail() : null,
+                author != null ? author.getDisplayName() : null,
+                f.isResolved(),
+                f.getResolvedAt(),
+                f.getCreatedAt()
         );
     }
 }

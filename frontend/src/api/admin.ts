@@ -1,5 +1,5 @@
 import { api } from './axios'
-import type { AdminUsersPage } from '@/types/admin'
+import type { AdminUsersPage, AdminFeedbackPage } from '@/types/admin'
 
 export const adminApi = {
   getUsers: (search?: string, page = 0, size = 20): Promise<AdminUsersPage> =>
@@ -10,4 +10,13 @@ export const adminApi = {
 
   unbanUser: (id: string): Promise<void> =>
     api.patch(`/admin/users/${id}/unban`).then(() => undefined),
+
+  getFeedback: (category?: string, resolved?: boolean, page = 0, size = 20): Promise<AdminFeedbackPage> =>
+    api.get('/admin/feedback', { params: { category, resolved, page, size } }).then((r) => r.data),
+
+  resolveFeedback: (id: string): Promise<void> =>
+    api.patch(`/admin/feedback/${id}/resolve`).then(() => undefined),
+
+  unresolveFeedback: (id: string): Promise<void> =>
+    api.patch(`/admin/feedback/${id}/unresolve`).then(() => undefined),
 }
