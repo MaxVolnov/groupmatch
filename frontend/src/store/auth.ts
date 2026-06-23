@@ -12,8 +12,9 @@ interface AuthState {
   role: Role | null
   plan: Plan | null
   isAuthenticated: boolean
+  isGuest: boolean
 
-  login: (accessToken: string, refreshToken: string) => void
+  login: (accessToken: string, refreshToken: string, displayName?: string) => void
   logout: () => void
   refresh: () => Promise<string>
   setProfile: (userId: string, email: string, displayName: string, role: Role, plan: Plan) => void
@@ -29,6 +30,10 @@ function decodeJwt(token: string): Record<string, unknown> {
   }
 }
 
+function isGuestEmail(email: unknown): boolean {
+  return typeof email === 'string' && email.endsWith('@guest.groupmatch.local')
+}
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
@@ -40,17 +45,20 @@ export const useAuthStore = create<AuthState>()(
       role: null,
       plan: null,
       isAuthenticated: false,
+      isGuest: false,
 
-      login: (accessToken, refreshToken) => {
+      login: (accessToken, refreshToken, displayName) => {
         const claims = decodeJwt(accessToken)
         set({
           accessToken,
           refreshToken,
           userId: claims.sub as string,
           email: claims.email as string,
+          displayName: displayName ?? null,
           role: claims.role as Role,
           plan: claims.plan as Plan,
           isAuthenticated: true,
+          isGuest: isGuestEmail(claims.email),
         })
       },
 
@@ -68,6 +76,7 @@ export const useAuthStore = create<AuthState>()(
           role: null,
           plan: null,
           isAuthenticated: false,
+          isGuest: false,
         })
       },
 
@@ -84,6 +93,7 @@ export const useAuthStore = create<AuthState>()(
           role: claims.role as Role,
           plan: claims.plan as Plan,
           isAuthenticated: true,
+          isGuest: isGuestEmail(claims.email),
         })
         return data.accessToken
       },
@@ -103,6 +113,7 @@ export const useAuthStore = create<AuthState>()(
         role: s.role,
         plan: s.plan,
         isAuthenticated: s.isAuthenticated,
+        isGuest: s.isGuest,
       }),
     },
   ),

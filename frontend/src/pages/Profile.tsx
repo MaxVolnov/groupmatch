@@ -11,7 +11,7 @@ import { TIMEZONES } from '@/utils/timezones'
 
 export function Profile() {
   const qc = useQueryClient()
-  const { setProfile } = useAuthStore()
+  const { isGuest, setProfile } = useAuthStore()
 
   const { data, isLoading, error: loadError } = useQuery({
     queryKey: ['me'],
@@ -39,7 +39,19 @@ export function Profile() {
   return (
     <Layout>
       <div className="max-w-lg">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">My Profile</h1>
+        <div className="flex items-center gap-3 mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">My Profile</h1>
+          {isGuest && (
+            <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-full">
+              Guest
+            </span>
+          )}
+        </div>
+        {isGuest && (
+          <p className="mb-4 text-sm text-gray-500 dark:text-gray-400 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3">
+            Guest account — your data is tied to this device session.
+          </p>
+        )}
 
         {loadError && <ErrorMessage error={loadError} />}
 

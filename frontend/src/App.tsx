@@ -21,14 +21,7 @@ function App() {
         <Routes>
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
-          <Route
-            path="/join/:token"
-            element={
-              <ProtectedRoute>
-                <JoinInvite />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/join/:token" element={<JoinInvite />} />
           <Route
             path="/"
             element={
