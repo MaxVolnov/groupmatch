@@ -150,7 +150,7 @@ public class AdminService {
     @Transactional
     public void deleteGroup(UUID groupId) {
         Group group = groupRepository.findById(groupId)
-                .orElseThrow(GroupNotFoundException::new);
+                .orElseThrow(() -> new GroupNotFoundException(groupId));
         groupRepository.delete(group);
         log.info("Group force-deleted by admin. groupId={}", groupId);
     }
