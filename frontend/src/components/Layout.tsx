@@ -52,7 +52,7 @@ function GuestBadge() {
 }
 
 export function Layout({ children }: LayoutProps) {
-  const { isAuthenticated, displayName, email, isGuest, logout } = useAuthStore()
+  const { isAuthenticated, displayName, email, isGuest, role, logout } = useAuthStore()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
   const [showFeedback, setShowFeedback] = useState(false)
@@ -89,6 +89,14 @@ export function Layout({ children }: LayoutProps) {
                     {displayName ?? email}
                     {isGuest && <GuestBadge />}
                   </Link>
+                  {role === 'ADMIN' && (
+                    <Link
+                      to="/admin"
+                      className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                    >
+                      Admin
+                    </Link>
+                  )}
                   <button
                     onClick={() => setShowFeedback(true)}
                     className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
@@ -130,6 +138,15 @@ export function Layout({ children }: LayoutProps) {
               {displayName ?? email}
               {isGuest && <GuestBadge />}
             </Link>
+            {role === 'ADMIN' && (
+              <Link
+                to="/admin"
+                onClick={() => setMenuOpen(false)}
+                className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+              >
+                Admin
+              </Link>
+            )}
             <button
               onClick={() => { setMenuOpen(false); setShowFeedback(true) }}
               className="text-left text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"

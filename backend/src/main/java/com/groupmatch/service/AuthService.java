@@ -5,6 +5,7 @@ import com.groupmatch.domain.Role;
 import com.groupmatch.domain.User;
 import com.groupmatch.dto.auth.*;
 import com.groupmatch.exception.EmailAlreadyExistsException;
+import com.groupmatch.exception.ForbiddenException;
 import com.groupmatch.exception.InvalidCredentialsException;
 import com.groupmatch.repository.UserRepository;
 import com.groupmatch.security.JwtUtils;
@@ -68,6 +69,10 @@ public class AuthService {
             throw new InvalidCredentialsException("Account is blocked");
         }
 
+        if (user.isBanned()) {
+            throw new ForbiddenException("Account is banned");
+        }
+
         log.info("User signed in: userId={}", user.getId());
         return issueTokenPair(user.getId(), user.getEmail(), user.getRole(), user.getPlan(), user.isGuest());
     }
@@ -115,6 +120,10 @@ public class AuthService {
 
         if (user.isBlocked()) {
             throw new InvalidCredentialsException("Account is blocked");
+        }
+
+        if (user.isBanned()) {
+            throw new ForbiddenException("Account is banned");
         }
 
         log.info("Token refreshed for userId={}", userId);

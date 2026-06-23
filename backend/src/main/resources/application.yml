@@ -55,6 +55,8 @@ jwt:
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
+  admin:
+    email: ${ADMIN_EMAIL:}
   rate-limit:
     signup: 5
     signin: 10
