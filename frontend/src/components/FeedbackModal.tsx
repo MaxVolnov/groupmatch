@@ -35,16 +35,18 @@ export function FeedbackModal({ open, onClose }: Props) {
     },
   })
 
+  const { reset } = submit
+
   useEffect(() => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current)
     if (!open) return
     setCategory('OTHER')
     setMessage('')
-    submit.reset()
+    reset()
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current)
     }
-  }, [open])
+  }, [open, reset])
 
   const isSuccess = submit.isSuccess
 
