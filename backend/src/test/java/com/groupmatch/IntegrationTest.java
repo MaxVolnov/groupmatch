@@ -60,7 +60,8 @@ class IntegrationTest {
     @Autowired
     JdbcTemplate jdbcTemplate;
 
-    final RestTemplate rest = new RestTemplate();
+    final RestTemplate rest = new RestTemplate(
+            new org.springframework.http.client.HttpComponentsClientHttpRequestFactory());
 
     // Shared state passed between ordered tests
     static String accessToken;
