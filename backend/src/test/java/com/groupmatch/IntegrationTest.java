@@ -26,6 +26,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -69,6 +70,9 @@ class IntegrationTest {
     static String guestAccessToken;
     static String adminAccessToken;
     static String integrationUserId;
+    static String inviteToken;
+    static String secondUserAccessToken;
+    static String secondUserId;
 
     private String url(String path) {
         return "http://localhost:" + port + path;
@@ -294,5 +298,262 @@ class IntegrationTest {
         } catch (HttpClientErrorException ex) {
             assertThat(ex.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         }
+    }
+
+    // ── 10. create invite ────────────────────────────────────────────────────
+
+    @Test
+    @Order(10)
+    void createInvite() {
+        var body = Map.of("maxUses", 0);
+        ResponseEntity<Map> resp = rest.exchange(
+                url("/api/v1/groups/" + groupId + "/invites"), HttpMethod.POST,
+                new HttpEntity<>(body, authHeaders()), Map.class);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(resp.getBody()).containsKey("token");
+        inviteToken = resp.getBody().get("token").toString();
+        assertThat(inviteToken).isNotBlank();
+    }
+
+    // ── 11. second user joins via invite ─────────────────────────────────────
+
+    @Test
+    @Order(11)
+    void secondUserJoinsViaInvite() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        // Signup second user
+        var signupBody = Map.of(
+                "email", "second@groupmatch-test.io",
+                "password", "Second1!",
+                "displayName", "Second User"
+        );
+        rest.exchange(url("/api/v1/auth/signup"), HttpMethod.POST,
+                new HttpEntity<>(signupBody, headers), Map.class);
+
+        // Signin second user
+        var signinBody = Map.of(
+                "email", "second@groupmatch-test.io",
+                "password", "Second1!"
+        );
+        ResponseEntity<Map> signinResp = rest.exchange(url("/api/v1/auth/signin"), HttpMethod.POST,
+                new HttpEntity<>(signinBody, headers), Map.class);
+        assertThat(signinResp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        secondUserAccessToken = (String) signinResp.getBody().get("accessToken");
+        assertThat(secondUserAccessToken).isNotBlank();
+
+        // Join via invite token
+        HttpHeaders secondHeaders = new HttpHeaders();
+        secondHeaders.setBearerAuth(secondUserAccessToken);
+        secondHeaders.setContentType(MediaType.APPLICATION_JSON);
+
+        ResponseEntity<Map> joinResp = rest.exchange(
+                url("/api/v1/invites/" + inviteToken + "/join"), HttpMethod.POST,
+                new HttpEntity<>(secondHeaders), Map.class);
+
+        assertThat(joinResp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(joinResp.getBody()).containsKey("groupId");
+    }
+
+    // ── 12. join same invite again is idempotent ──────────────────────────────
+
+    @Test
+    @Order(12)
+    void joinSameInviteAgainIsIdempotent() {
+        HttpHeaders secondHeaders = new HttpHeaders();
+        secondHeaders.setBearerAuth(secondUserAccessToken);
+        secondHeaders.setContentType(MediaType.APPLICATION_JSON);
+
+        ResponseEntity<Map> resp = rest.exchange(
+                url("/api/v1/invites/" + inviteToken + "/join"), HttpMethod.POST,
+                new HttpEntity<>(secondHeaders), Map.class);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    // ── 13. join with invalid token → 404 ────────────────────────────────────
+
+    @Test
+    @Order(13)
+    void joinInvalidTokenReturns404() {
+        try {
+            rest.exchange(url("/api/v1/invites/invalid-token-xyz/join"), HttpMethod.POST,
+                    new HttpEntity<>(authHeaders()), Map.class);
+            fail("Expected 404");
+        } catch (HttpClientErrorException ex) {
+            assertThat(ex.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    // ── 14. list invites ──────────────────────────────────────────────────────
+
+    @Test
+    @Order(14)
+    void listInvites() {
+        ResponseEntity<List> resp = rest.exchange(
+                url("/api/v1/groups/" + groupId + "/invites"), HttpMethod.GET,
+                new HttpEntity<>(authHeaders()), List.class);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(resp.getBody()).isNotEmpty();
+        assertThat(resp.getBody())
+                .anyMatch(item -> inviteToken.equals(((Map<?, ?>) item).get("token")));
+    }
+
+    // ── 15. admin lists users ─────────────────────────────────────────────────
+
+    @Test
+    @Order(15)
+    @SuppressWarnings("unchecked")
+    void adminListsUsers() {
+        ResponseEntity<Map> resp = rest.exchange(
+                url("/api/v1/admin/users"), HttpMethod.GET,
+                new HttpEntity<>(adminAuthHeaders()), Map.class);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        List<Map<?, ?>> users = (List<Map<?, ?>>) resp.getBody().get("users");
+        assertThat(users).isNotEmpty();
+        assertThat(((Number) resp.getBody().get("totalElements")).longValue()).isGreaterThan(0);
+    }
+
+    // ── 16. admin searches users ──────────────────────────────────────────────
+
+    @Test
+    @Order(16)
+    @SuppressWarnings("unchecked")
+    void adminSearchesUsers() {
+        ResponseEntity<Map> resp = rest.exchange(
+                url("/api/v1/admin/users?search=second"), HttpMethod.GET,
+                new HttpEntity<>(adminAuthHeaders()), Map.class);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        List<Map<?, ?>> users = (List<Map<?, ?>>) resp.getBody().get("users");
+        assertThat(users).isNotEmpty();
+        assertThat(users).allMatch(u -> {
+            String email = u.get("email").toString().toLowerCase();
+            String displayName = u.get("displayName").toString().toLowerCase();
+            return email.contains("second") || displayName.contains("second");
+        });
+        secondUserId = users.get(0).get("id").toString();
+        assertThat(secondUserId).isNotBlank();
+    }
+
+    // ── 17. admin changes user plan FREE → PRO ────────────────────────────────
+
+    @Test
+    @Order(17)
+    @SuppressWarnings("unchecked")
+    void adminChangesUserPlan() {
+        ResponseEntity<Void> patchResp = rest.exchange(
+                url("/api/v1/admin/users/" + secondUserId + "/plan"), HttpMethod.PATCH,
+                new HttpEntity<>(Map.of("plan", "PRO"), adminAuthHeaders()), Void.class);
+        assertThat(patchResp.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+
+        ResponseEntity<Map> verifyResp = rest.exchange(
+                url("/api/v1/admin/users?search=second"), HttpMethod.GET,
+                new HttpEntity<>(adminAuthHeaders()), Map.class);
+        List<Map<?, ?>> users = (List<Map<?, ?>>) verifyResp.getBody().get("users");
+        assertThat(users.get(0).get("plan")).isEqualTo("PRO");
+    }
+
+    // ── 18. admin promotes user to ADMIN ──────────────────────────────────────
+
+    @Test
+    @Order(18)
+    @SuppressWarnings("unchecked")
+    void adminPromotesUserToAdmin() {
+        ResponseEntity<Void> patchResp = rest.exchange(
+                url("/api/v1/admin/users/" + secondUserId + "/role"), HttpMethod.PATCH,
+                new HttpEntity<>(Map.of("role", "ADMIN"), adminAuthHeaders()), Void.class);
+        assertThat(patchResp.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+
+        ResponseEntity<Map> verifyResp = rest.exchange(
+                url("/api/v1/admin/users?search=second"), HttpMethod.GET,
+                new HttpEntity<>(adminAuthHeaders()), Map.class);
+        List<Map<?, ?>> users = (List<Map<?, ?>>) verifyResp.getBody().get("users");
+        assertThat(users.get(0).get("role")).isEqualTo("ADMIN");
+    }
+
+    // ── 19. admin revokes ADMIN role ──────────────────────────────────────────
+
+    @Test
+    @Order(19)
+    @SuppressWarnings("unchecked")
+    void adminRevokesAdminRole() {
+        ResponseEntity<Void> patchResp = rest.exchange(
+                url("/api/v1/admin/users/" + secondUserId + "/role"), HttpMethod.PATCH,
+                new HttpEntity<>(Map.of("role", "USER"), adminAuthHeaders()), Void.class);
+        assertThat(patchResp.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+
+        ResponseEntity<Map> verifyResp = rest.exchange(
+                url("/api/v1/admin/users?search=second"), HttpMethod.GET,
+                new HttpEntity<>(adminAuthHeaders()), Map.class);
+        List<Map<?, ?>> users = (List<Map<?, ?>>) verifyResp.getBody().get("users");
+        assertThat(users.get(0).get("role")).isEqualTo("USER");
+    }
+
+    // ── 20. admin cannot change own role ──────────────────────────────────────
+
+    @Test
+    @Order(20)
+    @SuppressWarnings("unchecked")
+    void adminCannotChangeOwnRole() {
+        ResponseEntity<Map> searchResp = rest.exchange(
+                url("/api/v1/admin/users?search=admin@groupmatch-test.io"), HttpMethod.GET,
+                new HttpEntity<>(adminAuthHeaders()), Map.class);
+        List<Map<?, ?>> users = (List<Map<?, ?>>) searchResp.getBody().get("users");
+        String adminUserId = users.get(0).get("id").toString();
+
+        try {
+            rest.exchange(
+                    url("/api/v1/admin/users/" + adminUserId + "/role"), HttpMethod.PATCH,
+                    new HttpEntity<>(Map.of("role", "USER"), adminAuthHeaders()), Void.class);
+            fail("Expected 403");
+        } catch (HttpClientErrorException ex) {
+            assertThat(ex.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+    }
+
+    // ── 21. admin lists groups ────────────────────────────────────────────────
+
+    @Test
+    @Order(21)
+    @SuppressWarnings("unchecked")
+    void adminListsGroups() {
+        ResponseEntity<Map> resp = rest.exchange(
+                url("/api/v1/admin/groups"), HttpMethod.GET,
+                new HttpEntity<>(adminAuthHeaders()), Map.class);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        List<Map<?, ?>> groups = (List<Map<?, ?>>) resp.getBody().get("groups");
+        assertThat(groups).isNotEmpty();
+    }
+
+    // ── 22. admin resolves feedback ───────────────────────────────────────────
+
+    @Test
+    @Order(22)
+    @SuppressWarnings("unchecked")
+    void adminResolvesFeedback() {
+        ResponseEntity<Map> listResp = rest.exchange(
+                url("/api/v1/admin/feedback"), HttpMethod.GET,
+                new HttpEntity<>(adminAuthHeaders()), Map.class);
+        assertThat(listResp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        List<Map<?, ?>> items = (List<Map<?, ?>>) listResp.getBody().get("items");
+        assertThat(items).isNotEmpty();
+        String feedbackId = items.get(0).get("id").toString();
+
+        ResponseEntity<Void> resolveResp = rest.exchange(
+                url("/api/v1/admin/feedback/" + feedbackId + "/resolve"), HttpMethod.PATCH,
+                new HttpEntity<>(adminAuthHeaders()), Void.class);
+        assertThat(resolveResp.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+
+        ResponseEntity<Map> resolvedResp = rest.exchange(
+                url("/api/v1/admin/feedback?resolved=true"), HttpMethod.GET,
+                new HttpEntity<>(adminAuthHeaders()), Map.class);
+        List<Map<?, ?>> resolvedItems = (List<Map<?, ?>>) resolvedResp.getBody().get("items");
+        assertThat(resolvedItems).anyMatch(item -> feedbackId.equals(item.get("id").toString()));
     }
 }
