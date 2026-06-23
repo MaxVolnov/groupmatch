@@ -40,6 +40,21 @@ function makeMockJwt(): string {
 const MOCK_ACCESS_TOKEN = makeMockJwt()
 const MOCK_REFRESH_TOKEN = 'mock-refresh-token-demo'
 
+function makeMockGuestJwt(displayName: string): string {
+  const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+  const payload = btoa(JSON.stringify({
+    sub: '00000000-0000-0000-0000-000000000002',
+    email: 'guest-mock@guest.groupmatch.local',
+    displayName,
+    role: 'USER',
+    plan: 'FREE',
+    exp: 9999999999,
+    iat: 1700000000,
+  })).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+  return `${header}.${payload}.mock-signature`
+}
+
 // ── Mutable mock state (survives for the lifetime of the page) ────────────────
 
 const groups: GroupResponse[] = [
@@ -202,6 +217,10 @@ export const mockApi = {
         role: 'USER',
         createdAt: new Date().toISOString(),
       }
+    },
+    guest: async (data: { displayName: string }): Promise<AuthResponse> => {
+      await delay()
+      return { accessToken: makeMockGuestJwt(data.displayName), refreshToken: 'mock-guest-refresh-token', expiresIn: 900, tokenType: 'Bearer' }
     },
     refresh: async (): Promise<AuthResponse> => {
       await delay(100)
