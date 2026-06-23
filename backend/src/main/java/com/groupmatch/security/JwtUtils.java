@@ -28,12 +28,13 @@ public class JwtUtils {
 
     // ─── Генерация ────────────────────────────────────────────────────────────
 
-    public String generateAccessToken(UUID userId, String email, Role role, Plan plan) {
+    public String generateAccessToken(UUID userId, String email, Role role, Plan plan, boolean isGuest) {
         return Jwts.builder()
                 .subject(userId.toString())
                 .claim("email", email)
-                .claim("role", role.name())   // "USER" | "ADMIN"
-                .claim("plan", plan.name())   // "FREE" | "PRO" | "TEAM"
+                .claim("role", role.name())      // "USER" | "ADMIN"
+                .claim("plan", plan.name())      // "FREE" | "PRO" | "TEAM"
+                .claim("isGuest", isGuest)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + accessTokenExpiration))
                 .signWith(getSigningKey())
