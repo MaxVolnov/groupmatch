@@ -72,6 +72,28 @@ public class AuthService {
         return issueTokenPair(user.getId(), user.getEmail(), user.getRole(), user.getPlan());
     }
 
+    // ─── Guest signin ─────────────────────────────────────────────────────────
+
+    @Transactional
+    public AuthResponse guestSignin(GuestRequest request) {
+        String email = "guest-" + UUID.randomUUID() + "@guest.groupmatch.local";
+
+        User user = new User();
+        user.setEmail(email);
+        user.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
+        user.setDisplayName(request.displayName());
+        user.setTzId("UTC");
+        user.setPlan(Plan.FREE);
+        user.setRole(Role.USER);
+        user.setGuest(true);
+        user.setBlocked(false);
+
+        user = userRepository.save(user);
+        log.info("Guest user created: userId={}", user.getId());
+
+        return issueTokenPair(user.getId(), user.getEmail(), user.getRole(), user.getPlan());
+    }
+
     // ─── Refresh ──────────────────────────────────────────────────────────────
 
     /**
