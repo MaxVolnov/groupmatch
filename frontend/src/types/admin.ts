@@ -33,3 +33,23 @@ export interface AdminFeedbackPage {
   totalPages: number
   totalElements: number
 }
+
+export interface AdminGroup {
+  id: string
+  title: string
+  description: string | null
+  timezone: string
+  ownerId: string
+  ownerEmail: string
+  ownerDisplayName: string
+  memberCount: number
+  isLocked: boolean
+  createdAt: string
+}
+
+export interface AdminGroupPage {
+  groups: AdminGroup[]
+  page: number
+  totalPages: number
+  totalElements: number
+}

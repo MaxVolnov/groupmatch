@@ -1,5 +1,5 @@
 import { api } from './axios'
-import type { AdminUsersPage, AdminFeedbackPage } from '@/types/admin'
+import type { AdminUsersPage, AdminFeedbackPage, AdminGroupPage } from '@/types/admin'
 
 export const adminApi = {
   getUsers: (search?: string, page = 0, size = 20): Promise<AdminUsersPage> =>
@@ -19,4 +19,10 @@ export const adminApi = {
 
   unresolveFeedback: (id: string): Promise<void> =>
     api.patch(`/admin/feedback/${id}/unresolve`).then(() => undefined),
+
+  getGroups: (search?: string, page = 0, size = 20): Promise<AdminGroupPage> =>
+    api.get('/admin/groups', { params: { search, page, size } }).then((r) => r.data),
+
+  deleteGroup: (id: string): Promise<void> =>
+    api.delete(`/admin/groups/${id}`).then(() => undefined),
 }

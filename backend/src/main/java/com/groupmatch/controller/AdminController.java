@@ -2,6 +2,7 @@ package com.groupmatch.controller;
 
 import com.groupmatch.domain.FeedbackCategory;
 import com.groupmatch.dto.admin.AdminFeedbackPageResponse;
+import com.groupmatch.dto.admin.AdminGroupPageResponse;
 import com.groupmatch.dto.admin.AdminUsersPageResponse;
 import com.groupmatch.dto.admin.BanUserRequest;
 import com.groupmatch.security.UserPrincipal;
@@ -87,6 +88,25 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> unresolveFeedback(@PathVariable UUID id) {
         adminService.unresolveFeedback(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    // ── Groups ────────────────────────────────────────────────────────────────
+
+    @GetMapping("/groups")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<AdminGroupPageResponse> getGroups(
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        return ResponseEntity.ok(adminService.getGroups(search, page, size));
+    }
+
+    @DeleteMapping("/groups/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteGroup(@PathVariable UUID id) {
+        adminService.deleteGroup(id);
         return ResponseEntity.noContent().build();
     }
 }
