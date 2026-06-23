@@ -15,6 +15,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -86,10 +87,13 @@ public class InviteService {
 
         UUID groupId = invite.getGroupId();
 
-        grpMemberRepository.findByGroupAndUser(groupId, callerId).ifPresent(m -> {
-            if (m.getStatus() == MemberStatus.BANNED) throw new MemberBannedException();
-            if (m.getStatus() == MemberStatus.ACTIVE) throw new MemberAlreadyExistsException();
-        });
+        Optional<GrpMember> existingMember = grpMemberRepository.findByGroupAndUser(groupId, callerId);
+        if (existingMember.isPresent()) {
+            MemberStatus status = existingMember.get().getStatus();
+            if (status == MemberStatus.BANNED) throw new MemberBannedException();
+            // Already active — idempotent join: redirect to the group, no error shown.
+            if (status == MemberStatus.ACTIVE) return toResponse(invite);
+        }
 
         // Check group member limit against the OWNER's plan
         // (owner is the one whose plan governs the group capacity)
@@ -100,7 +104,7 @@ public class InviteService {
                 .orElseThrow(() -> new GroupNotFoundException(groupId));
 
         // Reuse existing LEFT member record if present, otherwise create new
-        GrpMember member = grpMemberRepository.findByGroupAndUser(groupId, callerId)
+        GrpMember member = existingMember
                 .orElse(new GrpMember(groupId, callerId, GroupRole.MEMBER, MemberStatus.ACTIVE));
         member.setStatus(MemberStatus.ACTIVE);
         grpMemberRepository.save(member);

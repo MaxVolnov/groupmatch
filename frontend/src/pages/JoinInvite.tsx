@@ -54,9 +54,9 @@ export function JoinInvite() {
         <div className="rounded-xl bg-white dark:bg-gray-800 p-8 shadow-md text-center">
           <p className="text-lg font-semibold text-red-600 dark:text-red-400 mb-2">Unable to join</p>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{error}</p>
-          <a href="/" className="text-indigo-600 dark:text-indigo-400 hover:underline text-sm">
+          <Link to="/" className="text-indigo-600 dark:text-indigo-400 hover:underline text-sm">
             Go to dashboard
-          </a>
+          </Link>
         </div>
       </div>
     )

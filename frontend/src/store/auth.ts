@@ -30,10 +30,6 @@ function decodeJwt(token: string): Record<string, unknown> {
   }
 }
 
-function isGuestEmail(email: unknown): boolean {
-  return typeof email === 'string' && email.endsWith('@guest.groupmatch.local')
-}
-
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
@@ -58,7 +54,7 @@ export const useAuthStore = create<AuthState>()(
           role: claims.role as Role,
           plan: claims.plan as Plan,
           isAuthenticated: true,
-          isGuest: isGuestEmail(claims.email),
+          isGuest: claims.isGuest === true,
         })
       },
 
@@ -93,7 +89,7 @@ export const useAuthStore = create<AuthState>()(
           role: claims.role as Role,
           plan: claims.plan as Plan,
           isAuthenticated: true,
-          isGuest: isGuestEmail(claims.email),
+          isGuest: claims.isGuest === true,
         })
         return data.accessToken
       },
