@@ -22,7 +22,7 @@ api.interceptors.response.use(
   (r) => r,
   async (error) => {
     const original = error.config
-    if (error.response?.status !== 401 || original._retry) {
+    if (error.response?.status !== 401 || original._retry || original.url?.startsWith('/auth/')) {
       return Promise.reject(error)
     }
     original._retry = true
