@@ -93,6 +93,13 @@ jobs:
           SPRING_REDIS_URL: redis://localhost:6379
           JWT_SECRET: ci-test-secret-key-minimum-256-bits-long-padding-here-x
 
+      - name: Upload JaCoCo report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: backend/build/reports/jacoco/test/html/
+
       - name: Upload test report
         if: failure()
         uses: actions/upload-artifact@v4
