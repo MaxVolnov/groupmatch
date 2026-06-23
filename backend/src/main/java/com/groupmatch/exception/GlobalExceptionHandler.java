@@ -104,6 +104,12 @@ public class GlobalExceptionHandler {
                 new ErrorResponse("meeting_not_found", ex.getMessage(), null, Instant.now()));
     }
 
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ErrorResponse> handleForbidden(ForbiddenException ex) {
+        return ResponseEntity.status(FORBIDDEN).body(
+                new ErrorResponse("forbidden", ex.getMessage(), null, Instant.now()));
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
         return ResponseEntity.status(BAD_REQUEST).body(
