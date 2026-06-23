@@ -74,7 +74,7 @@ public class AuthService {
         }
 
         log.info("User signed in: userId={}", user.getId());
-        return issueTokenPair(user.getId(), user.getEmail(), user.getRole(), user.getPlan());
+        return issueTokenPair(user.getId(), user.getEmail(), user.getRole(), user.getPlan(), user.isGuest());
     }
 
     // ─── Guest signin ─────────────────────────────────────────────────────────
@@ -96,7 +96,7 @@ public class AuthService {
         user = userRepository.save(user);
         log.info("Guest user created: userId={}", user.getId());
 
-        return issueTokenPair(user.getId(), user.getEmail(), user.getRole(), user.getPlan());
+        return issueTokenPair(user.getId(), user.getEmail(), user.getRole(), user.getPlan(), user.isGuest());
     }
 
     // ─── Refresh ──────────────────────────────────────────────────────────────
@@ -127,7 +127,7 @@ public class AuthService {
         }
 
         log.info("Token refreshed for userId={}", userId);
-        return issueTokenPair(user.getId(), user.getEmail(), user.getRole(), user.getPlan());
+        return issueTokenPair(user.getId(), user.getEmail(), user.getRole(), user.getPlan(), user.isGuest());
     }
 
     // ─── Logout ───────────────────────────────────────────────────────────────
@@ -151,8 +151,8 @@ public class AuthService {
 
     // ─── Внутреннее ───────────────────────────────────────────────────────────
 
-    private AuthResponse issueTokenPair(UUID userId, String email, Role role, Plan plan) {
-        String accessToken  = jwtUtils.generateAccessToken(userId, email, role, plan);
+    private AuthResponse issueTokenPair(UUID userId, String email, Role role, Plan plan, boolean isGuest) {
+        String accessToken  = jwtUtils.generateAccessToken(userId, email, role, plan, isGuest);
         String refreshToken = refreshTokenService.issue(userId);
         return new AuthResponse(accessToken, refreshToken, 900L);
     }
