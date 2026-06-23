@@ -144,7 +144,7 @@ export function AvailabilityTab({ groupId, callerPlan }: Props) {
         ) : (
           <>
             {count === 0 && (
-              <p className="text-sm text-gray-500 dark:text-gray-400">No slots yet. Add your available times.</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">🕐 No slots yet. Add your available times.</p>
             )}
             <div className="flex flex-col gap-2">
               {slots?.map((s) => (
