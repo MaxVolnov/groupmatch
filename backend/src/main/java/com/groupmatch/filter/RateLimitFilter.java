@@ -2,6 +2,7 @@ package com.groupmatch.filter;
 
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
+import io.github.bucket4j.ConsumptionProbe;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -12,6 +13,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -63,14 +65,20 @@ public class RateLimitFilter extends OncePerRequestFilter {
         log.debug("RateLimit check: ip={}, path={}", ip, path);
 
         Bucket bucket = bucketMap.computeIfAbsent(ip, k -> newBucket(capacity));
+        ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
 
-        if (bucket.tryConsume(1)) {
+        if (probe.isConsumed()) {
             filterChain.doFilter(request, response);
         } else {
             log.debug("RateLimit exceeded: ip={}, path={}", ip, path);
+            long retryAfterSeconds = probe.getNanosToWaitForRefill() / 1_000_000_000L;
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
-            response.setContentType("application/json");
-            response.getWriter().write("{\"error\":\"Too many requests. Please try again later.\"}");
+            response.setContentType("application/json;charset=UTF-8");
+            response.setHeader("Retry-After", String.valueOf(retryAfterSeconds));
+            response.getWriter().write(String.format(
+                "{\"code\":\"too_many_requests\",\"message\":\"Too many requests. Please try again later.\",\"details\":null,\"timestamp\":\"%s\"}",
+                Instant.now()
+            ));
         }
     }
 
