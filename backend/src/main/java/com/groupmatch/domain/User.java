@@ -48,6 +48,9 @@ public class User {
     @Column(nullable = false, length = 10)
     private Role role = Role.USER;
 
+    @Column(name = "is_guest", nullable = false)
+    private boolean guest = false;
+
     @Column(name = "is_blocked", nullable = false)
     private boolean blocked = false;
 

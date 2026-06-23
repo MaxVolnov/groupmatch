@@ -13,6 +13,11 @@ export const authApi = {
       ? mockApi.auth.signin(data)
       : api.post<AuthResponse>('/auth/signin', data).then((r) => r.data),
 
+  guest: (data: { displayName: string }): Promise<AuthResponse> =>
+    IS_MOCK
+      ? mockApi.auth.guest(data)
+      : api.post<AuthResponse>('/auth/guest', data).then((r) => r.data),
+
   refresh: (refreshToken: string): Promise<AuthResponse> =>
     IS_MOCK
       ? mockApi.auth.refresh()

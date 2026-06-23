@@ -43,8 +43,16 @@ function ThemeToggle() {
   )
 }
 
+function GuestBadge() {
+  return (
+    <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-full">
+      Guest
+    </span>
+  )
+}
+
 export function Layout({ children }: LayoutProps) {
-  const { isAuthenticated, displayName, email, logout } = useAuthStore()
+  const { isAuthenticated, displayName, email, isGuest, logout } = useAuthStore()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
   const [showFeedback, setShowFeedback] = useState(false)
@@ -76,9 +84,10 @@ export function Layout({ children }: LayoutProps) {
                 <div className="hidden sm:flex items-center gap-3">
                   <Link
                     to="/profile"
-                    className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                    className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                   >
                     {displayName ?? email}
+                    {isGuest && <GuestBadge />}
                   </Link>
                   <button
                     onClick={() => setShowFeedback(true)}
@@ -116,9 +125,10 @@ export function Layout({ children }: LayoutProps) {
             <Link
               to="/profile"
               onClick={() => setMenuOpen(false)}
-              className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+              className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
             >
               {displayName ?? email}
+              {isGuest && <GuestBadge />}
             </Link>
             <button
               onClick={() => { setMenuOpen(false); setShowFeedback(true) }}

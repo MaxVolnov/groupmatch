@@ -29,6 +29,13 @@ public class AuthController {
         return ResponseEntity.ok(authService.signin(request));
     }
 
+    /** POST /api/v1/auth/guest — мгновенный гостевой аккаунт без email/пароля (публичный). */
+    @PostMapping("/guest")
+    @ResponseStatus(HttpStatus.CREATED)
+    public AuthResponse guestSignin(@Valid @RequestBody GuestRequest request) {
+        return authService.guestSignin(request);
+    }
+
     /**
      * POST /api/v1/auth/refresh — обмен refresh token на новую пару токенов (публичный).
      * Реализует rotation: старый refresh token аннулируется.
