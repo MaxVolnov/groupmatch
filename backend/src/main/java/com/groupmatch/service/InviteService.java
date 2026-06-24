@@ -35,6 +35,7 @@ public class InviteService {
     private final UserRepository userRepository;
     private final GroupRepository groupRepository;
     private final NotificationService notificationService;
+    private final NotificationPreferencesService notificationPreferencesService;
     private final EmailService emailService;
 
     @Transactional
@@ -125,26 +126,31 @@ public class InviteService {
         if (!ownerId.equals(callerId)) {
             userRepository.findById(callerId).ifPresent(joiner ->
                 groupRepository.findById(groupId).ifPresent(group -> {
-                    notificationService.create(ownerId, NotificationType.MEMBER_JOINED, Map.of(
-                        "groupId", groupId.toString(),
-                        "groupTitle", group.getTitle(),
-                        "joinerId", callerId.toString(),
-                        "joinerName", joiner.getDisplayName()
-                    ));
-                    userRepository.findById(ownerId).ifPresent(owner -> {
-                        if (!owner.isGuest()) {
-                            try {
-                                emailService.sendMemberJoinedEmail(
-                                    owner.getEmail(),
-                                    owner.getDisplayName(),
-                                    joiner.getDisplayName(),
-                                    group.getTitle()
-                                );
-                            } catch (Exception e) {
-                                log.warn("Failed to send member joined email to ownerId={}. error={}", ownerId, e.getMessage());
+                    NotificationPreferences ownerPrefs = notificationPreferencesService.getOrCreate(ownerId);
+                    if (ownerPrefs.isInappMemberJoined()) {
+                        notificationService.create(ownerId, NotificationType.MEMBER_JOINED, Map.of(
+                            "groupId", groupId.toString(),
+                            "groupTitle", group.getTitle(),
+                            "joinerId", callerId.toString(),
+                            "joinerName", joiner.getDisplayName()
+                        ));
+                    }
+                    if (ownerPrefs.isEmailMemberJoined()) {
+                        userRepository.findById(ownerId).ifPresent(owner -> {
+                            if (!owner.isGuest()) {
+                                try {
+                                    emailService.sendMemberJoinedEmail(
+                                        owner.getEmail(),
+                                        owner.getDisplayName(),
+                                        joiner.getDisplayName(),
+                                        group.getTitle()
+                                    );
+                                } catch (Exception e) {
+                                    log.warn("Failed to send member joined email to ownerId={}. error={}", ownerId, e.getMessage());
+                                }
                             }
-                        }
-                    });
+                        });
+                    }
                 })
             );
         }

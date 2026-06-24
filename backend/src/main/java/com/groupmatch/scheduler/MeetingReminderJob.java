@@ -3,11 +3,13 @@ package com.groupmatch.scheduler;
 import com.groupmatch.domain.GrpMember;
 import com.groupmatch.domain.Meeting;
 import com.groupmatch.domain.MemberStatus;
+import com.groupmatch.domain.NotificationPreferences;
 import com.groupmatch.repository.GrpMemberRepository;
 import com.groupmatch.repository.GroupRepository;
 import com.groupmatch.repository.MeetingRepository;
 import com.groupmatch.repository.UserRepository;
 import com.groupmatch.service.EmailService;
+import com.groupmatch.service.NotificationPreferencesService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -27,6 +29,7 @@ public class MeetingReminderJob {
     private final GroupRepository groupRepository;
     private final UserRepository userRepository;
     private final EmailService emailService;
+    private final NotificationPreferencesService notificationPreferencesService;
 
     @Scheduled(fixedDelay = 300_000)
     @Transactional
@@ -59,6 +62,8 @@ public class MeetingReminderJob {
         for (GrpMember member : grpMemberRepository.findByGroupAndStatus(meeting.getGroupId(), MemberStatus.ACTIVE)) {
             userRepository.findById(member.getUser()).ifPresent(user -> {
                 if (user.isGuest()) return;
+                NotificationPreferences prefs = notificationPreferencesService.getOrCreate(user.getId());
+                if (!prefs.isEmailMeetingReminder()) return;
                 try {
                     emailService.sendMeetingReminderEmail(
                         user.getEmail(),

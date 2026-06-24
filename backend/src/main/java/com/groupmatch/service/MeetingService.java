@@ -3,6 +3,7 @@ package com.groupmatch.service;
 import com.groupmatch.domain.GrpMember;
 import com.groupmatch.domain.Meeting;
 import com.groupmatch.domain.MemberStatus;
+import com.groupmatch.domain.NotificationPreferences;
 import com.groupmatch.domain.NotificationType;
 import com.groupmatch.dto.meeting.MeetingRequest;
 import com.groupmatch.dto.meeting.MeetingResponse;
@@ -27,6 +28,7 @@ public class MeetingService {
     private final MeetingRepository meetingRepository;
     private final GrpMemberRepository grpMemberRepository;
     private final NotificationService notificationService;
+    private final NotificationPreferencesService notificationPreferencesService;
 
     @Transactional
     public MeetingResponse createMeeting(UUID groupId, UUID callerId, MeetingRequest req) {
@@ -45,11 +47,14 @@ public class MeetingService {
 
         grpMemberRepository.findByGroupAndStatus(groupId, MemberStatus.ACTIVE).forEach(m -> {
             if (!m.getUser().equals(callerId)) {
-                notificationService.create(m.getUser(), NotificationType.MEETING_CREATED, Map.of(
-                    "groupId", groupId.toString(),
-                    "meetingId", saved.getId().toString(),
-                    "meetingTitle", req.title()
-                ));
+                NotificationPreferences memberPrefs = notificationPreferencesService.getOrCreate(m.getUser());
+                if (memberPrefs.isInappMeetingCreated()) {
+                    notificationService.create(m.getUser(), NotificationType.MEETING_CREATED, Map.of(
+                        "groupId", groupId.toString(),
+                        "meetingId", saved.getId().toString(),
+                        "meetingTitle", req.title()
+                    ));
+                }
             }
         });
 

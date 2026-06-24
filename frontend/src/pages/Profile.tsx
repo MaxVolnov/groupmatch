@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { meApi } from '@/api/me'
+import { preferencesApi } from '@/api/preferences'
 import { useAuthStore } from '@/store/auth'
 import { Layout } from '@/components/Layout'
 import { Button } from '@/components/Button'
@@ -8,6 +9,7 @@ import { Input } from '@/components/Input'
 import { Skeleton } from '@/components/Skeleton'
 import { ErrorMessage } from '@/components/ErrorMessage'
 import { TIMEZONES } from '@/utils/timezones'
+import type { NotificationPreferences } from '@/types'
 
 export function Profile() {
   const qc = useQueryClient()
@@ -35,6 +37,22 @@ export function Profile() {
       qc.invalidateQueries({ queryKey: ['me'] })
     },
   })
+
+  const { data: prefs } = useQuery({
+    queryKey: ['notification-preferences'],
+    queryFn: preferencesApi.get,
+    enabled: !isGuest,
+  })
+
+  const updatePrefs = useMutation({
+    mutationFn: preferencesApi.update,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['notification-preferences'] }),
+  })
+
+  const toggle = (key: keyof NotificationPreferences) => {
+    if (!prefs) return
+    updatePrefs.mutate({ [key]: !prefs[key] })
+  }
 
   return (
     <Layout>
@@ -113,6 +131,46 @@ export function Profile() {
               Save changes
             </Button>
           </div>
+        )}
+
+        {!isGuest && (
+          <section className="rounded-xl border border-gray-200 dark:border-gray-700 p-5 mt-6">
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">
+              Notification preferences
+            </h2>
+            {prefs ? (
+              <div className="space-y-3">
+                {(
+                  [
+                    ['emailMemberJoined',    'Email when someone joins your group'],
+                    ['emailMeetingReminder', 'Email reminder 1 hour before meeting'],
+                    ['inappMemberJoined',    'In-app alert when someone joins your group'],
+                    ['inappMeetingCreated',  'In-app alert when a meeting is created'],
+                  ] as const
+                ).map(([key, label]) => (
+                  <label key={key} className="flex items-center justify-between cursor-pointer">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
+                    <button
+                      role="switch"
+                      aria-checked={prefs[key]}
+                      onClick={() => toggle(key)}
+                      className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors ${
+                        prefs[key] ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-600'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 mt-0.5 rounded-full bg-white shadow transition-transform ${
+                          prefs[key] ? 'translate-x-4' : 'translate-x-0.5'
+                        }`}
+                      />
+                    </button>
+                  </label>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400">Loading...</p>
+            )}
+          </section>
         )}
       </div>
     </Layout>

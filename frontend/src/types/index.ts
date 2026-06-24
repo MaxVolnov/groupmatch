@@ -160,6 +160,15 @@ export interface FeedbackResponse {
   createdAt: string
 }
 
+// ── Notification preferences ──────────────────────────────────────────────────
+
+export interface NotificationPreferences {
+  emailMemberJoined: boolean
+  emailMeetingReminder: boolean
+  inappMemberJoined: boolean
+  inappMeetingCreated: boolean
+}
+
 // ── Notifications ─────────────────────────────────────────────────────────────
 
 export type NotificationType = 'MEMBER_JOINED' | 'MEETING_CREATED'
