@@ -8,6 +8,10 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 @Service
@@ -49,6 +53,28 @@ public class EmailService {
             <p>Link expires in 1 hour.</p>
             <p>If you didn't request a password reset, ignore this email.</p>
             """.formatted(displayName, link);
+        send(to, subject, html);
+    }
+
+    public void sendMemberJoinedEmail(String to, String ownerName, String joinerName, String groupTitle) {
+        String subject = joinerName + " joined your group on GroupMatch";
+        String html = """
+            <p>Hi %s,</p>
+            <p><strong>%s</strong> has joined your group <strong>%s</strong>.</p>
+            <p>Head over to GroupMatch to see the updated availability heatmap.</p>
+            """.formatted(ownerName, joinerName, groupTitle);
+        send(to, subject, html);
+    }
+
+    public void sendMeetingReminderEmail(String to, String displayName, String meetingTitle,
+                                         String groupTitle, Instant startsAt, String tzId) {
+        ZonedDateTime zdt = startsAt.atZone(ZoneId.of(tzId));
+        String formatted = zdt.format(DateTimeFormatter.ofPattern("EEE, MMM d 'at' HH:mm z"));
+        String subject = "Reminder: \"" + meetingTitle + "\" starts in 1 hour";
+        String html = """
+            <p>Hi %s,</p>
+            <p>This is a reminder that the meeting <strong>%s</strong> in group <strong>%s</strong> starts at <strong>%s</strong>.</p>
+            """.formatted(displayName, meetingTitle, groupTitle, formatted);
         send(to, subject, html);
     }
 

@@ -37,6 +37,9 @@ public class Meeting {
     @Column(name = "ends_at", nullable = false)
     private Instant endsAt;
 
+    @Column(name = "reminder_sent", nullable = false)
+    private boolean reminderSent = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 

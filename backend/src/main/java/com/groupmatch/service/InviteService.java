@@ -9,6 +9,7 @@ import com.groupmatch.repository.GroupRepository;
 import com.groupmatch.repository.InviteRepository;
 import com.groupmatch.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class InviteService {
 
     private static final int TOKEN_BYTES = 24; // 48 hex chars
@@ -33,6 +35,7 @@ public class InviteService {
     private final UserRepository userRepository;
     private final GroupRepository groupRepository;
     private final NotificationService notificationService;
+    private final EmailService emailService;
 
     @Transactional
     public InviteResponse createInvite(UUID groupId, UUID callerId, Plan callerPlan,
@@ -121,14 +124,28 @@ public class InviteService {
         UUID ownerId = ownerMembership.getUser();
         if (!ownerId.equals(callerId)) {
             userRepository.findById(callerId).ifPresent(joiner ->
-                groupRepository.findById(groupId).ifPresent(group ->
+                groupRepository.findById(groupId).ifPresent(group -> {
                     notificationService.create(ownerId, NotificationType.MEMBER_JOINED, Map.of(
                         "groupId", groupId.toString(),
                         "groupTitle", group.getTitle(),
                         "joinerId", callerId.toString(),
                         "joinerName", joiner.getDisplayName()
-                    ))
-                )
+                    ));
+                    userRepository.findById(ownerId).ifPresent(owner -> {
+                        if (!owner.isGuest()) {
+                            try {
+                                emailService.sendMemberJoinedEmail(
+                                    owner.getEmail(),
+                                    owner.getDisplayName(),
+                                    joiner.getDisplayName(),
+                                    group.getTitle()
+                                );
+                            } catch (Exception e) {
+                                log.warn("Failed to send member joined email to ownerId={}. error={}", ownerId, e.getMessage());
+                            }
+                        }
+                    });
+                })
             );
         }
 
