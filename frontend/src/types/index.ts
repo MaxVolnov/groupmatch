@@ -160,6 +160,18 @@ export interface FeedbackResponse {
   createdAt: string
 }
 
+// ── Notifications ─────────────────────────────────────────────────────────────
+
+export type NotificationType = 'MEMBER_JOINED' | 'MEETING_CREATED'
+
+export interface NotificationResponse {
+  id: string
+  type: NotificationType
+  payload: Record<string, string>
+  read: boolean
+  createdAt: string
+}
+
 // ── Error ─────────────────────────────────────────────────────────────────────
 
 export interface ApiError {

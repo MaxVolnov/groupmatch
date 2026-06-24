@@ -5,7 +5,9 @@ import com.groupmatch.dto.invite.CreateInviteRequest;
 import com.groupmatch.dto.invite.InviteResponse;
 import com.groupmatch.exception.*;
 import com.groupmatch.repository.GrpMemberRepository;
+import com.groupmatch.repository.GroupRepository;
 import com.groupmatch.repository.InviteRepository;
+import com.groupmatch.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +17,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -27,6 +30,9 @@ public class InviteService {
 
     private final InviteRepository inviteRepository;
     private final GrpMemberRepository grpMemberRepository;
+    private final UserRepository userRepository;
+    private final GroupRepository groupRepository;
+    private final NotificationService notificationService;
 
     @Transactional
     public InviteResponse createInvite(UUID groupId, UUID callerId, Plan callerPlan,
@@ -111,6 +117,20 @@ public class InviteService {
 
         invite.setCurrentUses(invite.getCurrentUses() + 1);
         inviteRepository.save(invite);
+
+        UUID ownerId = ownerMembership.getUser();
+        if (!ownerId.equals(callerId)) {
+            userRepository.findById(callerId).ifPresent(joiner ->
+                groupRepository.findById(groupId).ifPresent(group ->
+                    notificationService.create(ownerId, NotificationType.MEMBER_JOINED, Map.of(
+                        "groupId", groupId.toString(),
+                        "groupTitle", group.getTitle(),
+                        "joinerId", callerId.toString(),
+                        "joinerName", joiner.getDisplayName()
+                    ))
+                )
+            );
+        }
 
         return toResponse(invite);
     }
