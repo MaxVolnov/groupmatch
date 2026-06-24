@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class NotificationPreferencesTest extends BaseIntegrationTest {
 
     private static final String EMAIL    = "notif-prefs@groupmatch-test.io";
-    private static final String PASSWORD = "Prefs1!";
+    private static final String PASSWORD = "Prefs1!X";
 
     String accessToken;
 

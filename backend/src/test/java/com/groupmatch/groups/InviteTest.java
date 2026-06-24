@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.fail;
 public class InviteTest extends BaseIntegrationTest {
 
     private static final String OWNER_EMAIL    = "invite-owner@groupmatch-test.io";
-    private static final String OWNER_PASSWORD = "Owner1!";
+    private static final String OWNER_PASSWORD = "Owner1!X";
     private static final String JOINER_EMAIL    = "invite-joiner@groupmatch-test.io";
     private static final String JOINER_PASSWORD = "Joiner1!";
 

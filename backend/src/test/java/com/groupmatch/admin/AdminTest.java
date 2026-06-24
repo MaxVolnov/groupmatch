@@ -24,9 +24,9 @@ import static org.assertj.core.api.Assertions.fail;
 public class AdminTest extends BaseIntegrationTest {
 
     private static final String USER_EMAIL    = "at-target@groupmatch-test.io";
-    private static final String USER_PASSWORD = "Target1!";
+    private static final String USER_PASSWORD = "Target1!X";
     private static final String ADMIN_EMAIL    = "at-actor@groupmatch-test.io";
-    private static final String ADMIN_PASSWORD = "Actor1!";
+    private static final String ADMIN_PASSWORD = "Actor1!XX";
 
     String userToken;
     String userId;

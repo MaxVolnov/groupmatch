@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class NotificationTest extends BaseIntegrationTest {
 
     private static final String OWNER_EMAIL    = "notif-owner@groupmatch-test.io";
-    private static final String OWNER_PASSWORD = "Owner1!";
+    private static final String OWNER_PASSWORD = "Owner1!X";
     private static final String MEMBER_EMAIL    = "notif-member@groupmatch-test.io";
     private static final String MEMBER_PASSWORD = "Member1!";
 
