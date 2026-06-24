@@ -2,6 +2,9 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { groupsApi } from '@/api/groups'
+import { meApi } from '@/api/me'
+import { authApi } from '@/api/auth'
+import { useAuthStore } from '@/store/auth'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
 import { Modal } from '@/components/Modal'
@@ -126,10 +129,28 @@ function CreateGroupModal({ open, onClose }: { open: boolean; onClose: () => voi
 
 export function Dashboard() {
   const [showCreate, setShowCreate] = useState(false)
+  const [resendSent, setResendSent] = useState(false)
+  const isGuest = useAuthStore((s) => s.isGuest)
+  const qc = useQueryClient()
+
   const { data: groups, isLoading, error } = useQuery({
     queryKey: ['groups'],
     queryFn: groupsApi.list,
   })
+
+  const { data: meData } = useQuery({
+    queryKey: ['me'],
+    queryFn: meApi.get,
+    enabled: !isGuest,
+  })
+
+  const isEmailVerified = isGuest || (meData?.isEmailVerified ?? true)
+
+  const handleResend = async () => {
+    await authApi.resendVerification()
+    setResendSent(true)
+    qc.invalidateQueries({ queryKey: ['me'] })
+  }
 
   return (
     <Layout>
@@ -137,6 +158,24 @@ export function Dashboard() {
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">My Groups</h1>
         <Button onClick={() => setShowCreate(true)}>+ New group</Button>
       </div>
+
+      {!isGuest && !isEmailVerified && (
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-3 mb-4 flex items-center justify-between">
+          <span className="text-sm text-yellow-800 dark:text-yellow-200">
+            Please confirm your email address to unlock all features.
+          </span>
+          {resendSent ? (
+            <span className="text-sm font-medium text-yellow-700 dark:text-yellow-300 ml-4">Sent!</span>
+          ) : (
+            <button
+              onClick={handleResend}
+              className="text-sm font-medium text-yellow-700 dark:text-yellow-300 hover:underline ml-4"
+            >
+              Resend
+            </button>
+          )}
+        </div>
+      )}
 
       {isLoading && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

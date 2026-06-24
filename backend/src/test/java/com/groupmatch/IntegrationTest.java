@@ -73,6 +73,9 @@ class IntegrationTest {
     static String inviteToken;
     static String secondUserAccessToken;
     static String secondUserId;
+    static String notificationId;
+    static String verificationToken;
+    static String resetToken;
 
     private String url(String path) {
         return "http://localhost:" + port + path;
@@ -88,6 +91,13 @@ class IntegrationTest {
     private HttpHeaders adminAuthHeaders() {
         HttpHeaders h = new HttpHeaders();
         h.setBearerAuth(adminAccessToken);
+        h.setContentType(MediaType.APPLICATION_JSON);
+        return h;
+    }
+
+    private HttpHeaders jsonHeaders(String token) {
+        HttpHeaders h = new HttpHeaders();
+        h.setBearerAuth(token);
         h.setContentType(MediaType.APPLICATION_JSON);
         return h;
     }
@@ -555,5 +565,254 @@ class IntegrationTest {
                 new HttpEntity<>(adminAuthHeaders()), Map.class);
         List<Map<?, ?>> resolvedItems = (List<Map<?, ?>>) resolvedResp.getBody().get("items");
         assertThat(resolvedItems).anyMatch(item -> feedbackId.equals(item.get("id").toString()));
+    }
+
+    // ── 23. notifications list after member joined ────────────────────────────
+
+    @Test
+    @Order(23)
+    @SuppressWarnings("unchecked")
+    void notificationsListAfterMemberJoined() {
+        // Test 11 triggered MEMBER_JOINED for the group owner (integration user)
+        ResponseEntity<List> resp = rest.exchange(
+                url("/api/v1/notifications"), HttpMethod.GET,
+                new HttpEntity<>(authHeaders()), List.class);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        List<Map<?, ?>> notifications = (List<Map<?, ?>>) resp.getBody();
+        assertThat(notifications).isNotEmpty();
+        Map<?, ?> first = notifications.get(0);
+        assertThat(first.get("type")).isEqualTo("MEMBER_JOINED");
+        assertThat((Boolean) first.get("read")).isFalse();
+        notificationId = first.get("id").toString();
+        assertThat(notificationId).isNotBlank();
+    }
+
+    // ── 24. unread count ≥ 1 ─────────────────────────────────────────────────
+
+    @Test
+    @Order(24)
+    void unreadCountIsPositive() {
+        ResponseEntity<Map> resp = rest.exchange(
+                url("/api/v1/notifications/unread-count"), HttpMethod.GET,
+                new HttpEntity<>(authHeaders()), Map.class);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        long count = ((Number) resp.getBody().get("count")).longValue();
+        assertThat(count).isGreaterThanOrEqualTo(1L);
+    }
+
+    // ── 25. mark single notification read ────────────────────────────────────
+
+    @Test
+    @Order(25)
+    void markSingleNotificationRead() {
+        ResponseEntity<Void> resp = rest.exchange(
+                url("/api/v1/notifications/" + notificationId + "/read"), HttpMethod.PATCH,
+                new HttpEntity<>(authHeaders()), Void.class);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+    }
+
+    // ── 26. unread count drops after mark-read ────────────────────────────────
+
+    @Test
+    @Order(26)
+    void unreadCountDropsAfterMarkRead() {
+        ResponseEntity<Map> resp = rest.exchange(
+                url("/api/v1/notifications/unread-count"), HttpMethod.GET,
+                new HttpEntity<>(authHeaders()), Map.class);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        long count = ((Number) resp.getBody().get("count")).longValue();
+        assertThat(count).isEqualTo(0L);
+    }
+
+    // ── 27. mark-all-read returns 204 ─────────────────────────────────────────
+
+    @Test
+    @Order(27)
+    void markAllNotificationsRead() {
+        ResponseEntity<Void> resp = rest.exchange(
+                url("/api/v1/notifications/read-all"), HttpMethod.PATCH,
+                new HttpEntity<>(authHeaders()), Void.class);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+    }
+
+    // ── 28. get notification preferences (defaults) ───────────────────────────
+
+    @Test
+    @Order(28)
+    void getNotificationPreferences() {
+        ResponseEntity<Map> resp = rest.exchange(
+                url("/api/v1/me/notification-preferences"), HttpMethod.GET,
+                new HttpEntity<>(authHeaders()), Map.class);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(resp.getBody()).containsKeys(
+                "emailMemberJoined", "emailMeetingReminder",
+                "inappMemberJoined", "inappMeetingCreated");
+        assertThat((Boolean) resp.getBody().get("inappMemberJoined")).isTrue();
+    }
+
+    // ── 29. update notification preferences ──────────────────────────────────
+
+    @Test
+    @Order(29)
+    void updateNotificationPreferences() {
+        var body = Map.of("emailMeetingReminder", false);
+        ResponseEntity<Map> resp = rest.exchange(
+                url("/api/v1/me/notification-preferences"), HttpMethod.PATCH,
+                new HttpEntity<>(body, authHeaders()), Map.class);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat((Boolean) resp.getBody().get("emailMeetingReminder")).isFalse();
+        assertThat((Boolean) resp.getBody().get("emailMemberJoined")).isTrue();
+    }
+
+    // ── 30. create meeting → second user gets MEETING_CREATED notification ────
+
+    @Test
+    @Order(30)
+    @SuppressWarnings("unchecked")
+    void createMeetingNotifiesMembers() {
+        Instant startsAt = Instant.now().plus(2, ChronoUnit.DAYS).truncatedTo(ChronoUnit.HOURS);
+        var body = Map.of(
+                "title", "Integration Meeting",
+                "startsAt", startsAt.toString(),
+                "endsAt", startsAt.plus(1, ChronoUnit.HOURS).toString()
+        );
+        ResponseEntity<Map> createResp = rest.exchange(
+                url("/api/v1/groups/" + groupId + "/meetings"), HttpMethod.POST,
+                new HttpEntity<>(body, authHeaders()), Map.class);
+
+        assertThat(createResp.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(createResp.getBody().get("title")).isEqualTo("Integration Meeting");
+
+        // Second user should have received a MEETING_CREATED notification
+        ResponseEntity<List> notifResp = rest.exchange(
+                url("/api/v1/notifications"), HttpMethod.GET,
+                new HttpEntity<>(jsonHeaders(secondUserAccessToken)), List.class);
+
+        assertThat(notifResp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        List<Map<?, ?>> secondUserNotifs = (List<Map<?, ?>>) notifResp.getBody();
+        assertThat(secondUserNotifs).anyMatch(n -> "MEETING_CREATED".equals(n.get("type")));
+    }
+
+    // ── 31. guest account upgrade flow ────────────────────────────────────────
+
+    @Test
+    @Order(31)
+    void guestAccountUpgradeFlow() {
+        var body = Map.of(
+                "email", "upgraded-guest@groupmatch-test.io",
+                "password", "Upgraded1!",
+                "displayName", "Upgraded Guest"
+        );
+        ResponseEntity<Map> resp = rest.exchange(
+                url("/api/v1/auth/upgrade-guest"), HttpMethod.POST,
+                new HttpEntity<>(body, jsonHeaders(guestAccessToken)), Map.class);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(resp.getBody()).containsKey("accessToken");
+        String newToken = resp.getBody().get("accessToken").toString();
+        assertThat(newToken).isNotBlank();
+
+        // Verify the new token works and the account is no longer guest
+        ResponseEntity<Map> meResp = rest.exchange(
+                url("/api/v1/me"), HttpMethod.GET,
+                new HttpEntity<>(jsonHeaders(newToken)), Map.class);
+        assertThat(meResp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(meResp.getBody().get("email")).isEqualTo("upgraded-guest@groupmatch-test.io");
+    }
+
+    // ── 32. forgot password ───────────────────────────────────────────────────
+
+    @Test
+    @Order(32)
+    void forgotPassword() {
+        var body = Map.of("email", "second@groupmatch-test.io");
+        ResponseEntity<Void> resp = rest.exchange(
+                url("/api/v1/auth/forgot-password"), HttpMethod.POST,
+                new HttpEntity<>(body, new HttpHeaders() {{ setContentType(MediaType.APPLICATION_JSON); }}),
+                Void.class);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        // Fetch token directly from DB (email not actually sent in tests)
+        resetToken = jdbcTemplate.queryForObject(
+                "SELECT prt.token FROM password_reset_token prt " +
+                "JOIN app_user u ON u.id = prt.user_id " +
+                "WHERE u.email = 'second@groupmatch-test.io' " +
+                "AND prt.used_at IS NULL " +
+                "ORDER BY prt.expires_at DESC LIMIT 1",
+                String.class);
+        assertThat(resetToken).isNotBlank();
+    }
+
+    // ── 33. reset password with token ─────────────────────────────────────────
+
+    @Test
+    @Order(33)
+    void resetPasswordWithToken() {
+        var body = Map.of(
+                "token", resetToken,
+                "newPassword", "ResetPass1!"
+        );
+        ResponseEntity<Void> resp = rest.exchange(
+                url("/api/v1/auth/reset-password"), HttpMethod.POST,
+                new HttpEntity<>(body, new HttpHeaders() {{ setContentType(MediaType.APPLICATION_JSON); }}),
+                Void.class);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    // ── 34. sign in with new password after reset ─────────────────────────────
+
+    @Test
+    @Order(34)
+    void signinWithNewPasswordAfterReset() {
+        var body = Map.of(
+                "email", "second@groupmatch-test.io",
+                "password", "ResetPass1!"
+        );
+        ResponseEntity<Map> resp = rest.exchange(
+                url("/api/v1/auth/signin"), HttpMethod.POST,
+                new HttpEntity<>(body, new HttpHeaders() {{ setContentType(MediaType.APPLICATION_JSON); }}),
+                Map.class);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(resp.getBody()).containsKey("accessToken");
+    }
+
+    // ── 35. email verification via DB token ───────────────────────────────────
+
+    @Test
+    @Order(35)
+    void verifyEmailFromDbToken() {
+        // Fetch the verification token saved when signup or upgrade-guest triggered sendVerification
+        verificationToken = jdbcTemplate.queryForObject(
+                "SELECT evt.token FROM email_verification_token evt " +
+                "JOIN app_user u ON u.id = evt.user_id " +
+                "WHERE u.email = 'second@groupmatch-test.io' " +
+                "AND evt.used_at IS NULL " +
+                "ORDER BY evt.expires_at DESC LIMIT 1",
+                String.class);
+        assertThat(verificationToken).isNotBlank();
+
+        var body = Map.of("token", verificationToken);
+        ResponseEntity<Void> resp = rest.exchange(
+                url("/api/v1/auth/verify-email"), HttpMethod.POST,
+                new HttpEntity<>(body, new HttpHeaders() {{ setContentType(MediaType.APPLICATION_JSON); }}),
+                Void.class);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        // Confirm email is now verified in DB
+        Boolean verified = jdbcTemplate.queryForObject(
+                "SELECT is_email_verified FROM app_user WHERE email = 'second@groupmatch-test.io'",
+                Boolean.class);
+        assertThat(verified).isTrue();
     }
 }

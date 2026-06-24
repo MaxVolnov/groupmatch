@@ -12,6 +12,7 @@ public record UserResponse(
         String tzId,
         String plan,
         String role,
+        boolean isEmailVerified,
         Instant createdAt
 ) {
     public static UserResponse from(User user) {
@@ -22,6 +23,7 @@ public record UserResponse(
                 user.getTzId(),
                 user.getPlan().name(),
                 user.getRole().name(),
+                user.isEmailVerified(),
                 user.getCreatedAt()
         );
     }

@@ -116,6 +116,12 @@ public class GlobalExceptionHandler {
                 new ErrorResponse("forbidden", ex.getMessage(), null, Instant.now()));
     }
 
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ErrorResponse> handleBadRequest(BadRequestException ex) {
+        return ResponseEntity.status(BAD_REQUEST).body(
+                new ErrorResponse("bad_request", ex.getMessage(), null, Instant.now()));
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
         return ResponseEntity.status(BAD_REQUEST).body(

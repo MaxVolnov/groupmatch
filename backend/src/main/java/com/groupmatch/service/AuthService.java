@@ -4,9 +4,11 @@ import com.groupmatch.domain.Plan;
 import com.groupmatch.domain.Role;
 import com.groupmatch.domain.User;
 import com.groupmatch.dto.auth.*;
+import com.groupmatch.exception.BadRequestException;
 import com.groupmatch.exception.EmailAlreadyExistsException;
 import com.groupmatch.exception.ForbiddenException;
 import com.groupmatch.exception.InvalidCredentialsException;
+import com.groupmatch.exception.UserNotFoundException;
 import com.groupmatch.repository.UserRepository;
 import com.groupmatch.security.JwtUtils;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
     private final RefreshTokenService refreshTokenService;
+    private final EmailVerificationService emailVerificationService;
 
     // ─── Signup ───────────────────────────────────────────────────────────────
 
@@ -48,6 +51,8 @@ public class AuthService {
 
         user = userRepository.save(user);
         log.info("User created: userId={}", user.getId());
+
+        emailVerificationService.sendVerification(user);
 
         return UserResponse.from(user);
     }
@@ -128,6 +133,37 @@ public class AuthService {
 
         log.info("Token refreshed for userId={}", userId);
         return issueTokenPair(user.getId(), user.getEmail(), user.getRole(), user.getPlan(), user.isGuest());
+    }
+
+    // ─── Guest upgrade ────────────────────────────────────────────────────────
+
+    @Transactional
+    public AuthResponse upgradeGuest(UUID userId, UpgradeGuestRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(UserNotFoundException::new);
+
+        if (!user.isGuest()) {
+            throw new BadRequestException("Account is already upgraded");
+        }
+
+        if (userRepository.existsByEmail(request.email())) {
+            throw new BadRequestException("Email already in use");
+        }
+
+        user.setEmail(request.email());
+        user.setPasswordHash(passwordEncoder.encode(request.password()));
+        user.setDisplayName(request.displayName());
+        user.setGuest(false);
+        user.setEmailVerified(false);
+        userRepository.save(user);
+
+        refreshTokenService.invalidateAllForUser(userId);
+        AuthResponse newTokens = issueTokenPair(user.getId(), user.getEmail(), user.getRole(), user.getPlan(), false);
+
+        emailVerificationService.sendVerification(user);
+
+        log.info("Guest account upgraded. userId={}", userId);
+        return newTokens;
     }
 
     // ─── Logout ───────────────────────────────────────────────────────────────

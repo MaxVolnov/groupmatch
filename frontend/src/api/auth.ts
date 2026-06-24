@@ -29,4 +29,19 @@ export const authApi = {
       : api
           .post<void>('/auth/logout', { refreshToken }, { headers: { Authorization: `Bearer ${accessToken}` } })
           .then(() => undefined),
+
+  upgradeGuest: (data: { email: string; password: string; displayName: string }): Promise<AuthResponse> =>
+    api.post<AuthResponse>('/auth/upgrade-guest', data).then((r) => r.data),
+
+  verifyEmail: (token: string): Promise<void> =>
+    api.post('/auth/verify-email', { token }).then(() => {}),
+
+  resendVerification: (): Promise<void> =>
+    api.post('/auth/resend-verification').then(() => {}),
+
+  forgotPassword: (email: string): Promise<void> =>
+    api.post('/auth/forgot-password', { email }).then(() => {}),
+
+  resetPassword: (token: string, newPassword: string): Promise<void> =>
+    api.post('/auth/reset-password', { token, newPassword }).then(() => {}),
 }
