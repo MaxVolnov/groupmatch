@@ -9,6 +9,16 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+  mail:
+    host: localhost
+    port: 2525
+    test-connection: false
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
   jpa:
     hibernate:
       ddl-auto: none
@@ -34,3 +44,10 @@ app:
     refresh: 20
   cache:
     heatmap-ttl-minutes: 60
+  mail:
+    from: noreply@test.local
+    base-url: http://localhost:3000
+  email-verification:
+    token-ttl-hours: 24
+  password-reset:
+    token-ttl-hours: 1

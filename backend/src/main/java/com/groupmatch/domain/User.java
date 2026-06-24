@@ -57,6 +57,9 @@ public class User {
     @Column(name = "ban_reason")
     private String banReason;
 
+    @Column(name = "is_email_verified", nullable = false)
+    private boolean emailVerified = false;
+
     @Column(name = "is_blocked", nullable = false)
     private boolean blocked = false;
 

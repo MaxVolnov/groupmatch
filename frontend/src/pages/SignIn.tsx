@@ -72,14 +72,22 @@ export function SignIn() {
             required
             autoComplete="email"
           />
-          <Input
-            label="Password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            autoComplete="current-password"
-          />
+          <div className="flex flex-col gap-1">
+            <Input
+              label="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+            />
+            <Link
+              to="/forgot-password"
+              className="self-end text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
           <Button type="submit" loading={loading} className="mt-2 w-full justify-center">
             Sign in

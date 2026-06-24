@@ -95,6 +95,11 @@ public class RefreshTokenService {
         }
     }
 
+    /** Инвалидирует ВСЕ refresh-токены пользователя (псевдоним для смены пароля и аналогичных операций). */
+    public void invalidateAllForUser(UUID userId) {
+        invalidateAllSessions(userId);
+    }
+
     /** Инвалидирует ВСЕ refresh-токены пользователя (принудительный logout всех сессий). */
     public void invalidateAllSessions(UUID userId) {
         var members = redis.opsForSet().members(REFRESH_USER_PREFIX + userId);

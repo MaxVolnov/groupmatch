@@ -7,6 +7,9 @@ import { Dashboard } from '@/pages/Dashboard'
 import { GroupPage } from '@/pages/GroupPage'
 import { JoinInvite } from '@/pages/JoinInvite'
 import { Profile } from '@/pages/Profile'
+import { VerifyEmail } from '@/pages/VerifyEmail'
+import { ForgotPassword } from '@/pages/ForgotPassword'
+import { ResetPassword } from '@/pages/ResetPassword'
 import AdminPage from '@/pages/AdminPage'
 
 const queryClient = new QueryClient({
@@ -23,6 +26,9 @@ function App() {
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/join/:token" element={<JoinInvite />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route
             path="/"
             element={

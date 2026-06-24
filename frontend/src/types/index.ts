@@ -10,7 +10,13 @@ export interface UserResponse {
   tzId: string
   plan: Plan
   role: Role
+  isEmailVerified: boolean
   createdAt: string
+}
+
+export interface NotificationBannerProps {
+  message: string
+  action?: { label: string; onClick: () => void }
 }
 
 export interface AuthResponse {

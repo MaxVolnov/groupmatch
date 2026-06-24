@@ -26,6 +26,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
     private final RefreshTokenService refreshTokenService;
+    private final EmailVerificationService emailVerificationService;
 
     // ─── Signup ───────────────────────────────────────────────────────────────
 
@@ -48,6 +49,8 @@ public class AuthService {
 
         user = userRepository.save(user);
         log.info("User created: userId={}", user.getId());
+
+        emailVerificationService.sendVerification(user);
 
         return UserResponse.from(user);
     }

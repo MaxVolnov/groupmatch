@@ -29,4 +29,16 @@ export const authApi = {
       : api
           .post<void>('/auth/logout', { refreshToken }, { headers: { Authorization: `Bearer ${accessToken}` } })
           .then(() => undefined),
+
+  verifyEmail: (token: string): Promise<void> =>
+    api.post('/auth/verify-email', { token }).then(() => {}),
+
+  resendVerification: (): Promise<void> =>
+    api.post('/auth/resend-verification').then(() => {}),
+
+  forgotPassword: (email: string): Promise<void> =>
+    api.post('/auth/forgot-password', { email }).then(() => {}),
+
+  resetPassword: (token: string, newPassword: string): Promise<void> =>
+    api.post('/auth/reset-password', { token, newPassword }).then(() => {}),
 }
