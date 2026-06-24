@@ -17,6 +17,20 @@ export function ResetPassword() {
 
   const token = searchParams.get('token') ?? ''
 
+  if (!token) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
+        <div className="w-full max-w-sm rounded-xl bg-white dark:bg-gray-800 p-8 shadow-md text-center">
+          <p className="text-4xl mb-4">❌</p>
+          <p className="text-gray-900 dark:text-gray-100 font-medium mb-6">Invalid reset link.</p>
+          <Button onClick={() => navigate('/forgot-password')} className="w-full justify-center">
+            Request a new link
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     if (newPassword !== confirm) {

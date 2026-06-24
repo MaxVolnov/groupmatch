@@ -53,11 +53,6 @@ public class AuthController {
         return ResponseEntity.ok(authService.refresh(request));
     }
 
-    /**
-     * POST /api/v1/auth/logout — выход (требует авторизации).
-     * Access token → Redis blacklist.
-     * Refresh token → удаляется из Redis (передаётся в теле, опционально).
-     */
     @PostMapping("/verify-email")
     public ResponseEntity<Void> verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
         emailVerificationService.verifyToken(request.token());
@@ -84,6 +79,11 @@ public class AuthController {
         return ResponseEntity.ok().build();
     }
 
+    /**
+     * POST /api/v1/auth/logout — выход (требует авторизации).
+     * Access token → Redis blacklist (TTL = оставшееся время жизни).
+     * Refresh token → удаляется из Redis (передаётся в теле, опционально).
+     */
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(
             @RequestHeader("Authorization") String authHeader,
