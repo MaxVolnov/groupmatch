@@ -8,12 +8,10 @@ import com.groupmatch.groups.InviteTest;
 import com.groupmatch.meetings.MeetingTest;
 import com.groupmatch.notifications.NotificationPreferencesTest;
 import com.groupmatch.notifications.NotificationTest;
-import org.junit.platform.suite.api.IncludeTags;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
 @Suite
-@IncludeTags("integration")
 @SelectClasses({
     AuthTest.class,
     GuestUpgradeTest.class,

@@ -71,9 +71,8 @@ dependencies {
 }
 
 tasks.withType<Test> {
-    useJUnitPlatform {
-        excludeTags("integration")
-    }
+    useJUnitPlatform()
+    include("**/IntegrationTestSuite.class")
     finalizedBy(tasks.jacocoTestReport)
 }
 
