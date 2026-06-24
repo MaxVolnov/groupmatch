@@ -1,6 +1,7 @@
 package com.groupmatch.auth;
 
 import com.groupmatch.BaseIntegrationTest;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,11 @@ public class AuthTest extends BaseIntegrationTest {
     String accessToken;
     String refreshToken;
     String resetToken;
+
+    @BeforeAll
+    void setUp() {
+        cleanupUser(EMAIL);
+    }
 
     // ── 1. signup ─────────────────────────────────────────────────────────────
 

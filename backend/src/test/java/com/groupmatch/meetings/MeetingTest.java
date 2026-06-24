@@ -32,6 +32,8 @@ public class MeetingTest extends BaseIntegrationTest {
 
     @BeforeAll
     void setUp() {
+        cleanupUser(EMAIL);
+
         rest.exchange(url("/api/v1/auth/signup"), HttpMethod.POST,
                 new HttpEntity<>(Map.of("email", EMAIL, "password", PASSWORD,
                         "displayName", "Meeting Tester"), jsonHeaders()), Map.class);

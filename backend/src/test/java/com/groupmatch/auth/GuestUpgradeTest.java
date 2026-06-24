@@ -1,6 +1,7 @@
 package com.groupmatch.auth;
 
 import com.groupmatch.BaseIntegrationTest;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,11 @@ public class GuestUpgradeTest extends BaseIntegrationTest {
 
     String guestToken;
     String upgradedToken;
+
+    @BeforeAll
+    void setUp() {
+        cleanupUser(UPGRADE_EMAIL);
+    }
 
     // ── 1. guest signin ───────────────────────────────────────────────────────
 

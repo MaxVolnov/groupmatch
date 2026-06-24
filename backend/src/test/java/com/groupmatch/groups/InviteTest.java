@@ -36,6 +36,9 @@ public class InviteTest extends BaseIntegrationTest {
 
     @BeforeAll
     void setUp() {
+        cleanupUser(OWNER_EMAIL);
+        cleanupUser(JOINER_EMAIL);
+
         // Owner signup + signin
         rest.exchange(url("/api/v1/auth/signup"), HttpMethod.POST,
                 new HttpEntity<>(Map.of("email", OWNER_EMAIL, "password", OWNER_PASSWORD,

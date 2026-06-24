@@ -29,6 +29,8 @@ public class GroupTest extends BaseIntegrationTest {
 
     @BeforeAll
     void setUp() {
+        cleanupUser(EMAIL);
+
         rest.exchange(url("/api/v1/auth/signup"), HttpMethod.POST,
                 new HttpEntity<>(Map.of("email", EMAIL, "password", PASSWORD,
                         "displayName", "Group Tester"), jsonHeaders()), Map.class);

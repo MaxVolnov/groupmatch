@@ -1,5 +1,6 @@
 package com.groupmatch;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -18,6 +19,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @Testcontainers
+@Tag("integration")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class BaseIntegrationTest {
 
@@ -74,5 +76,9 @@ public abstract class BaseIntegrationTest {
         h.setBearerAuth(token);
         h.setContentType(MediaType.APPLICATION_JSON);
         return h;
+    }
+
+    protected void cleanupUser(String email) {
+        jdbcTemplate.update("DELETE FROM app_user WHERE email = ?", email);
     }
 }

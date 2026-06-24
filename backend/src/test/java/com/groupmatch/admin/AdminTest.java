@@ -35,6 +35,9 @@ public class AdminTest extends BaseIntegrationTest {
 
     @BeforeAll
     void setUp() {
+        cleanupUser(USER_EMAIL);
+        cleanupUser(ADMIN_EMAIL);
+
         // Regular user
         ResponseEntity<Map> signupResp = rest.exchange(
                 url("/api/v1/auth/signup"), HttpMethod.POST,

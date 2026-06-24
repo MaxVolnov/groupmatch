@@ -36,6 +36,9 @@ public class NotificationTest extends BaseIntegrationTest {
     @BeforeAll
     @SuppressWarnings("unchecked")
     void setUp() {
+        cleanupUser(OWNER_EMAIL);
+        cleanupUser(MEMBER_EMAIL);
+
         // Owner
         rest.exchange(url("/api/v1/auth/signup"), HttpMethod.POST,
                 new HttpEntity<>(Map.of("email", OWNER_EMAIL, "password", OWNER_PASSWORD,
