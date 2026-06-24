@@ -63,6 +63,7 @@ dependencies {
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("org.apache.httpcomponents.client5:httpclient5")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation("org.junit.platform:junit-platform-suite")
     testImplementation(platform("org.testcontainers:testcontainers-bom:1.20.4"))
     testImplementation("org.testcontainers:junit-jupiter")
     testImplementation("org.testcontainers:postgresql")
