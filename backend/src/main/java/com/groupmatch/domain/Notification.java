@@ -27,7 +27,7 @@ public class Notification {
     private UUID userId;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "notification_type")
+    @Column(nullable = false, length = 50)
     private NotificationType type;
 
     @JdbcTypeCode(SqlTypes.JSON)
