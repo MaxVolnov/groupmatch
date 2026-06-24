@@ -39,9 +39,9 @@ app:
   cors:
     allowed-origins: http://localhost:3000
   rate-limit:
-    signup: 5
-    signin: 10
-    refresh: 20
+    signup: 30
+    signin: 30
+    refresh: 30
   cache:
     heatmap-ttl-minutes: 60
   mail:

@@ -811,7 +811,7 @@ class IntegrationTest {
 
         // Confirm email is now verified in DB
         Boolean verified = jdbcTemplate.queryForObject(
-                "SELECT email_verified FROM app_user WHERE email = 'second@groupmatch-test.io'",
+                "SELECT is_email_verified FROM app_user WHERE email = 'second@groupmatch-test.io'",
                 Boolean.class);
         assertThat(verified).isTrue();
     }
