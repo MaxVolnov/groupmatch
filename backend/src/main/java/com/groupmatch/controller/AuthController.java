@@ -1,8 +1,13 @@
 package com.groupmatch.controller;
 
+import com.groupmatch.domain.User;
 import com.groupmatch.dto.auth.*;
+import com.groupmatch.exception.UserNotFoundException;
+import com.groupmatch.repository.UserRepository;
 import com.groupmatch.security.UserPrincipal;
 import com.groupmatch.service.AuthService;
+import com.groupmatch.service.EmailVerificationService;
+import com.groupmatch.service.PasswordResetService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,6 +21,9 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final EmailVerificationService emailVerificationService;
+    private final PasswordResetService passwordResetService;
+    private final UserRepository userRepository;
 
     /** POST /api/v1/auth/signup — регистрация (публичный). */
     @PostMapping("/signup")
@@ -45,9 +53,42 @@ public class AuthController {
         return ResponseEntity.ok(authService.refresh(request));
     }
 
+    @PostMapping("/verify-email")
+    public ResponseEntity<Void> verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
+        emailVerificationService.verifyToken(request.token());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/resend-verification")
+    public ResponseEntity<Void> resendVerification(@AuthenticationPrincipal UserPrincipal principal) {
+        User user = userRepository.findById(principal.getId())
+                .orElseThrow(UserNotFoundException::new);
+        emailVerificationService.sendVerification(user);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/upgrade-guest")
+    public ResponseEntity<AuthResponse> upgradeGuest(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @Valid @RequestBody UpgradeGuestRequest request) {
+        return ResponseEntity.ok(authService.upgradeGuest(principal.getId(), request));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        passwordResetService.requestReset(request.email());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        passwordResetService.resetPassword(request.token(), request.newPassword());
+        return ResponseEntity.ok().build();
+    }
+
     /**
      * POST /api/v1/auth/logout — выход (требует авторизации).
-     * Access token → Redis blacklist.
+     * Access token → Redis blacklist (TTL = оставшееся время жизни).
      * Refresh token → удаляется из Redis (передаётся в теле, опционально).
      */
     @PostMapping("/logout")

@@ -10,7 +10,13 @@ export interface UserResponse {
   tzId: string
   plan: Plan
   role: Role
+  isEmailVerified: boolean
   createdAt: string
+}
+
+export interface NotificationBannerProps {
+  message: string
+  action?: { label: string; onClick: () => void }
 }
 
 export interface AuthResponse {
@@ -152,6 +158,41 @@ export interface FeedbackResponse {
   category: FeedbackCategory
   message: string
   createdAt: string
+}
+
+// ── Notification preferences ──────────────────────────────────────────────────
+
+export interface NotificationPreferences {
+  emailMemberJoined: boolean
+  emailMeetingReminder: boolean
+  inappMemberJoined: boolean
+  inappMeetingCreated: boolean
+}
+
+// ── Notifications ─────────────────────────────────────────────────────────────
+
+export type NotificationType = 'MEMBER_JOINED' | 'MEETING_CREATED'
+
+export interface NotificationResponse {
+  id: string
+  type: NotificationType
+  payload: Record<string, string>
+  read: boolean
+  createdAt: string
+}
+
+// ── Pagination ────────────────────────────────────────────────────────────────
+
+export interface PageResponse<T> {
+  items: T[]
+  totalElements: number
+  totalPages: number
+  page: number
+  size: number
+}
+
+export interface UnreadCountResponse {
+  count: number
 }
 
 // ── Error ─────────────────────────────────────────────────────────────────────

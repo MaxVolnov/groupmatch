@@ -2,6 +2,9 @@ package com.groupmatch.service;
 
 import com.groupmatch.domain.GrpMember;
 import com.groupmatch.domain.Meeting;
+import com.groupmatch.domain.MemberStatus;
+import com.groupmatch.domain.NotificationPreferences;
+import com.groupmatch.domain.NotificationType;
 import com.groupmatch.dto.meeting.MeetingRequest;
 import com.groupmatch.dto.meeting.MeetingResponse;
 import com.groupmatch.exception.*;
@@ -15,6 +18,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -23,6 +27,8 @@ public class MeetingService {
 
     private final MeetingRepository meetingRepository;
     private final GrpMemberRepository grpMemberRepository;
+    private final NotificationService notificationService;
+    private final NotificationPreferencesService notificationPreferencesService;
 
     @Transactional
     public MeetingResponse createMeeting(UUID groupId, UUID callerId, MeetingRequest req) {
@@ -37,7 +43,22 @@ public class MeetingService {
         meeting.setStartsAt(req.startsAt());
         meeting.setEndsAt(req.endsAt());
 
-        return toResponse(meetingRepository.save(meeting));
+        Meeting saved = meetingRepository.save(meeting);
+
+        grpMemberRepository.findByGroupAndStatus(groupId, MemberStatus.ACTIVE).forEach(m -> {
+            if (!m.getUser().equals(callerId)) {
+                NotificationPreferences memberPrefs = notificationPreferencesService.getOrCreate(m.getUser());
+                if (memberPrefs.isInappMeetingCreated()) {
+                    notificationService.create(m.getUser(), NotificationType.MEETING_CREATED, Map.of(
+                        "groupId", groupId.toString(),
+                        "meetingId", saved.getId().toString(),
+                        "meetingTitle", req.title()
+                    ));
+                }
+            }
+        });
+
+        return toResponse(saved);
     }
 
     @Transactional(readOnly = true)

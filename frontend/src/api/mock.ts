@@ -215,6 +215,7 @@ export const mockApi = {
         tzId: 'Europe/London',
         plan: 'PRO',
         role: 'USER',
+        isEmailVerified: true,
         createdAt: new Date().toISOString(),
       }
     },
@@ -407,6 +408,7 @@ export const mockApi = {
       tzId: 'Europe/London',
       plan: 'PRO',
       role: 'USER',
+      isEmailVerified: true,
       createdAt: '2025-01-01T00:00:00Z',
     }
     return {

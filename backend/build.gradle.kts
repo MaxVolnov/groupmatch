@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.groupmatch"
-version = "0.5.0"
+version = "0.6.0"
 
 java {
     toolchain {
@@ -32,6 +32,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    implementation("org.springframework.boot:spring-boot-starter-mail")
 
     // Database
     runtimeOnly("org.postgresql:postgresql")
@@ -62,6 +63,7 @@ dependencies {
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("org.apache.httpcomponents.client5:httpclient5")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation("org.junit.platform:junit-platform-suite")
     testImplementation(platform("org.testcontainers:testcontainers-bom:1.20.4"))
     testImplementation("org.testcontainers:junit-jupiter")
     testImplementation("org.testcontainers:postgresql")
@@ -70,6 +72,7 @@ dependencies {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    include("**/IntegrationTestSuite.class")
     finalizedBy(tasks.jacocoTestReport)
 }
 

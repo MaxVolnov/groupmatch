@@ -32,6 +32,19 @@ spring:
     redis:
       url: ${SPRING_REDIS_URL:redis://localhost:6379}
 
+  mail:
+    host: smtp.resend.com
+    port: 587
+    username: resend
+    password: ${RESEND_API_KEY:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
 server:
   port: 8080
   error:
@@ -66,6 +79,13 @@ app:
     refresh: 20
   cache:
     heatmap-ttl-minutes: 60
+  mail:
+    from: ${MAIL_FROM:noreply@groupmatch.app}
+    base-url: ${APP_BASE_URL:http://localhost:3000}
+  email-verification:
+    token-ttl-hours: 24
+  password-reset:
+    token-ttl-hours: 1
 
 logging:
   level:

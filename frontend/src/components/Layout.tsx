@@ -4,6 +4,7 @@ import { useAuthStore } from '@/store/auth'
 import { useThemeStore, applyTheme, type Theme } from '@/store/theme'
 import { Button } from './Button'
 import { FeedbackModal } from './FeedbackModal'
+import { NotificationBell } from './NotificationBell'
 
 interface LayoutProps {
   children: ReactNode
@@ -76,6 +77,7 @@ export function Layout({ children }: LayoutProps) {
           </Link>
 
           <div className="flex items-center gap-2">
+            {isAuthenticated && !isGuest && <NotificationBell />}
             <ThemeToggle />
 
             {isAuthenticated && (
