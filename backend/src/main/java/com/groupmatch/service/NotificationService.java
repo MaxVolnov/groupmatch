@@ -30,7 +30,7 @@ public class NotificationService {
 
     @Transactional(readOnly = true)
     public List<NotificationResponse> listForUser(UUID userId) {
-        return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId)
+        return notificationRepository.findTop50ByUserIdOrderByCreatedAtDesc(userId)
                 .stream().map(NotificationResponse::from).toList();
     }
 

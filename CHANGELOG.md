@@ -12,6 +12,23 @@ _Nothing yet._
 
 ---
 
+## [0.6.0] — 2026-06-24
+
+### Added
+- **In-app notification bell** — polling every 30 s; unread badge (capped at 9+); dropdown lists last 50 notifications; mark single or all as read (`MEMBER_JOINED`, `MEETING_CREATED` types)
+- **Email notifications** — owner receives an email when a member joins their group; group members receive a meeting-reminder email 55–65 min before a scheduled meeting (`MeetingReminderJob`, `@Scheduled` every 5 min)
+- **Notification preferences** — four per-user toggles (`emailMemberJoined`, `emailMeetingReminder`, `inappMemberJoined`, `inappMeetingCreated`); exposed on the Profile page; lazy-row creation on first use
+- **Guest account upgrade** — guest users can supply email + password + display name to convert to a full account; old refresh tokens are invalidated and a verification email is sent
+- Flyway migrations V14–V16: `notification` table (VARCHAR type column, JSONB payload), `meeting.reminder_sent` column, `notification_preferences` table
+- 13 new integration tests (orders 23–35) covering notifications, notification preferences, meeting-created notification, guest upgrade, email verification, and password reset
+
+### Technical
+- `NotificationRepository.findTop50ByUserIdOrderByCreatedAtDesc` replaces the unbounded query
+- `InviteService.joinByToken` now loads the group owner once instead of twice
+- `app.mail.from` in test config aligned to `test@groupmatch-test.io`
+
+---
+
 ## [0.4.1] — 2026-06-17
 
 ### Fixed

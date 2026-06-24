@@ -45,7 +45,7 @@ app:
   cache:
     heatmap-ttl-minutes: 60
   mail:
-    from: noreply@test.local
+    from: test@groupmatch-test.io
     base-url: http://localhost:3000
   email-verification:
     token-ttl-hours: 24
