@@ -49,7 +49,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
         if ("/api/v1/auth/signup".equals(path) || "/api/v1/auth/guest".equals(path)
                 || "/api/v1/auth/forgot-password".equals(path)
-                || "/api/v1/auth/resend-verification".equals(path)) {
+                || "/api/v1/auth/resend-verification".equals(path)
+                || "/api/v1/auth/upgrade-guest".equals(path)) {
             bucketMap = signupBuckets;
             capacity = signupCapacity;
         } else if ("/api/v1/auth/signin".equals(path)) {

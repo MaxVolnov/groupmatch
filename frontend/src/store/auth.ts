@@ -18,6 +18,7 @@ interface AuthState {
   logout: () => void
   refresh: () => Promise<string>
   setProfile: (userId: string, email: string, displayName: string, role: Role, plan: Plan) => void
+  upgradeGuest: (data: { email: string; password: string; displayName: string }) => Promise<void>
 }
 
 // Decode a JWT payload without verifying (client-side only)
@@ -96,6 +97,22 @@ export const useAuthStore = create<AuthState>()(
 
       setProfile: (userId, email, displayName, role, plan) => {
         set({ userId, email, displayName, role, plan })
+      },
+
+      upgradeGuest: async (data) => {
+        const response = await authApi.upgradeGuest(data)
+        const claims = decodeJwt(response.accessToken)
+        set({
+          accessToken: response.accessToken,
+          refreshToken: response.refreshToken,
+          userId: claims.sub as string,
+          email: claims.email as string,
+          displayName: data.displayName,
+          role: claims.role as Role,
+          plan: claims.plan as Plan,
+          isAuthenticated: true,
+          isGuest: false,
+        })
       },
     }),
     {

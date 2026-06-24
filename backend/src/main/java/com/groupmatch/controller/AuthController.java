@@ -67,6 +67,13 @@ public class AuthController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/upgrade-guest")
+    public ResponseEntity<AuthResponse> upgradeGuest(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @Valid @RequestBody UpgradeGuestRequest request) {
+        return ResponseEntity.ok(authService.upgradeGuest(principal.getId(), request));
+    }
+
     @PostMapping("/forgot-password")
     public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         passwordResetService.requestReset(request.email());

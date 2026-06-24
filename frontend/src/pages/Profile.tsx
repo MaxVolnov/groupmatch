@@ -14,6 +14,7 @@ import type { NotificationPreferences } from '@/types'
 export function Profile() {
   const qc = useQueryClient()
   const { isGuest, setProfile } = useAuthStore()
+  const upgradeGuest = useAuthStore((s) => s.upgradeGuest)
 
   const { data, isLoading, error: loadError } = useQuery({
     queryKey: ['me'],
@@ -52,6 +53,31 @@ export function Profile() {
   const toggle = (key: keyof NotificationPreferences) => {
     if (!prefs) return
     updatePrefs.mutate({ [key]: !prefs[key] })
+  }
+
+  const [upgradeEmail, setUpgradeEmail] = useState('')
+  const [upgradePassword, setUpgradePassword] = useState('')
+  const [upgradeDisplayName, setUpgradeDisplayName] = useState('')
+  const [upgradeError, setUpgradeError] = useState<string | null>(null)
+  const [upgradeSuccess, setUpgradeSuccess] = useState(false)
+  const [upgradeLoading, setUpgradeLoading] = useState(false)
+
+  const handleUpgrade = async () => {
+    setUpgradeError(null)
+    if (upgradePassword.length < 8) {
+      setUpgradeError('Password must be at least 8 characters')
+      return
+    }
+    setUpgradeLoading(true)
+    try {
+      await upgradeGuest({ email: upgradeEmail, password: upgradePassword, displayName: upgradeDisplayName })
+      setUpgradeSuccess(true)
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } } }
+      setUpgradeError(err?.response?.data?.message ?? 'Something went wrong')
+    } finally {
+      setUpgradeLoading(false)
+    }
   }
 
   return (
@@ -131,6 +157,56 @@ export function Profile() {
               Save changes
             </Button>
           </div>
+        )}
+
+        {isGuest && (
+          <section className="rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50/40 dark:bg-indigo-900/10 p-5 mt-6">
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
+              Set up your account
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Save your progress and access your groups from any device.
+            </p>
+            {upgradeSuccess ? (
+              <p className="text-sm text-green-600 dark:text-green-400">
+                ✓ Account created! Check your email to verify your address.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  placeholder="Display name"
+                  value={upgradeDisplayName}
+                  onChange={(e) => setUpgradeDisplayName(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                <input
+                  type="email"
+                  placeholder="Email address"
+                  value={upgradeEmail}
+                  onChange={(e) => setUpgradeEmail(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                <input
+                  type="password"
+                  placeholder="Password (min 8 characters)"
+                  value={upgradePassword}
+                  onChange={(e) => setUpgradePassword(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                {upgradeError && (
+                  <p className="text-sm text-red-600 dark:text-red-400">{upgradeError}</p>
+                )}
+                <button
+                  onClick={handleUpgrade}
+                  disabled={upgradeLoading || !upgradeEmail || !upgradePassword || !upgradeDisplayName}
+                  className="w-full rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 px-4 py-2 text-sm font-medium text-white transition-colors"
+                >
+                  {upgradeLoading ? 'Setting up…' : 'Create account'}
+                </button>
+              </div>
+            )}
+          </section>
         )}
 
         {!isGuest && (
