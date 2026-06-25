@@ -124,33 +124,32 @@ public class InviteService {
 
         UUID ownerId = ownerMembership.getUser();
         if (!ownerId.equals(callerId)) {
-            userRepository.findById(callerId).ifPresent(joiner ->
-                userRepository.findById(ownerId).ifPresent(owner ->
-                    groupRepository.findById(groupId).ifPresent(group -> {
-                        NotificationPreferences ownerPrefs = notificationPreferencesService.getOrCreate(ownerId);
-                        if (ownerPrefs.isInappMemberJoined()) {
-                            notificationService.create(ownerId, NotificationType.MEMBER_JOINED, Map.of(
-                                "groupId", groupId.toString(),
-                                "groupTitle", group.getTitle(),
-                                "joinerId", callerId.toString(),
-                                "joinerName", joiner.getDisplayName()
-                            ));
-                        }
-                        if (ownerPrefs.isEmailMemberJoined() && !owner.isGuest()) {
-                            try {
-                                emailService.sendMemberJoinedEmail(
-                                    owner.getEmail(),
-                                    owner.getDisplayName(),
-                                    joiner.getDisplayName(),
-                                    group.getTitle()
-                                );
-                            } catch (Exception e) {
-                                log.warn("Failed to send member joined email to ownerId={}. error={}", ownerId, e.getMessage());
-                            }
-                        }
-                    })
-                )
-            );
+            User joiner = userRepository.findById(callerId).orElse(null);
+            User owner  = userRepository.findById(ownerId).orElse(null);
+            Group group = groupRepository.findById(groupId).orElse(null);
+            if (joiner != null && owner != null && group != null) {
+                NotificationPreferences ownerPrefs = notificationPreferencesService.getOrCreate(ownerId);
+                if (ownerPrefs.isInappMemberJoined()) {
+                    notificationService.create(ownerId, NotificationType.MEMBER_JOINED, Map.of(
+                        "groupId", groupId.toString(),
+                        "groupTitle", group.getTitle(),
+                        "joinerId", callerId.toString(),
+                        "joinerName", joiner.getDisplayName()
+                    ));
+                }
+                if (ownerPrefs.isEmailMemberJoined() && !owner.isGuest()) {
+                    try {
+                        emailService.sendMemberJoinedEmail(
+                            owner.getEmail(),
+                            owner.getDisplayName(),
+                            joiner.getDisplayName(),
+                            group.getTitle()
+                        );
+                    } catch (Exception e) {
+                        log.warn("Failed to send member joined email to ownerId={}. error={}", ownerId, e.getMessage());
+                    }
+                }
+            }
         }
 
         return toResponse(invite);

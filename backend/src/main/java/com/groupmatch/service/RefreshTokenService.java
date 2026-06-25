@@ -40,12 +40,27 @@ public class RefreshTokenService {
     @Value("${jwt.expiration.refresh}")
     private long refreshExpirationMs;
 
+    @Value("${jwt.expiration.refresh-guest}")
+    private long refreshGuestExpirationMs;
+
     // ─── Создание ─────────────────────────────────────────────────────────────
 
     /** Генерирует и сохраняет новый refresh-токен для пользователя. */
     public String issue(UUID userId) {
         String token = generateToken();
         Duration ttl = Duration.ofMillis(refreshExpirationMs);
+
+        redis.opsForValue().set(REFRESH_PREFIX + token, userId.toString(), ttl);
+        redis.opsForSet().add(REFRESH_USER_PREFIX + userId, token);
+        redis.expire(REFRESH_USER_PREFIX + userId, ttl);
+
+        return token;
+    }
+
+    /** Генерирует refresh-токен с увеличенным TTL для гостевых аккаунтов (90 дней). */
+    public String issueForGuest(UUID userId) {
+        String token = generateToken();
+        Duration ttl = Duration.ofMillis(refreshGuestExpirationMs);
 
         redis.opsForValue().set(REFRESH_PREFIX + token, userId.toString(), ttl);
         redis.opsForSet().add(REFRESH_USER_PREFIX + userId, token);
