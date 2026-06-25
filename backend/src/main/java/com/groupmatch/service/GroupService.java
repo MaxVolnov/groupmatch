@@ -5,6 +5,7 @@ import com.groupmatch.dto.group.AddMemberRequest;
 import com.groupmatch.dto.group.GroupRequest;
 import com.groupmatch.dto.group.GroupResponse;
 import com.groupmatch.dto.group.MemberResponse;
+import com.groupmatch.dto.plan.PlanInfoResponse;
 import com.groupmatch.exception.*;
 import com.groupmatch.repository.AvailabilityRepository;
 import com.groupmatch.repository.GrpMemberRepository;
@@ -170,6 +171,13 @@ public class GroupService {
             availabilityRepository.deleteByGroupIdAndUserId(groupId, targetId);
         }
         grpMemberRepository.save(target);
+    }
+
+    @Transactional(readOnly = true)
+    public PlanInfoResponse getPlanInfo(UUID callerId, Plan callerPlan) {
+        int owned = (int) groupRepository.countByOwnerId(callerId);
+        int limit = callerPlan == Plan.FREE ? callerPlan.limits().maxGroups() : -1;
+        return new PlanInfoResponse(callerPlan.name(), owned, limit);
     }
 
     // --- helpers ---

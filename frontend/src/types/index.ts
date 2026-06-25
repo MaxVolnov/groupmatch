@@ -195,6 +195,14 @@ export interface UnreadCountResponse {
   count: number
 }
 
+// ── Plan ──────────────────────────────────────────────────────────────────────
+
+export interface PlanInfoResponse {
+  plan: Plan
+  ownedGroups: number
+  groupLimit: number  // -1 = unlimited
+}
+
 // ── Error ─────────────────────────────────────────────────────────────────────
 
 export interface ApiError {
