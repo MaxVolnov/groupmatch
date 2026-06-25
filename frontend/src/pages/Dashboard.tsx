@@ -182,6 +182,11 @@ export function Dashboard() {
 
   return (
     <Layout>
+      {isGuest && (
+        <div className="mb-4 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 text-sm text-amber-800 dark:text-amber-300 flex items-center justify-between gap-4">
+          <span>⚠️ You're using a guest account. Your session lasts 90 days — <Link to="/profile" className="underline font-medium">create an account</Link> to keep your data permanently.</span>
+        </div>
+      )}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">My Groups</h1>
         <Button onClick={handleCreateGroup}>+ New group</Button>

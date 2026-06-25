@@ -203,6 +203,29 @@ export interface PlanInfoResponse {
   groupLimit: number  // -1 = unlimited
 }
 
+// ── Subscription ─────────────────────────────────────────────────────────────
+
+export type SubscriptionStatus = 'PENDING' | 'ACTIVE' | 'EXPIRED' | 'CANCELLED' | 'FAILED'
+
+export interface SubscriptionResponse {
+  id: string
+  status: SubscriptionStatus
+  periodMonths: number
+  amountKopecks: number
+  expiresAt: string | null
+}
+
+export interface CreatePaymentRequest {
+  periodMonths: number
+}
+
+export interface CreatePaymentResponse {
+  subscriptionId: string
+  confirmationUrl: string | null
+  amountKopecks: number
+  currency: string
+}
+
 // ── Error ─────────────────────────────────────────────────────────────────────
 
 export interface ApiError {

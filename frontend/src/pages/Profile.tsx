@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { meApi } from '@/api/me'
+import { paymentsApi } from '@/api/payments'
 import { preferencesApi } from '@/api/preferences'
 import { useAuthStore } from '@/store/auth'
+import { usePlanInfo } from '@/hooks/usePlanInfo'
 import { Layout } from '@/components/Layout'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
@@ -54,6 +56,35 @@ export function Profile() {
     if (!prefs) return
     updatePrefs.mutate({ [key]: !prefs[key] })
   }
+
+  const { data: planInfo } = usePlanInfo()
+
+  const { data: subscription } = useQuery({
+    queryKey: ['subscription'],
+    queryFn: paymentsApi.getSubscription,
+    enabled: !isGuest,
+  })
+
+  const createPayment = useMutation({
+    mutationFn: paymentsApi.createPayment,
+    onSuccess: (res) => {
+      if (res.confirmationUrl) {
+        window.location.href = res.confirmationUrl
+      } else {
+        alert('Payment system is not configured yet. Check back soon!')
+      }
+    },
+  })
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('payment') === 'success') {
+      qc.invalidateQueries({ queryKey: ['me'] })
+      qc.invalidateQueries({ queryKey: ['planInfo'] })
+      qc.invalidateQueries({ queryKey: ['subscription'] })
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }, [qc])
 
   const [upgradeEmail, setUpgradeEmail] = useState('')
   const [upgradePassword, setUpgradePassword] = useState('')
@@ -113,9 +144,59 @@ export function Profile() {
               <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Email</span>
               <span className="text-sm text-gray-900 dark:text-gray-100">{data.email}</span>
             </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Plan</span>
-              <span className="text-sm text-gray-900 dark:text-gray-100">{data.plan}</span>
+            {/* Plan & Billing */}
+            <div className="flex flex-col gap-3">
+              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                Plan & Billing
+              </span>
+              {data.plan === 'FREE' && (
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div>
+                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Free</span>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      {planInfo
+                        ? `${planInfo.ownedGroups} / ${planInfo.groupLimit} groups used`
+                        : 'Up to 3 groups'}
+                    </p>
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      loading={createPayment.isPending}
+                      onClick={() => createPayment.mutate({ periodMonths: 1 })}
+                    >
+                      Monthly — 199 ₽
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      loading={createPayment.isPending}
+                      onClick={() => createPayment.mutate({ periodMonths: 12 })}
+                    >
+                      Yearly — 1 490 ₽
+                    </Button>
+                  </div>
+                </div>
+              )}
+              {data.plan === 'PRO' && (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 dark:text-indigo-400">
+                      <span>⚡</span> Pro
+                    </span>
+                    {subscription?.status === 'ACTIVE' && subscription.expiresAt && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        Renews {new Date(subscription.expiresAt).toLocaleDateString('ru-RU')}
+                      </p>
+                    )}
+                    {subscription?.status === 'EXPIRED' && (
+                      <p className="text-xs text-red-500 mt-0.5">Subscription expired</p>
+                    )}
+                  </div>
+                  <span className="text-xs text-gray-400 dark:text-gray-500">Unlimited groups</span>
+                </div>
+              )}
             </div>
 
             <div className="border-t border-gray-200 dark:border-gray-700" />
