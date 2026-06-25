@@ -1,24 +1,23 @@
 package com.groupmatch.service;
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
 
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
 import java.util.UUID;
 
-@Service
 @Slf4j
+@Service
 public class EmailService {
 
-    private final JavaMailSender mailSender;
+    private final RestClient restClient;
 
     @Value("${app.mail.from}")
     private String from;
@@ -26,8 +25,13 @@ public class EmailService {
     @Value("${app.mail.base-url}")
     private String baseUrl;
 
-    public EmailService(JavaMailSender mailSender) {
-        this.mailSender = mailSender;
+    @Value("${spring.mail.password:}")
+    private String resendApiKey;
+
+    public EmailService(ObjectMapper objectMapper) {
+        this.restClient = RestClient.builder()
+                .baseUrl("https://api.resend.com")
+                .build();
     }
 
     public void sendVerificationEmail(String to, String displayName, UUID token) {
@@ -79,17 +83,29 @@ public class EmailService {
     }
 
     private void send(String to, String subject, String htmlBody) {
+        if (resendApiKey == null || resendApiKey.isBlank()) {
+            log.warn("RESEND_API_KEY not configured, skipping email. to={}, subject={}", to, subject);
+            return;
+        }
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            helper.setFrom(from);
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(htmlBody, true);
-            mailSender.send(message);
-            log.info("Email sent. to={}, subject={}", to, subject);
-        } catch (MessagingException e) {
-            log.error("Failed to send email. to={}, subject={}, error={}", to, subject, e.getMessage(), e);
+            Map<String, Object> payload = Map.of(
+                "from", from,
+                "to", new String[]{to},
+                "subject", subject,
+                "html", htmlBody
+            );
+
+            restClient.post()
+                    .uri("/emails")
+                    .header("Authorization", "Bearer " + resendApiKey)
+                    .header("Content-Type", "application/json")
+                    .body(payload)
+                    .retrieve()
+                    .toBodilessEntity();
+
+            log.info("Email sent via Resend API. to={}, subject={}", to, subject);
+        } catch (Exception e) {
+            log.error("Failed to send email via Resend API. to={}, subject={}, error={}", to, subject, e.getMessage(), e);
             throw new RuntimeException("Failed to send email", e);
         }
     }
