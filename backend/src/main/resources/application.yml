@@ -87,6 +87,10 @@ app:
   password-reset:
     token-ttl-hours: 1
 
+yookassa:
+  shop-id: ${YOOKASSA_SHOP_ID:stub}
+  secret-key: ${YOOKASSA_SECRET_KEY:stub}
+
 logging:
   level:
     com.groupmatch: DEBUG

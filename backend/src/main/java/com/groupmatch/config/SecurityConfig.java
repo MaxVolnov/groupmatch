@@ -108,6 +108,7 @@ public class SecurityConfig {
                     "/api/v1/auth/verify-email",
                     "/api/v1/auth/forgot-password",
                     "/api/v1/auth/reset-password",
+                    "/api/v1/payments/yookassa/webhook",
                     "/actuator/health",
                     "/actuator/info"
                 ).permitAll()
