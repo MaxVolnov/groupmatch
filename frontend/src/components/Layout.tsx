@@ -66,7 +66,7 @@ export function Layout({ children }: LayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 overflow-x-hidden">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 overflow-x-hidden flex flex-col">
       <nav className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <Link
@@ -178,7 +178,7 @@ export function Layout({ children }: LayoutProps) {
         )}
       </nav>
 
-      <main className="mx-auto max-w-6xl px-4 py-6 md:py-8">{children}</main>
+      <main className="flex-1 mx-auto w-full max-w-6xl px-4 py-6 md:py-8">{children}</main>
 
       <Footer />
 

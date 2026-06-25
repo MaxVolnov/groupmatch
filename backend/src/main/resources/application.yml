@@ -33,17 +33,7 @@ spring:
       url: ${SPRING_REDIS_URL:redis://localhost:6379}
 
   mail:
-    host: smtp.resend.com
-    port: 587
-    username: resend
     password: ${RESEND_API_KEY:}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-            required: true
 
 server:
   port: 8080
@@ -86,6 +76,10 @@ app:
     token-ttl-hours: 24
   password-reset:
     token-ttl-hours: 1
+
+yookassa:
+  shop-id: ${YOOKASSA_SHOP_ID:stub}
+  secret-key: ${YOOKASSA_SECRET_KEY:stub}
 
 logging:
   level:
