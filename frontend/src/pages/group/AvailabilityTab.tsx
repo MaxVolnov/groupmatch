@@ -81,13 +81,17 @@ export function AvailabilityTab({ groupId, callerPlan }: Props) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['availability', groupId] })
+      qc.invalidateQueries({ queryKey: ['heatmap', groupId] })
       setNote('')
     },
   })
 
   const del = useMutation({
     mutationFn: (slotId: string) => availabilityApi.deleteSlot(groupId, slotId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['availability', groupId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['availability', groupId] })
+      qc.invalidateQueries({ queryKey: ['heatmap', groupId] })
+    },
   })
 
   const planLimits: Record<Plan, number> = { FREE: 50, PRO: 200, TEAM: 500 }
