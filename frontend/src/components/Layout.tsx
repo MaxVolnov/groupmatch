@@ -100,6 +100,12 @@ export function Layout({ children }: LayoutProps) {
                       <span>Admin</span>
                     </Link>
                   )}
+                  <Link
+                    to="/pricing"
+                    className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                  >
+                    Pricing
+                  </Link>
                   <button
                     onClick={() => setShowFeedback(true)}
                     className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
@@ -151,6 +157,13 @@ export function Layout({ children }: LayoutProps) {
                 <span>Admin Panel</span>
               </Link>
             )}
+            <Link
+              to="/pricing"
+              onClick={() => setMenuOpen(false)}
+              className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+            >
+              Pricing
+            </Link>
             <button
               onClick={() => { setMenuOpen(false); setShowFeedback(true) }}
               className="text-left text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"

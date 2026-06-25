@@ -1,6 +1,6 @@
 import { api } from './axios'
 import { IS_MOCK, mockApi } from './mock'
-import type { UserResponse } from '@/types'
+import type { PlanInfoResponse, UserResponse } from '@/types'
 
 export interface UpdateMeRequest {
   displayName?: string
@@ -13,4 +13,7 @@ export const meApi = {
 
   update: (data: UpdateMeRequest): Promise<UserResponse> =>
     IS_MOCK ? mockApi.me.update(data) : api.patch<UserResponse>('/me', data).then((r) => r.data),
+
+  getPlanInfo: (): Promise<PlanInfoResponse> =>
+    api.get<PlanInfoResponse>('/me/plan').then((r) => r.data),
 }
