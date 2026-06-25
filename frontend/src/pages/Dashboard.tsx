@@ -10,9 +10,11 @@ import { Input } from '@/components/Input'
 import { Modal } from '@/components/Modal'
 import { Skeleton } from '@/components/Skeleton'
 import { ErrorMessage } from '@/components/ErrorMessage'
+import { UpgradeModal } from '@/components/UpgradeModal'
 import type { GroupResponse } from '@/types'
 import { Layout } from '@/components/Layout'
 import { TIMEZONES, getBrowserTimezone } from '@/utils/timezones'
+import { usePlanInfo } from '@/hooks/usePlanInfo'
 
 function GroupCard({ group }: { group: GroupResponse }) {
   return (
@@ -57,7 +59,15 @@ function GroupCardSkeleton() {
   )
 }
 
-function CreateGroupModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+function CreateGroupModal({
+  open,
+  onClose,
+  onPlanLimitExceeded,
+}: {
+  open: boolean
+  onClose: () => void
+  onPlanLimitExceeded: () => void
+}) {
   const qc = useQueryClient()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -67,10 +77,18 @@ function CreateGroupModal({ open, onClose }: { open: boolean; onClose: () => voi
     mutationFn: () => groupsApi.create({ title, description: description || undefined, tzId }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['groups'] })
+      qc.invalidateQueries({ queryKey: ['planInfo'] })
       setTitle('')
       setDescription('')
       setTzId(getBrowserTimezone())
       onClose()
+    },
+    onError: (error) => {
+      const code = (error as { response?: { data?: { code?: string } } })?.response?.data?.code
+      if (code === 'plan_limit_exceeded') {
+        onClose()
+        onPlanLimitExceeded()
+      }
     },
   })
 
@@ -129,9 +147,19 @@ function CreateGroupModal({ open, onClose }: { open: boolean; onClose: () => voi
 
 export function Dashboard() {
   const [showCreate, setShowCreate] = useState(false)
+  const [showUpgrade, setShowUpgrade] = useState(false)
   const [resendSent, setResendSent] = useState(false)
   const isGuest = useAuthStore((s) => s.isGuest)
   const qc = useQueryClient()
+  const { data: planInfo } = usePlanInfo()
+
+  const handleCreateGroup = () => {
+    if (planInfo && planInfo.groupLimit !== -1 && planInfo.ownedGroups >= planInfo.groupLimit) {
+      setShowUpgrade(true)
+    } else {
+      setShowCreate(true)
+    }
+  }
 
   const { data: groups, isLoading, error } = useQuery({
     queryKey: ['groups'],
@@ -156,7 +184,7 @@ export function Dashboard() {
     <Layout>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">My Groups</h1>
-        <Button onClick={() => setShowCreate(true)}>+ New group</Button>
+        <Button onClick={handleCreateGroup}>+ New group</Button>
       </div>
 
       {!isGuest && !isEmailVerified && (
@@ -192,7 +220,7 @@ export function Dashboard() {
           <p className="text-gray-500 dark:text-gray-400">No groups yet.</p>
           <button
             className="mt-2 inline-flex items-center justify-center min-h-[44px] px-4 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
-            onClick={() => setShowCreate(true)}
+            onClick={handleCreateGroup}
           >
             Create your first group →
           </button>
@@ -207,7 +235,12 @@ export function Dashboard() {
         </div>
       )}
 
-      <CreateGroupModal open={showCreate} onClose={() => setShowCreate(false)} />
+      <CreateGroupModal
+        open={showCreate}
+        onClose={() => setShowCreate(false)}
+        onPlanLimitExceeded={() => { setShowCreate(false); setShowUpgrade(true) }}
+      />
+      <UpgradeModal open={showUpgrade} onClose={() => setShowUpgrade(false)} />
     </Layout>
   )
 }
