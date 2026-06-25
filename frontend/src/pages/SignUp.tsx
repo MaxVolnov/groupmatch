@@ -76,9 +76,11 @@ export function SignUp() {
             />
             <span>
               I agree to the{' '}
-              <Link to="/legal#terms" className="text-indigo-600 hover:underline">Terms of Service</Link>
+              <a href={`${import.meta.env.BASE_URL}legal#terms`} target="_blank" rel="noopener noreferrer"
+                 className="text-indigo-600 hover:underline">Terms of Service</a>
               {' '}and{' '}
-              <Link to="/legal#privacy" className="text-indigo-600 hover:underline">Privacy Policy</Link>
+              <a href={`${import.meta.env.BASE_URL}legal#privacy`} target="_blank" rel="noopener noreferrer"
+                 className="text-indigo-600 hover:underline">Privacy Policy</a>
             </span>
           </label>
           <Button type="submit" loading={loading} disabled={!agreedToTerms || loading} className="mt-2 w-full justify-center">
