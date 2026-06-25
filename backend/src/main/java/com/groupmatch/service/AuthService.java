@@ -189,7 +189,9 @@ public class AuthService {
 
     private AuthResponse issueTokenPair(UUID userId, String email, Role role, Plan plan, boolean isGuest) {
         String accessToken  = jwtUtils.generateAccessToken(userId, email, role, plan, isGuest);
-        String refreshToken = refreshTokenService.issue(userId);
+        String refreshToken = isGuest
+                ? refreshTokenService.issueForGuest(userId)
+                : refreshTokenService.issue(userId);
         return new AuthResponse(accessToken, refreshToken, 900L);
     }
 }

@@ -17,20 +17,20 @@ function resolveMessage(error: unknown): string {
         const seconds = parseInt(retryAfter, 10)
         if (!isNaN(seconds)) {
           const minutes = Math.ceil(seconds / 60)
-          return `Слишком много попыток. Подождите ${minutes} мин. и попробуйте снова.`
+          return `Too many attempts. Please wait ${minutes} min. and try again.`
         }
       }
-      return 'Слишком много попыток. Подождите немного и попробуйте снова.'
+      return 'Too many attempts. Please wait a moment and try again.'
     }
 
     if (backendMsg) return backendMsg
 
     if (!error.response) {
-      return 'Не удаётся подключиться к серверу. Проверьте соединение.'
+      return 'Cannot connect to the server. Check your connection.'
     }
-    if (status === 404) return 'Не найдено.'
+    if (status === 404) return 'Not found.'
     if (status === 500 || status === 502 || status === 503) {
-      return 'Что-то пошло не так на сервере. Попробуйте позже.'
+      return 'Something went wrong on the server. Please try again later.'
     }
     return error.message
   }

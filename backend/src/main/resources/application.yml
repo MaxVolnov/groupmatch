@@ -53,8 +53,9 @@ management:
 jwt:
   secret: ${JWT_SECRET:dev-secret-key-change-in-production-min-256-bits-12345678901234567890}
   expiration:
-    access: 900000       # 15 minutes
-    refresh: 1209600000  # 14 days
+    access: 900000         # 15 minutes
+    refresh: 1209600000    # 14 days (regular users)
+    refresh-guest: 7776000000  # 90 days (guest users)
 
 app:
   cors:
