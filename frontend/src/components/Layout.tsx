@@ -4,6 +4,7 @@ import { useAuthStore } from '@/store/auth'
 import { useThemeStore, applyTheme, type Theme } from '@/store/theme'
 import { Button } from './Button'
 import { FeedbackModal } from './FeedbackModal'
+import { Footer } from './Footer'
 import { NotificationBell } from './NotificationBell'
 
 interface LayoutProps {
@@ -178,6 +179,8 @@ export function Layout({ children }: LayoutProps) {
       </nav>
 
       <main className="mx-auto max-w-6xl px-4 py-6 md:py-8">{children}</main>
+
+      <Footer />
 
       <FeedbackModal open={showFeedback} onClose={() => setShowFeedback(false)} />
     </div>

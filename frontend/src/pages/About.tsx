@@ -13,7 +13,7 @@ export function About() {
           back-and-forth emails needed.
         </p>
         <p className="text-gray-600 dark:text-gray-400 mb-8">
-          Built by Maxim Volnov as an indie project.
+          Built by Max Wave Studio.
         </p>
         <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide mb-3">

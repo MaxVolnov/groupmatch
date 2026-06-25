@@ -13,7 +13,7 @@ export function Footer() {
           <div>
             <p className="text-white font-bold mb-2">GroupMatch</p>
             <p className="text-sm mb-4">Group scheduling made simple.</p>
-            <p className="text-xs">© 2025 Волнов Максим Юрьевич</p>
+            <p className="text-xs">© 2026 Max Wave Studio</p>
             <p className="text-xs">ИНН: 771887947687</p>
             <a
               href="mailto:volnov.max@yandex.ru"
