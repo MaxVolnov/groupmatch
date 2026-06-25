@@ -1,3 +1,7 @@
+-- V6 created a billing stub with a different schema (UNIQUE user_id, stripe_sub_id, valid_until).
+-- Drop it along with its trigger and index before creating the real table.
+DROP TABLE IF EXISTS subscription CASCADE;
+
 CREATE TABLE subscription (
     id                   UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id              UUID        NOT NULL REFERENCES app_user(id) ON DELETE CASCADE,
