@@ -64,6 +64,7 @@ function App() {
               </AdminRoute>
             }
           />
+          <Route path="/terms" element={<Navigate to="/legal#terms" replace />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/about" element={<About />} />
           <Route path="/legal" element={<Legal />} />

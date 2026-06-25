@@ -15,6 +15,7 @@ export function SignUp() {
   const [displayName, setDisplayName] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
@@ -66,7 +67,21 @@ export function SignUp() {
             autoComplete="new-password"
           />
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
-          <Button type="submit" loading={loading} className="mt-2 w-full justify-center">
+          <label className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={agreedToTerms}
+              onChange={(e) => setAgreedToTerms(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+            />
+            <span>
+              I agree to the{' '}
+              <Link to="/legal#terms" className="text-indigo-600 hover:underline">Terms of Service</Link>
+              {' '}and{' '}
+              <Link to="/legal#privacy" className="text-indigo-600 hover:underline">Privacy Policy</Link>
+            </span>
+          </label>
+          <Button type="submit" loading={loading} disabled={!agreedToTerms || loading} className="mt-2 w-full justify-center">
             Create account
           </Button>
         </form>
