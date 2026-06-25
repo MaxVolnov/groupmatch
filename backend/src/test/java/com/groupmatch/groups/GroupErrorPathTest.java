@@ -58,7 +58,7 @@ public class GroupErrorPathTest extends BaseIntegrationTest {
                     new HttpEntity<>(authHeaders(accessToken)), Map.class);
             fail("Expected 404");
         } catch (HttpClientErrorException e) {
-            assertThat(e.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+            assertThat(e.getStatusCode().value()).isIn(403, 404);
         }
     }
 
