@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { groupsApi } from '@/api/groups'
@@ -58,6 +58,13 @@ export function GroupPage() {
     setShowCreateMeeting(false)
     setMeetingPrefill(undefined)
   }
+
+  useEffect(() => {
+    if (group?.title) {
+      document.title = `${group.title} · GroupMatch`
+    }
+    return () => { document.title = 'GroupMatch' }
+  }, [group?.title])
 
   const handleHeatmapSlotClick = (slot: HeatmapSlot) => {
     const start = DateTime.fromISO(slot.startsAt)
