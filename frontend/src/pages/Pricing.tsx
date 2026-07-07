@@ -82,6 +82,7 @@ export function Pricing() {
             >
               Upgrade to Pro
             </Link>
+            <p className="text-xs text-center text-gray-500 mt-2">Coming soon</p>
           </div>
         </div>
 

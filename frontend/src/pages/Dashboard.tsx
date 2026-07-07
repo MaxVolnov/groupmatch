@@ -154,11 +154,16 @@ export function Dashboard() {
   const { data: planInfo } = usePlanInfo()
 
   const handleCreateGroup = () => {
-    if (planInfo && planInfo.groupLimit !== -1 && planInfo.ownedGroups >= planInfo.groupLimit) {
+    if (
+      import.meta.env.VITE_MONETIZATION_ENABLED === 'true' &&
+      planInfo &&
+      planInfo.groupLimit !== -1 &&
+      planInfo.ownedGroups >= planInfo.groupLimit
+    ) {
       setShowUpgrade(true)
-    } else {
-      setShowCreate(true)
+      return
     }
+    setShowCreate(true)
   }
 
   const { data: groups, isLoading, error } = useQuery({
@@ -245,7 +250,9 @@ export function Dashboard() {
         onClose={() => setShowCreate(false)}
         onPlanLimitExceeded={() => { setShowCreate(false); setShowUpgrade(true) }}
       />
-      <UpgradeModal open={showUpgrade} onClose={() => setShowUpgrade(false)} />
+      {import.meta.env.VITE_MONETIZATION_ENABLED === 'true' && (
+        <UpgradeModal open={showUpgrade} onClose={() => setShowUpgrade(false)} />
+      )}
     </Layout>
   )
 }
