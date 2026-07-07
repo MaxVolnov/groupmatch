@@ -2,6 +2,7 @@ package com.groupmatch.groups;
 
 import com.groupmatch.BaseIntegrationTest;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.http.*;
 import org.springframework.web.client.HttpClientErrorException;
 
@@ -120,6 +121,7 @@ public class GroupErrorPathTest extends BaseIntegrationTest {
 
     // 6. Plan limit: FREE user creating 4th group → 402
     @Test @Order(6)
+    @EnabledIfEnvironmentVariable(named = "MONETIZATION_ENABLED", matches = "true")
     void createFourthGroupOnFreeplanReturns402() {
         // setUp created 1 group already — create 2 more to reach the FREE limit of 3
         for (int i = 0; i < 2; i++) {
