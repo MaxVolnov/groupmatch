@@ -12,6 +12,7 @@ import com.groupmatch.repository.GrpMemberRepository;
 import com.groupmatch.repository.GroupRepository;
 import com.groupmatch.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,13 +31,18 @@ public class GroupService {
     private final UserRepository userRepository;
     private final AvailabilityRepository availabilityRepository;
 
+    @Value("${app.features.monetization-enabled}")
+    private boolean monetizationEnabled;
+
     @Transactional
     public GroupResponse createGroup(UUID callerId, Plan callerPlan, GroupRequest req) {
-        long owned = groupRepository.countByOwnerId(callerId);
-        int maxGroups = callerPlan.limits().maxGroups();
-        if (owned >= maxGroups) {
-            throw new PlanLimitExceededException(
-                    "Plan limit reached: max " + maxGroups + " groups for " + callerPlan + " plan");
+        if (monetizationEnabled) {
+            long owned = groupRepository.countByOwnerId(callerId);
+            int maxGroups = callerPlan.limits().maxGroups();
+            if (owned >= maxGroups) {
+                throw new PlanLimitExceededException(
+                        "Plan limit reached: max " + maxGroups + " groups for " + callerPlan + " plan");
+            }
         }
 
         User owner = userRepository.findById(callerId)

@@ -144,60 +144,71 @@ export function Profile() {
               <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Email</span>
               <span className="text-sm text-gray-900 dark:text-gray-100">{data.email}</span>
             </div>
-            {/* Plan & Billing */}
-            <div className="flex flex-col gap-3">
-              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                Plan & Billing
-              </span>
-              {data.plan === 'FREE' && (
-                <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <div>
-                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Free</span>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                      {planInfo
-                        ? `${planInfo.ownedGroups} / ${planInfo.groupLimit} groups used`
-                        : 'Up to 3 groups'}
-                    </p>
-                  </div>
-                  <div className="flex gap-2 flex-wrap">
-                    <Button
-                      size="sm"
-                      variant="primary"
-                      loading={createPayment.isPending}
-                      onClick={() => createPayment.mutate({ periodMonths: 1 })}
-                    >
-                      Monthly — 199 ₽
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      loading={createPayment.isPending}
-                      onClick={() => createPayment.mutate({ periodMonths: 12 })}
-                    >
-                      Yearly — 1 490 ₽
-                    </Button>
-                  </div>
-                </div>
-              )}
-              {data.plan === 'PRO' && (
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 dark:text-indigo-400">
-                      <span>⚡</span> Pro
-                    </span>
-                    {subscription?.status === 'ACTIVE' && subscription.expiresAt && (
+            {import.meta.env.VITE_MONETIZATION_ENABLED !== 'true' && (
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                  Plan
+                </span>
+                <span className="text-sm text-gray-900 dark:text-gray-100">
+                  {data.plan === 'PRO' ? '⚡ Pro' : 'Free'}
+                </span>
+              </div>
+            )}
+            {import.meta.env.VITE_MONETIZATION_ENABLED === 'true' && (
+              <div className="flex flex-col gap-3">
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                  Plan & Billing
+                </span>
+                {data.plan === 'FREE' && (
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div>
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Free</span>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        Renews {new Date(subscription.expiresAt).toLocaleDateString('ru-RU')}
+                        {planInfo
+                          ? `${planInfo.ownedGroups} / ${planInfo.groupLimit} groups used`
+                          : 'Up to 3 groups'}
                       </p>
-                    )}
-                    {subscription?.status === 'EXPIRED' && (
-                      <p className="text-xs text-red-500 mt-0.5">Subscription expired</p>
-                    )}
+                    </div>
+                    <div className="flex gap-2 flex-wrap">
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        loading={createPayment.isPending}
+                        onClick={() => createPayment.mutate({ periodMonths: 1 })}
+                      >
+                        Monthly — 199 ₽
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        loading={createPayment.isPending}
+                        onClick={() => createPayment.mutate({ periodMonths: 12 })}
+                      >
+                        Yearly — 1 490 ₽
+                      </Button>
+                    </div>
                   </div>
-                  <span className="text-xs text-gray-400 dark:text-gray-500">Unlimited groups</span>
-                </div>
-              )}
-            </div>
+                )}
+                {data.plan === 'PRO' && (
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 dark:text-indigo-400">
+                        <span>⚡</span> Pro
+                      </span>
+                      {subscription?.status === 'ACTIVE' && subscription.expiresAt && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          Renews {new Date(subscription.expiresAt).toLocaleDateString('ru-RU')}
+                        </p>
+                      )}
+                      {subscription?.status === 'EXPIRED' && (
+                        <p className="text-xs text-red-500 mt-0.5">Subscription expired</p>
+                      )}
+                    </div>
+                    <span className="text-xs text-gray-400 dark:text-gray-500">Unlimited groups</span>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="border-t border-gray-200 dark:border-gray-700" />
 
