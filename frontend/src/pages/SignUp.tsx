@@ -1,5 +1,5 @@
 import { FormEvent, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { authApi } from '@/api/auth'
 import { useAuthStore } from '@/store/auth'
 import { Button } from '@/components/Button'
@@ -10,12 +10,17 @@ import type { ApiError } from '@/types'
 export function SignUp() {
   const navigate = useNavigate()
   const login = useAuthStore((s) => s.login)
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
+
+  if (isAuthenticated) {
+    return <Navigate to="/" replace />
+  }
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
