@@ -11,16 +11,16 @@ export function SignUp() {
   const navigate = useNavigate()
   const login = useAuthStore((s) => s.login)
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
-
-  if (isAuthenticated) {
-    return <Navigate to="/" replace />
-  }
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
+
+  if (isAuthenticated) {
+    return <Navigate to="/" replace />
+  }
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
