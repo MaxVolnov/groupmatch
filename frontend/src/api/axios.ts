@@ -47,8 +47,13 @@ api.interceptors.response.use(
     } catch (e) {
       queue.forEach((q) => q.reject(e))
       queue = []
-      useAuthStore.getState().logout()
-      window.location.href = `${import.meta.env.BASE_URL}signin`
+      const status = (e as { response?: { status?: number } })?.response?.status
+      // Логаутим только если сервер явно сказал что токен невалиден
+      // Не логаутим при сетевых ошибках (timeout, Railway restart и т.д.)
+      if (status === 401 || status === 403) {
+        useAuthStore.getState().logout()
+        window.location.replace(`${window.location.origin}/signin`)
+      }
       return Promise.reject(e)
     } finally {
       refreshing = false
