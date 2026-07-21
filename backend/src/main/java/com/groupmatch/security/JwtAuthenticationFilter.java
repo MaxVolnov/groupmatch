@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -38,13 +39,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final String BLACKLIST_PREFIX = "blacklist:access:";
 
+    // Must match exactly the permitAll() paths in SecurityConfig — not more, not less.
+    private static final Set<String> PUBLIC_PATHS = Set.of(
+            "/api/v1/auth/signup",
+            "/api/v1/auth/signin",
+            "/api/v1/auth/guest",
+            "/api/v1/auth/refresh",
+            "/api/v1/auth/verify-email",
+            "/api/v1/auth/forgot-password",
+            "/api/v1/auth/reset-password",
+            "/api/v1/payments/yookassa/webhook",
+            "/actuator/health",
+            "/actuator/info"
+    );
+
     private final JwtUtils jwtUtils;
     private final StringRedisTemplate redisTemplate;
 
     @Override
     protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
-        String path = request.getRequestURI();
-        return path.startsWith("/api/v1/auth/") || path.startsWith("/api/v1/payments/yookassa/");
+        return PUBLIC_PATHS.contains(request.getRequestURI());
     }
 
     @Override
