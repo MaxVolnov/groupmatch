@@ -82,6 +82,20 @@ export const useAuthStore = create<AuthState>()(
         if (!refreshToken) throw new Error('No refresh token')
         const data = await authApi.refresh(refreshToken)
         const claims = decodeJwt(data.accessToken)
+
+        // Сразу записываем новый refreshToken в localStorage
+        // чтобы при следующем refresh использовался актуальный токен
+        try {
+          const stored = JSON.parse(localStorage.getItem('groupmatch-auth') || '{}')
+          if (stored.state) {
+            stored.state.refreshToken = data.refreshToken
+            stored.state.accessToken = data.accessToken
+            localStorage.setItem('groupmatch-auth', JSON.stringify(stored))
+          }
+        } catch {
+          // ignore localStorage errors
+        }
+
         set({
           accessToken: data.accessToken,
           refreshToken: data.refreshToken,
