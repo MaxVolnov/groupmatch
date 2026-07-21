@@ -90,7 +90,16 @@
       "noAvailability": "No availability for this week.",
       "members": "members",
       "available": "available",
-      "clickToSchedule": "— click to schedule a meeting"
+      "clickToSchedule": "— click to schedule a meeting",
+      "day": {
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat",
+        "sun": "Sun"
+      }
     },
     "meetingsTab": {
       "schedule": "+ Schedule meeting",

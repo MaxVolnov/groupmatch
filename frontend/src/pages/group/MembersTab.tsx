@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { groupsApi } from '@/api/groups'
 import { invitesApi } from '@/api/invites'
 import { Button } from '@/components/Button'
@@ -15,6 +16,7 @@ interface Props {
 }
 
 function InviteSection({ group }: { group: GroupResponse }) {
+  const { t } = useTranslation()
   const qc = useQueryClient()
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
@@ -38,14 +40,14 @@ function InviteSection({ group }: { group: GroupResponse }) {
   return (
     <div className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-6">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="font-medium text-gray-900 dark:text-gray-100">Invite links</h3>
+        <h3 className="font-medium text-gray-900 dark:text-gray-100">{t('group.membersTab.inviteLinks')}</h3>
         <Button size="sm" loading={create.isPending} onClick={() => create.mutate()}>
-          + New link
+          {t('group.membersTab.newLink')}
         </Button>
       </div>
       {create.error && <ErrorMessage error={create.error} />}
       {invites && invites.length === 0 && (
-        <p className="text-sm text-gray-500 dark:text-gray-400">🔗 No active invite links.</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{t('group.membersTab.noInvites')}</p>
       )}
       <div className="flex flex-col gap-2">
         {invites?.map((inv) => (
@@ -63,14 +65,14 @@ function InviteSection({ group }: { group: GroupResponse }) {
                 setCopiedId(inv.id)
                 setTimeout(() => setCopiedId(null), 2000)
               }}
-              title="Copy link"
+              title={t('group.membersTab.copyLink')}
             >
               {copiedId === inv.id ? '✓' : '📋'}
             </button>
             <button
               className="flex items-center justify-center min-h-[44px] min-w-[44px] text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
               onClick={() => revoke.mutate(inv.id)}
-              title="Revoke"
+              title={t('group.membersTab.revoke')}
             >
               ✕
             </button>
@@ -98,6 +100,7 @@ function MembersSkeletonList() {
 }
 
 export function MembersTab({ group, currentUserId }: Props) {
+  const { t } = useTranslation()
   const qc = useQueryClient()
   const isOwner = group.ownerId === currentUserId
   const [addOpen, setAddOpen] = useState(false)
@@ -130,7 +133,7 @@ export function MembersTab({ group, currentUserId }: Props) {
       {isOwner && (
         <div className="mb-4 flex justify-end">
           <Button size="sm" onClick={() => setAddOpen(true)}>
-            + Add member
+            {t('group.membersTab.addMember')}
           </Button>
         </div>
       )}
@@ -157,7 +160,7 @@ export function MembersTab({ group, currentUserId }: Props) {
                 onClick={() => removeMember.mutate(m.userId)}
                 loading={removeMember.isPending}
               >
-                Ban
+                {t('group.membersTab.ban')}
               </Button>
             )}
             {!isOwner && m.userId === currentUserId && (
@@ -167,7 +170,7 @@ export function MembersTab({ group, currentUserId }: Props) {
                 onClick={() => removeMember.mutate(m.userId)}
                 loading={removeMember.isPending}
               >
-                Leave
+                {t('group.membersTab.leave')}
               </Button>
             )}
           </div>
@@ -177,28 +180,28 @@ export function MembersTab({ group, currentUserId }: Props) {
       {isOwner && <InviteSection group={group} />}
 
       <Modal
-        title="Add member"
+        title={t('group.membersTab.addMemberModal.title')}
         open={addOpen}
         onClose={() => setAddOpen(false)}
         footer={
           <>
-            <Button variant="secondary" onClick={() => setAddOpen(false)}>Cancel</Button>
+            <Button variant="secondary" onClick={() => setAddOpen(false)}>{t('group.membersTab.addMemberModal.cancel')}</Button>
             <Button
               loading={addMember.isPending}
               disabled={!addUserId.trim()}
               onClick={() => addMember.mutate()}
             >
-              Add
+              {t('group.membersTab.addMemberModal.add')}
             </Button>
           </>
         }
       >
         <div className="flex flex-col gap-3">
           <Input
-            label="User ID"
+            label={t('group.membersTab.addMemberModal.userId')}
             value={addUserId}
             onChange={(e) => setAddUserId(e.target.value)}
-            placeholder="UUID of the user"
+            placeholder={t('group.membersTab.addMemberModal.userIdPlaceholder')}
           />
           {addMember.error && <ErrorMessage error={addMember.error} />}
         </div>

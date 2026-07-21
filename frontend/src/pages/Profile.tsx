@@ -75,7 +75,7 @@ export function Profile() {
       if (res.confirmationUrl) {
         window.location.href = res.confirmationUrl
       } else {
-        alert('Payment system is not configured yet. Check back soon!')
+        alert(t('profile.paymentNotConfigured'))
       }
     },
   })
@@ -100,7 +100,7 @@ export function Profile() {
   const handleUpgrade = async () => {
     setUpgradeError(null)
     if (upgradePassword.length < 8) {
-      setUpgradeError('Password must be at least 8 characters')
+      setUpgradeError(t('profile.passwordTooShort'))
       return
     }
     setUpgradeLoading(true)
@@ -109,7 +109,7 @@ export function Profile() {
       setUpgradeSuccess(true)
     } catch (e: unknown) {
       const err = e as { response?: { data?: { message?: string } } }
-      setUpgradeError(err?.response?.data?.message ?? 'Something went wrong')
+      setUpgradeError(err?.response?.data?.message ?? t('errors.somethingWrong'))
     } finally {
       setUpgradeLoading(false)
     }
@@ -119,16 +119,16 @@ export function Profile() {
     <Layout>
       <div className="max-w-lg">
         <div className="flex items-center gap-3 mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">My Profile</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('profile.myProfile')}</h1>
           {isGuest && (
             <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-full">
-              Guest
+              {t('profile.guest')}
             </span>
           )}
         </div>
         {isGuest && (
           <p className="mb-4 text-sm text-gray-500 dark:text-gray-400 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3">
-            Guest account — your data is tied to this device session.
+            {t('profile.guestNote')}
           </p>
         )}
 
@@ -145,7 +145,7 @@ export function Profile() {
           <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 flex flex-col gap-5">
             {/* Read-only info */}
             <div className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Email</span>
+              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t('profile.email')}</span>
               <span className="text-sm text-gray-900 dark:text-gray-100">{data.email}</span>
             </div>
 
@@ -181,26 +181,26 @@ export function Profile() {
             {import.meta.env.VITE_MONETIZATION_ENABLED !== 'true' && (
               <div className="flex flex-col gap-1">
                 <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                  Plan
+                  {t('profile.plan')}
                 </span>
                 <span className="text-sm text-gray-900 dark:text-gray-100">
-                  {data.plan === 'PRO' ? '⚡ Pro' : 'Free'}
+                  {data.plan === 'PRO' ? t('profile.pro') : t('profile.free')}
                 </span>
               </div>
             )}
             {import.meta.env.VITE_MONETIZATION_ENABLED === 'true' && (
               <div className="flex flex-col gap-3">
                 <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                  Plan & Billing
+                  {t('profile.planBilling')}
                 </span>
                 {data.plan === 'FREE' && (
                   <div className="flex items-center justify-between gap-3 flex-wrap">
                     <div>
-                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Free</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{t('profile.free')}</span>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                         {planInfo
-                          ? `${planInfo.ownedGroups} / ${planInfo.groupLimit} groups used`
-                          : 'Up to 3 groups'}
+                          ? `${planInfo.ownedGroups} / ${planInfo.groupLimit} ${t('profile.groupsUsed')}`
+                          : t('profile.upToGroups')}
                       </p>
                     </div>
                     <div className="flex gap-2 flex-wrap">
@@ -210,7 +210,7 @@ export function Profile() {
                         loading={createPayment.isPending}
                         onClick={() => createPayment.mutate({ periodMonths: 1 })}
                       >
-                        Monthly — 199 ₽
+                        {t('profile.monthly')}
                       </Button>
                       <Button
                         size="sm"
@@ -218,7 +218,7 @@ export function Profile() {
                         loading={createPayment.isPending}
                         onClick={() => createPayment.mutate({ periodMonths: 12 })}
                       >
-                        Yearly — 1 490 ₽
+                        {t('profile.yearly')}
                       </Button>
                     </div>
                   </div>
@@ -227,18 +227,18 @@ export function Profile() {
                   <div className="flex items-center justify-between">
                     <div>
                       <span className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 dark:text-indigo-400">
-                        <span>⚡</span> Pro
+                        <span>⚡</span> {t('pricing.pro')}
                       </span>
                       {subscription?.status === 'ACTIVE' && subscription.expiresAt && (
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                          Renews {new Date(subscription.expiresAt).toLocaleDateString('ru-RU')}
+                          {t('profile.renews')} {new Date(subscription.expiresAt).toLocaleDateString('ru-RU')}
                         </p>
                       )}
                       {subscription?.status === 'EXPIRED' && (
-                        <p className="text-xs text-red-500 mt-0.5">Subscription expired</p>
+                        <p className="text-xs text-red-500 mt-0.5">{t('profile.subscriptionExpired')}</p>
                       )}
                     </div>
-                    <span className="text-xs text-gray-400 dark:text-gray-500">Unlimited groups</span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500">{t('profile.unlimitedGroups')}</span>
                   </div>
                 )}
               </div>
@@ -248,7 +248,7 @@ export function Profile() {
 
             {/* Editable fields */}
             <Input
-              label="Display name"
+              label={t('profile.displayName')}
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               minLength={2}
@@ -257,7 +257,7 @@ export function Profile() {
             />
 
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Timezone</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('profile.timezone')}</label>
               <select
                 value={tzId}
                 onChange={(e) => setTzId(e.target.value)}
@@ -271,7 +271,7 @@ export function Profile() {
 
             {update.error && <ErrorMessage error={update.error} />}
             {update.isSuccess && (
-              <p className="text-sm text-green-600 dark:text-green-400">Saved.</p>
+              <p className="text-sm text-green-600 dark:text-green-400">{t('profile.saved')}</p>
             )}
 
             <Button
@@ -280,7 +280,7 @@ export function Profile() {
               onClick={() => update.mutate()}
               className="w-full justify-center"
             >
-              Save changes
+              {t('profile.saveChanges')}
             </Button>
           </div>
         )}
@@ -288,34 +288,34 @@ export function Profile() {
         {isGuest && (
           <section className="rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50/40 dark:bg-indigo-900/10 p-5 mt-6">
             <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
-              Set up your account
+              {t('profile.setUpAccount')}
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              Save your progress and access your groups from any device.
+              {t('profile.setUpAccountDesc')}
             </p>
             {upgradeSuccess ? (
               <p className="text-sm text-green-600 dark:text-green-400">
-                ✓ Account created! Check your email to verify your address.
+                {t('profile.accountCreated')}
               </p>
             ) : (
               <div className="space-y-3">
                 <input
                   type="text"
-                  placeholder="Display name"
+                  placeholder={t('profile.namePlaceholder')}
                   value={upgradeDisplayName}
                   onChange={(e) => setUpgradeDisplayName(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
                 <input
                   type="email"
-                  placeholder="Email address"
+                  placeholder={t('profile.emailPlaceholder')}
                   value={upgradeEmail}
                   onChange={(e) => setUpgradeEmail(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
                 <input
                   type="password"
-                  placeholder="Password (min 8 characters)"
+                  placeholder={t('profile.passwordPlaceholder')}
                   value={upgradePassword}
                   onChange={(e) => setUpgradePassword(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -328,7 +328,7 @@ export function Profile() {
                   disabled={upgradeLoading || !upgradeEmail || !upgradePassword || !upgradeDisplayName}
                   className="w-full rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 px-4 py-2 text-sm font-medium text-white transition-colors"
                 >
-                  {upgradeLoading ? 'Setting up…' : 'Create account'}
+                  {upgradeLoading ? t('profile.settingUp') : t('profile.createAccount')}
                 </button>
               </div>
             )}
@@ -338,20 +338,20 @@ export function Profile() {
         {!isGuest && (
           <section className="rounded-xl border border-gray-200 dark:border-gray-700 p-5 mt-6">
             <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">
-              Notification preferences
+              {t('profile.notificationPreferences')}
             </h2>
             {prefs ? (
               <div className="space-y-3">
                 {(
                   [
-                    ['emailMemberJoined',    'Email when someone joins your group'],
-                    ['emailMeetingReminder', 'Email reminder 1 hour before meeting'],
-                    ['inappMemberJoined',    'In-app alert when someone joins your group'],
-                    ['inappMeetingCreated',  'In-app alert when a meeting is created'],
+                    ['emailMemberJoined',    'profile.emailMemberJoined'],
+                    ['emailMeetingReminder', 'profile.emailMeetingReminder'],
+                    ['inappMemberJoined',    'profile.inappMemberJoined'],
+                    ['inappMeetingCreated',  'profile.inappMeetingCreated'],
                   ] as const
-                ).map(([key, label]) => (
+                ).map(([key, labelKey]) => (
                   <label key={key} className="flex items-center justify-between cursor-pointer">
-                    <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">{t(labelKey)}</span>
                     <button
                       role="switch"
                       aria-checked={prefs[key]}
@@ -370,7 +370,7 @@ export function Profile() {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-gray-400">Loading...</p>
+              <p className="text-sm text-gray-400">{t('common.loading')}</p>
             )}
           </section>
         )}

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { availabilityApi } from '@/api/availability'
 import { Button } from '@/components/Button'
 import { Spinner } from '@/components/Spinner'
@@ -14,7 +15,7 @@ interface Props {
   onCreateMeeting: (slot: HeatmapSlot) => void
 }
 
-const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
 
 function intensityClass(count: number, max: number): string {
   if (count === 0 || max === 0) return 'bg-gray-100 dark:bg-gray-700'
@@ -60,6 +61,7 @@ function buildGrid(slots: HeatmapSlot[], from: DateTime): {
 }
 
 export function HeatmapTab({ groupId, isOwner, onCreateMeeting }: Props) {
+  const { t } = useTranslation()
   const [weekOffset, setWeekOffset] = useState(0)
   const [initialLoaded, setInitialLoaded] = useState(false)
 
@@ -90,17 +92,17 @@ export function HeatmapTab({ groupId, isOwner, onCreateMeeting }: Props) {
       {/* Week navigation */}
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <Button variant="secondary" size="sm" onClick={() => setWeekOffset((w) => w - 1)}>
-          ← Prev
+          {t('group.heatmapTab.prev')}
         </Button>
         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
           {monday.toFormat('dd MMM')} – {sunday.minus({ days: 1 }).toFormat('dd MMM yyyy')}
         </span>
         <Button variant="secondary" size="sm" onClick={() => setWeekOffset((w) => w + 1)}>
-          Next →
+          {t('group.heatmapTab.next')}
         </Button>
         {weekOffset !== 0 && (
           <Button variant="ghost" size="sm" onClick={() => setWeekOffset(0)}>
-            Today
+            {t('group.heatmapTab.today')}
           </Button>
         )}
         {isLoading && initialLoaded && <Spinner size="sm" />}
@@ -116,12 +118,12 @@ export function HeatmapTab({ groupId, isOwner, onCreateMeeting }: Props) {
             <thead>
               <tr>
                 <th className="w-10 border-b border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 py-2 px-1 text-right text-gray-400 dark:text-gray-500 font-normal sticky left-0 z-10" />
-                {DAYS.map((d, i) => (
+                {DAY_KEYS.map((dayKey, i) => (
                   <th
-                    key={d}
+                    key={dayKey}
                     className="min-w-[40px] border-b border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 py-2 px-1 font-medium text-gray-700 dark:text-gray-300 text-center"
                   >
-                    <div>{d}</div>
+                    <div>{t(`group.heatmapTab.day.${dayKey}`)}</div>
                     <div className="text-gray-400 dark:text-gray-500 font-normal">
                       {monday.plus({ days: i }).toFormat('dd/MM')}
                     </div>
@@ -143,7 +145,7 @@ export function HeatmapTab({ groupId, isOwner, onCreateMeeting }: Props) {
                       ? 'cursor-pointer hover:ring-2 hover:ring-indigo-400 hover:ring-inset'
                       : 'cursor-default'
                     const titleText = slot
-                      ? `${slot.count} available${slot.displayNames ? ': ' + slot.displayNames.join(', ') : ''}${isClickable ? ' — click to schedule a meeting' : ''}`
+                      ? `${slot.count} ${t('group.heatmapTab.available')}${slot.displayNames ? ': ' + slot.displayNames.join(', ') : ''}${isClickable ? ` ${t('group.heatmapTab.clickToSchedule')}` : ''}`
                       : ''
 
                     return (
@@ -168,11 +170,11 @@ export function HeatmapTab({ groupId, isOwner, onCreateMeeting }: Props) {
                   className={`inline-block h-3 w-6 rounded ${intensityClass(Math.ceil(r * maxCount), maxCount)}`}
                 />
               ))}
-              <span>{maxCount} members</span>
+              <span>{maxCount} {t('group.heatmapTab.members')}</span>
             </div>
           )}
           {maxCount === 0 && (
-            <p className="px-4 py-4 text-sm text-gray-500 dark:text-gray-400">No availability for this week.</p>
+            <p className="px-4 py-4 text-sm text-gray-500 dark:text-gray-400">{t('group.heatmapTab.noAvailability')}</p>
           )}
         </div>
       )}
