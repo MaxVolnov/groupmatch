@@ -31,6 +31,9 @@ function decodeJwt(token: string): Record<string, unknown> {
   }
 }
 
+// Module-level mutex so concurrent callers share a single in-flight refresh
+let refreshPromise: Promise<string> | null = null
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
@@ -78,35 +81,48 @@ export const useAuthStore = create<AuthState>()(
       },
 
       refresh: async () => {
+        // Если refresh уже в процессе — ждём его результата
+        if (refreshPromise) return refreshPromise
+
         const { refreshToken } = get()
         if (!refreshToken) throw new Error('No refresh token')
-        const data = await authApi.refresh(refreshToken)
-        const claims = decodeJwt(data.accessToken)
 
-        // Сразу записываем новый refreshToken в localStorage
-        // чтобы при следующем refresh использовался актуальный токен
-        try {
-          const stored = JSON.parse(localStorage.getItem('groupmatch-auth') || '{}')
-          if (stored.state) {
-            stored.state.refreshToken = data.refreshToken
-            stored.state.accessToken = data.accessToken
-            localStorage.setItem('groupmatch-auth', JSON.stringify(stored))
+        refreshPromise = (async () => {
+          try {
+            const data = await authApi.refresh(refreshToken)
+            const claims = decodeJwt(data.accessToken)
+
+            // Синхронная запись в localStorage
+            try {
+              const stored = JSON.parse(localStorage.getItem('groupmatch-auth') || '{}')
+              if (stored.state) {
+                stored.state.refreshToken = data.refreshToken
+                stored.state.accessToken = data.accessToken
+                localStorage.setItem('groupmatch-auth', JSON.stringify(stored))
+              }
+            } catch {
+              // ignore
+            }
+
+            set({
+              accessToken: data.accessToken,
+              refreshToken: data.refreshToken,
+              userId: claims.sub as string,
+              email: claims.email as string,
+              role: claims.role as Role,
+              plan: claims.plan as Plan,
+              isAuthenticated: true,
+              isGuest: claims.isGuest === true,
+            })
+
+            console.warn('[Auth] Token refreshed successfully')
+            return data.accessToken
+          } finally {
+            refreshPromise = null
           }
-        } catch {
-          // ignore localStorage errors
-        }
+        })()
 
-        set({
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken,
-          userId: claims.sub as string,
-          email: claims.email as string,
-          role: claims.role as Role,
-          plan: claims.plan as Plan,
-          isAuthenticated: true,
-          isGuest: claims.isGuest === true,
-        })
-        return data.accessToken
+        return refreshPromise
       },
 
       setProfile: (userId, email, displayName, role, plan) => {
