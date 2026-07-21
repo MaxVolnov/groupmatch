@@ -114,9 +114,11 @@ public class AuthService {
      */
     @Transactional(readOnly = true)
     public AuthResponse refresh(RefreshRequest request) {
+        log.debug("Token refresh requested. refreshToken={}", maskToken(request.refreshToken()));
         UUID userId = refreshTokenService.validateAndRotate(request.refreshToken());
 
         if (userId == null) {
+            log.warn("Refresh rejected: token not found or already used. token={}", maskToken(request.refreshToken()));
             throw new InvalidCredentialsException("Invalid or expired refresh token");
         }
 
@@ -131,7 +133,7 @@ public class AuthService {
             throw new ForbiddenException("Account is banned");
         }
 
-        log.info("Token refreshed for userId={}", userId);
+        log.info("Token refreshed. userId={}", userId);
         return issueTokenPair(user.getId(), user.getEmail(), user.getRole(), user.getPlan(), user.isGuest());
     }
 
@@ -174,6 +176,9 @@ public class AuthService {
      *   - refresh token → удаляется из Redis
      */
     public void logout(String accessToken, String refreshToken) {
+        UUID userId = jwtUtils.extractUserId(accessToken);
+        log.debug("Logout requested. userId={}", userId);
+
         long remainingTtl = jwtUtils.remainingTtlMillis(accessToken);
         refreshTokenService.blacklistAccessToken(accessToken, remainingTtl);
 
@@ -181,11 +186,15 @@ public class AuthService {
             refreshTokenService.invalidateRefresh(refreshToken);
         }
 
-        UUID userId = jwtUtils.extractUserId(accessToken);
         log.info("User logged out: userId={}", userId);
     }
 
     // ─── Внутреннее ───────────────────────────────────────────────────────────
+
+    private static String maskToken(String token) {
+        if (token == null || token.length() < 8) return "***";
+        return token.substring(0, 8) + "***";
+    }
 
     private AuthResponse issueTokenPair(UUID userId, String email, Role role, Plan plan, boolean isGuest) {
         String accessToken  = jwtUtils.generateAccessToken(userId, email, role, plan, isGuest);
