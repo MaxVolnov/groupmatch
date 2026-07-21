@@ -42,6 +42,7 @@
     "deleteConfirm": "Delete this group? This cannot be undone.",
     "locked": "🔒 Locked",
     "namesVisible": "👥 Names visible",
+    "notFound": "Group not found",
     "tabs": {
       "members": "Members",
       "availability": "My Availability",
