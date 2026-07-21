@@ -23,9 +23,12 @@ api.interceptors.response.use(
   async (error) => {
     const original = error.config
     const status = error.response?.status
-    if ((status !== 401 && status !== 403) || original._retry || original.url?.startsWith('/auth/')) {
+
+    // Не обрабатываем: не 401, уже ретраили, или это сам auth-запрос
+    if (status !== 401 || original._retry || original.url?.includes('/auth/')) {
       return Promise.reject(error)
     }
+
     original._retry = true
 
     if (refreshing) {
@@ -42,21 +45,19 @@ api.interceptors.response.use(
       const newToken = await useAuthStore.getState().refresh()
       queue.forEach((q) => q.resolve(newToken))
       queue = []
+      refreshing = false  // сбрасываем ПОСЛЕ resolve очереди
       original.headers.Authorization = `Bearer ${newToken}`
       return api(original)
     } catch (e) {
       queue.forEach((q) => q.reject(e))
       queue = []
-      const status = (e as { response?: { status?: number } })?.response?.status
-      // Логаутим только если сервер явно сказал что токен невалиден
-      // Не логаутим при сетевых ошибках (timeout, Railway restart и т.д.)
-      if (status === 401 || status === 403) {
+      refreshing = false
+      const errStatus = (e as { response?: { status?: number } })?.response?.status
+      if (errStatus === 401 || errStatus === 403) {
         useAuthStore.getState().logout()
         window.location.replace(`${window.location.origin}/signin`)
       }
       return Promise.reject(e)
-    } finally {
-      refreshing = false
     }
   },
 )
