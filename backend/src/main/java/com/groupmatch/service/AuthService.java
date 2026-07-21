@@ -45,6 +45,7 @@ public class AuthService {
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         user.setDisplayName(request.displayName());
         user.setTzId(request.tzid() != null ? request.tzid() : "Europe/Moscow");
+        user.setLocale(request.locale() != null ? request.locale() : "ru");
         user.setPlan(Plan.FREE);
         user.setRole(Role.USER);
         user.setBlocked(false);

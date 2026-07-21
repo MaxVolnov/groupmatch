@@ -35,6 +35,9 @@ public class UserService {
         if (req.tzId() != null) {
             user.setTzId(req.tzId());
         }
+        if (req.locale() != null) {
+            user.setLocale(req.locale());
+        }
 
         return UserResponse.from(userRepository.save(user));
     }

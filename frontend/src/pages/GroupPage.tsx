@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { groupsApi } from '@/api/groups'
 import { useAuthStore } from '@/store/auth'
@@ -18,17 +19,18 @@ import { DateTime } from 'luxon'
 
 type Tab = 'members' | 'availability' | 'heatmap' | 'meetings'
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: 'members', label: 'Members' },
-  { id: 'availability', label: 'My Availability' },
-  { id: 'heatmap', label: 'Heatmap' },
-  { id: 'meetings', label: 'Meetings' },
+const TABS: { id: Tab; labelKey: string }[] = [
+  { id: 'members', labelKey: 'group.tabs.members' },
+  { id: 'availability', labelKey: 'group.tabs.availability' },
+  { id: 'heatmap', labelKey: 'group.tabs.heatmap' },
+  { id: 'meetings', labelKey: 'group.tabs.meetings' },
 ]
 
 export function GroupPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const qc = useQueryClient()
+  const { t } = useTranslation()
   const { userId, plan } = useAuthStore()
   const [tab, setTab] = useState<Tab>('heatmap')
   const [showEdit, setShowEdit] = useState(false)
@@ -85,7 +87,7 @@ export function GroupPage() {
   if (error || !group) {
     return (
       <Layout>
-        <ErrorMessage error={error ?? new Error('Group not found')} />
+        <ErrorMessage error={error ?? new Error(t('group.notFound'))} />
       </Layout>
     )
   }
@@ -98,7 +100,7 @@ export function GroupPage() {
       <div className="mb-6">
         <div className="mb-2">
           <Link to="/" className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
-            ← Groups
+            {t('group.backToGroups')}
           </Link>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -109,8 +111,8 @@ export function GroupPage() {
             )}
             <div className="mt-2 flex flex-wrap gap-3 text-xs text-gray-400 dark:text-gray-500">
               <span>{group.tzId}</span>
-              {group.locked && <span>🔒 Locked</span>}
-              {group.showParticipants && <span>👥 Names visible</span>}
+              {group.locked && <span>{t('group.locked')}</span>}
+              {group.showParticipants && <span>{t('group.namesVisible')}</span>}
             </div>
           </div>
           {isOwner && (
@@ -121,20 +123,20 @@ export function GroupPage() {
                 onClick={() => setShowEdit(true)}
                 className="flex-1 sm:flex-none justify-center"
               >
-                Edit group
+                {t('group.editGroup')}
               </Button>
               <Button
                 variant="danger"
                 size="sm"
                 loading={deleteGroup.isPending}
                 onClick={() => {
-                  if (confirm('Delete this group? This cannot be undone.')) {
+                  if (confirm(t('group.deleteConfirm'))) {
                     deleteGroup.mutate()
                   }
                 }}
                 className="flex-1 sm:flex-none justify-center"
               >
-                Delete group
+                {t('group.deleteGroup')}
               </Button>
             </div>
           )}
@@ -144,17 +146,17 @@ export function GroupPage() {
       {/* Tabs — scrollable on mobile */}
       <div className="mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
         <nav className="flex gap-1 min-w-max sm:min-w-0">
-          {TABS.map((t) => (
+          {TABS.map((tabDef) => (
             <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
+              key={tabDef.id}
+              onClick={() => setTab(tabDef.id)}
               className={`whitespace-nowrap px-4 py-2.5 text-sm font-medium transition-colors border-b-2 min-h-[44px] ${
-                tab === t.id
+                tab === tabDef.id
                   ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
                   : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
               }`}
             >
-              {t.label}
+              {t(tabDef.labelKey)}
             </button>
           ))}
         </nav>

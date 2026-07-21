@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { authApi } from '@/api/auth'
 import { useAuthStore } from '@/store/auth'
 import { Button } from '@/components/Button'
@@ -11,6 +12,7 @@ export function SignUp() {
   const navigate = useNavigate()
   const login = useAuthStore((s) => s.login)
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const { t } = useTranslation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [displayName, setDisplayName] = useState('')
@@ -34,7 +36,7 @@ export function SignUp() {
     } catch (err) {
       const axErr = err instanceof AxiosError ? err : null
       const apiErr = axErr?.response?.data as ApiError | undefined
-      setError(apiErr?.message ?? 'Registration failed')
+      setError(apiErr?.message ?? t('auth.registrationFailed'))
     } finally {
       setLoading(false)
     }
@@ -43,10 +45,10 @@ export function SignUp() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
       <div className="w-full max-w-sm rounded-xl bg-white dark:bg-gray-800 p-8 shadow-md">
-        <h1 className="mb-6 text-center text-2xl font-bold text-gray-900 dark:text-gray-100">Create account</h1>
+        <h1 className="mb-6 text-center text-2xl font-bold text-gray-900 dark:text-gray-100">{t('auth.createAccount')}</h1>
         <form onSubmit={submit} className="flex flex-col gap-4">
           <Input
-            label="Name"
+            label={t('auth.displayName')}
             type="text"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
@@ -55,7 +57,7 @@ export function SignUp() {
             maxLength={50}
           />
           <Input
-            label="Email"
+            label={t('auth.email')}
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -63,7 +65,7 @@ export function SignUp() {
             autoComplete="email"
           />
           <Input
-            label="Password"
+            label={t('auth.password')}
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -80,22 +82,22 @@ export function SignUp() {
               className="mt-0.5 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
             />
             <span>
-              I agree to the{' '}
+              {t('auth.agreeToTerms')}{' '}
               <a href={`${import.meta.env.BASE_URL}legal#terms`} target="_blank" rel="noopener noreferrer"
-                 className="text-indigo-600 hover:underline">Terms of Service</a>
-              {' '}and{' '}
+                 className="text-indigo-600 hover:underline">{t('auth.termsOfService')}</a>
+              {' '}{t('auth.and')}{' '}
               <a href={`${import.meta.env.BASE_URL}legal#privacy`} target="_blank" rel="noopener noreferrer"
-                 className="text-indigo-600 hover:underline">Privacy Policy</a>
+                 className="text-indigo-600 hover:underline">{t('auth.privacyPolicy')}</a>
             </span>
           </label>
           <Button type="submit" loading={loading} disabled={!agreedToTerms || loading} className="mt-2 w-full justify-center">
-            Create account
+            {t('auth.createAccount')}
           </Button>
         </form>
         <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
-          Already have an account?{' '}
+          {t('auth.hasAccount')}{' '}
           <Link to="/signin" className="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300">
-            Sign in
+            {t('auth.signIn')}
           </Link>
         </p>
       </div>

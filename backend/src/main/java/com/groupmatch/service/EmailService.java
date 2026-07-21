@@ -34,52 +34,86 @@ public class EmailService {
                 .build();
     }
 
-    public void sendVerificationEmail(String to, String displayName, UUID token) {
+    /** Письма отправляются на языке пользователя: locale == "ru" → русский, иначе английский. */
+    private boolean isRu(String locale) {
+        return locale == null || "ru".equalsIgnoreCase(locale);
+    }
+
+    public void sendVerificationEmail(String to, String locale, UUID token) {
+        boolean isRu = isRu(locale);
         String link = baseUrl + "/verify-email?token=" + token;
-        String subject = "Confirm your GroupMatch email";
-        String html = """
-            <p>Hi %s,</p>
-            <p>Click the button below to confirm your email address:</p>
-            <p><a href="%s" style="background:#4f46e5;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;">Confirm email</a></p>
-            <p>Link expires in 24 hours.</p>
-            <p>If you didn't create a GroupMatch account, ignore this email.</p>
-            """.formatted(displayName, link);
-        send(to, subject, html);
+        String subject = isRu ? "Подтвердите email — GroupMatch" : "Verify your email — GroupMatch";
+        String body = isRu
+                ? "Подтвердите ваш email адрес, нажав на кнопку ниже. Ссылка действительна 24 часа."
+                : "Please verify your email address by clicking the button below. The link is valid for 24 hours.";
+        String buttonText = isRu ? "Подтвердить email" : "Verify email";
+        send(to, subject, buildEmail(body, buttonText, link));
     }
 
-    public void sendPasswordResetEmail(String to, String displayName, UUID token) {
+    public void sendPasswordResetEmail(String to, String locale, UUID token) {
+        boolean isRu = isRu(locale);
         String link = baseUrl + "/reset-password?token=" + token;
-        String subject = "Reset your GroupMatch password";
-        String html = """
-            <p>Hi %s,</p>
-            <p>Click the button below to reset your password:</p>
-            <p><a href="%s" style="background:#4f46e5;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;">Reset password</a></p>
-            <p>Link expires in 1 hour.</p>
-            <p>If you didn't request a password reset, ignore this email.</p>
-            """.formatted(displayName, link);
-        send(to, subject, html);
+        String subject = isRu ? "Сброс пароля — GroupMatch" : "Reset your password — GroupMatch";
+        String body = isRu
+                ? "Вы запросили сброс пароля. Нажмите кнопку ниже. Ссылка действительна 1 час."
+                : "You requested a password reset. Click the button below. The link is valid for 1 hour.";
+        String buttonText = isRu ? "Сбросить пароль" : "Reset password";
+        send(to, subject, buildEmail(body, buttonText, link));
     }
 
-    public void sendMemberJoinedEmail(String to, String ownerName, String joinerName, String groupTitle) {
-        String subject = joinerName + " joined your group on GroupMatch";
-        String html = """
-            <p>Hi %s,</p>
-            <p><strong>%s</strong> has joined your group <strong>%s</strong>.</p>
-            <p>Head over to GroupMatch to see the updated availability heatmap.</p>
-            """.formatted(ownerName, joinerName, groupTitle);
-        send(to, subject, html);
+    public void sendMemberJoinedEmail(String to, String locale, String joinerName, String groupTitle) {
+        boolean isRu = isRu(locale);
+        String subject = (isRu ? "Новый участник — " : "New member — ") + groupTitle;
+        String body = isRu
+                ? joinerName + " присоединился к группе «" + groupTitle + "»"
+                : joinerName + " joined the group \"" + groupTitle + "\"";
+        send(to, subject, buildEmail(body, null, null));
     }
 
-    public void sendMeetingReminderEmail(String to, String displayName, String meetingTitle,
+    /** Приглашение в группу по email. Пока не вызывается ни из одного места — InviteService
+     *  делится только ссылкой-приглашением, письма не шлёт; метод готов для будущей фичи. */
+    public void sendGroupInviteEmail(String to, String locale, String groupTitle, String joinUrl) {
+        boolean isRu = isRu(locale);
+        String subject = isRu ? "Вас пригласили в группу — GroupMatch" : "You've been invited — GroupMatch";
+        String body = isRu
+                ? "Вас пригласили в группу «" + groupTitle + "». Нажмите кнопку чтобы присоединиться."
+                : "You've been invited to join \"" + groupTitle + "\". Click the button to join.";
+        String buttonText = isRu ? "Присоединиться" : "Join group";
+        send(to, subject, buildEmail(body, buttonText, joinUrl));
+    }
+
+    public void sendMeetingReminderEmail(String to, String locale, String meetingTitle,
                                          String groupTitle, Instant startsAt, String tzId) {
+        boolean isRu = isRu(locale);
         ZonedDateTime zdt = startsAt.atZone(ZoneId.of(tzId));
         String formatted = zdt.format(DateTimeFormatter.ofPattern("EEE, MMM d 'at' HH:mm z"));
-        String subject = "Reminder: \"" + meetingTitle + "\" starts in 1 hour";
-        String html = """
-            <p>Hi %s,</p>
-            <p>This is a reminder that the meeting <strong>%s</strong> in group <strong>%s</strong> starts at <strong>%s</strong>.</p>
-            """.formatted(displayName, meetingTitle, groupTitle, formatted);
-        send(to, subject, html);
+        String subject = isRu
+                ? "Напоминание: «" + meetingTitle + "» начинается через час"
+                : "Reminder: \"" + meetingTitle + "\" starts in 1 hour";
+        String body = isRu
+                ? "Встреча «" + meetingTitle + "» в группе «" + groupTitle + "» начинается в " + formatted + "."
+                : "The meeting \"" + meetingTitle + "\" in group \"" + groupTitle + "\" starts at " + formatted + ".";
+        send(to, subject, buildEmail(body, null, null));
+    }
+
+    private String buildEmail(String body, String buttonText, String buttonUrl) {
+        return """
+            <!DOCTYPE html>
+            <html>
+            <head><meta charset="UTF-8"></head>
+            <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h2 style="color: #2563eb;">GroupMatch</h2>
+              <p>%s</p>
+              %s
+              <p style="color: #6b7280; font-size: 12px; margin-top: 32px;">GroupMatch · groupmatch.app</p>
+            </body>
+            </html>
+            """.formatted(
+                body,
+                buttonText != null && buttonUrl != null
+                    ? "<a href=\"%s\" style=\"display:inline-block;background:#2563eb;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;\">%s</a>".formatted(buttonUrl, buttonText)
+                    : ""
+            );
     }
 
     private void send(String to, String subject, String htmlBody) {

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { meetingsApi } from '@/api/meetings'
 import { Button } from '@/components/Button'
 import { Skeleton } from '@/components/Skeleton'
@@ -54,6 +55,7 @@ function MeetingSkeletonList() {
 }
 
 export function MeetingsTab({ group, currentUserId, onScheduleClick }: Props) {
+  const { t } = useTranslation()
   const isOwner = group.ownerId === currentUserId
   const qc = useQueryClient()
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -78,7 +80,7 @@ export function MeetingsTab({ group, currentUserId, onScheduleClick }: Props) {
       {isOwner && (
         <div className="mb-4 flex justify-end">
           <Button size="sm" onClick={onScheduleClick}>
-            + Schedule meeting
+            {t('group.meetingsTab.schedule')}
           </Button>
         </div>
       )}
@@ -86,7 +88,7 @@ export function MeetingsTab({ group, currentUserId, onScheduleClick }: Props) {
       {meetings && meetings.length === 0 && (
         <div className="py-12 text-center">
           <p className="text-3xl mb-3">📅</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">No meetings scheduled yet.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{t('group.meetingsTab.noMeetings')}</p>
         </div>
       )}
 
@@ -108,7 +110,7 @@ export function MeetingsTab({ group, currentUserId, onScheduleClick }: Props) {
                   onClick={() => downloadIcs(group.id, m.id)}
                   className="flex-1 sm:flex-none justify-center"
                 >
-                  Export .ics
+                  {t('group.meetingsTab.exportIcs')}
                 </Button>
                 {isOwner && (
                   <Button
@@ -118,7 +120,7 @@ export function MeetingsTab({ group, currentUserId, onScheduleClick }: Props) {
                     loading={deletingId === m.id}
                     className="flex-1 sm:flex-none justify-center"
                   >
-                    Delete
+                    {t('group.meetingsTab.delete')}
                   </Button>
                 )}
               </div>

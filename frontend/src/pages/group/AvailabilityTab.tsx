@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { availabilityApi } from '@/api/availability'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
@@ -47,6 +48,7 @@ function SlotSkeletonList() {
 }
 
 export function AvailabilityTab({ groupId, callerPlan }: Props) {
+  const { t } = useTranslation()
   const qc = useQueryClient()
   const [startsAt, setStartsAt] = useState(defaultDatetime(1))
   const [endsAt, setEndsAt] = useState(defaultDatetime(2))
@@ -72,7 +74,7 @@ export function AvailabilityTab({ groupId, callerPlan }: Props) {
       setFormError('')
       const s = DateTime.fromISO(toIso(startsAt))
       const e = DateTime.fromISO(toIso(endsAt))
-      if (e.toMillis() <= s.toMillis()) { setFormError('End must be after start'); return Promise.reject() }
+      if (e.toMillis() <= s.toMillis()) { setFormError(t('group.availabilityTab.endAfterStart')); return Promise.reject() }
       return availabilityApi.addSlot(groupId, {
         startsAt: toIso(startsAt),
         endsAt: toIso(endsAt),
@@ -104,25 +106,25 @@ export function AvailabilityTab({ groupId, callerPlan }: Props) {
     <div className="grid gap-6 lg:grid-cols-2">
       {/* Add slot form */}
       <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5">
-        <h3 className="mb-4 font-medium text-gray-900 dark:text-gray-100">Add availability</h3>
+        <h3 className="mb-4 font-medium text-gray-900 dark:text-gray-100">{t('group.availabilityTab.addAvailability')}</h3>
         <div className="flex flex-col gap-3">
           <Input
-            label="From"
+            label={t('group.availabilityTab.from')}
             type="datetime-local"
             value={startsAt}
             onChange={(e) => onStartsAtChange(e.target.value)}
           />
           <Input
-            label="To"
+            label={t('group.availabilityTab.to')}
             type="datetime-local"
             value={endsAt}
             onChange={(e) => setEndsAt(e.target.value)}
           />
           <Input
-            label="Note (optional)"
+            label={t('group.availabilityTab.note')}
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="e.g. Preferred"
+            placeholder={t('group.availabilityTab.notePlaceholder')}
             maxLength={200}
           />
           {formError && <p className="text-sm text-red-600 dark:text-red-400">{formError}</p>}
@@ -132,23 +134,23 @@ export function AvailabilityTab({ groupId, callerPlan }: Props) {
             onClick={() => add.mutate()}
             className="mt-1 justify-center w-full"
           >
-            Add slot
+            {t('group.availabilityTab.addSlot')}
           </Button>
           <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
-            {count} / {limit} slots used
+            {count} / {limit} {t('group.availabilityTab.slotsUsed')}
           </p>
         </div>
       </div>
 
       {/* My slots list */}
       <div>
-        <h3 className="mb-3 font-medium text-gray-900 dark:text-gray-100">My slots ({count})</h3>
+        <h3 className="mb-3 font-medium text-gray-900 dark:text-gray-100">{t('group.availabilityTab.mySlots')} ({count})</h3>
         {isLoading ? (
           <SlotSkeletonList />
         ) : (
           <>
             {count === 0 && (
-              <p className="text-sm text-gray-500 dark:text-gray-400">🕐 No slots yet. Add your available times.</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('group.availabilityTab.noSlots')}</p>
             )}
             <div className="flex flex-col gap-2">
               {slots?.map((s) => (
@@ -165,7 +167,7 @@ export function AvailabilityTab({ groupId, callerPlan }: Props) {
                   <button
                     className="ml-2 shrink-0 flex items-center justify-center min-h-[44px] min-w-[44px] text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                     onClick={() => del.mutate(s.id)}
-                    title="Delete"
+                    title={t('group.availabilityTab.delete')}
                   >
                     ✕
                   </button>

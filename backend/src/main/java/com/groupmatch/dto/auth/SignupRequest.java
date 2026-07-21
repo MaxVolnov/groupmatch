@@ -2,6 +2,7 @@ package com.groupmatch.dto.auth;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record SignupRequest(
@@ -16,6 +17,9 @@ public record SignupRequest(
         @NotBlank(message = "Display name is required")
         @Size(min = 2, max = 50, message = "Display name must be between 2 and 50 characters")
         String displayName,
-        
-        String tzid
+
+        String tzid,
+
+        @Pattern(regexp = "^(ru|en)$", message = "locale must be 'ru' or 'en'")
+        String locale
 ) {}

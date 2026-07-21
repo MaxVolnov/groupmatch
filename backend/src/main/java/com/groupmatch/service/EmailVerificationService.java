@@ -41,7 +41,7 @@ public class EmailVerificationService {
         tokenRepository.save(evt);
 
         try {
-            emailService.sendVerificationEmail(user.getEmail(), user.getDisplayName(), evt.getToken());
+            emailService.sendVerificationEmail(user.getEmail(), user.getLocale(), evt.getToken());
             log.info("Verification email sent. userId={}", user.getId());
         } catch (Exception e) {
             log.warn("Verification email not sent for userId={}. Token saved, can resend. error={}", user.getId(), e.getMessage());

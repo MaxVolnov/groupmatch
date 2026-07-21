@@ -67,7 +67,7 @@ public class MeetingReminderJob {
                 try {
                     emailService.sendMeetingReminderEmail(
                         user.getEmail(),
-                        user.getDisplayName(),
+                        user.getLocale(),
                         meeting.getTitle(),
                         groupTitle,
                         meeting.getStartsAt(),
