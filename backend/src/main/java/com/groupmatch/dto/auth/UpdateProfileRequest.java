@@ -5,5 +5,6 @@ import jakarta.validation.constraints.Size;
 
 public record UpdateProfileRequest(
         @Size(min = 2, max = 100) String displayName,
-        @Pattern(regexp = "^[A-Za-z_/+\\-]+$") String tzId
+        @Pattern(regexp = "^[A-Za-z_/+\\-]+$") String tzId,
+        @Pattern(regexp = "^(ru|en)$", message = "locale must be 'ru' or 'en'") String locale
 ) {}
