@@ -7,10 +7,11 @@ export const api = axios.create({
   withCredentials: true,
 })
 
-// Attach access token to every request
+// Attach access token to every request except /auth/ endpoints
 api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().accessToken
-  if (token) config.headers.Authorization = `Bearer ${token}`
+  const isAuthEndpoint = config.url?.includes('/auth/')
+  if (token && !isAuthEndpoint) config.headers.Authorization = `Bearer ${token}`
   return config
 })
 
