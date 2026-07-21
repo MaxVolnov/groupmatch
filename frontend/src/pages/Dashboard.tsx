@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { groupsApi } from '@/api/groups'
 import { meApi } from '@/api/me'
@@ -17,6 +18,7 @@ import { TIMEZONES, getBrowserTimezone } from '@/utils/timezones'
 import { usePlanInfo } from '@/hooks/usePlanInfo'
 
 function GroupCard({ group }: { group: GroupResponse }) {
+  const { t } = useTranslation()
   return (
     <Link
       to={`/groups/${group.id}`}
@@ -34,8 +36,8 @@ function GroupCard({ group }: { group: GroupResponse }) {
         </span>
       </div>
       <div className="mt-3 flex gap-3 text-xs text-gray-400 dark:text-gray-500">
-        {group.locked && <span>🔒 Locked</span>}
-        {group.showParticipants && <span>👥 Names visible</span>}
+        {group.locked && <span>{t('group.locked')}</span>}
+        {group.showParticipants && <span>{t('group.namesVisible')}</span>}
       </div>
     </Link>
   )
@@ -68,6 +70,7 @@ function CreateGroupModal({
   onClose: () => void
   onPlanLimitExceeded: () => void
 }) {
+  const { t } = useTranslation()
   const qc = useQueryClient()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -94,41 +97,41 @@ function CreateGroupModal({
 
   return (
     <Modal
-      title="Create group"
+      title={t('dashboard.createGroupModal.title')}
       open={open}
       onClose={onClose}
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button variant="secondary" onClick={onClose}>{t('dashboard.createGroupModal.cancel')}</Button>
           <Button
             loading={create.isPending}
             onClick={() => create.mutate()}
             disabled={!title.trim()}
           >
-            Create
+            {t('dashboard.createGroupModal.create')}
           </Button>
         </>
       }
     >
       <div className="flex flex-col gap-4">
         <Input
-          label="Group name"
+          label={t('dashboard.createGroupModal.groupName')}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="e.g. Weekly Sync"
+          placeholder={t('dashboard.createGroupModal.groupNamePlaceholder')}
           minLength={3}
           maxLength={100}
           required
         />
         <Input
-          label="Description (optional)"
+          label={t('dashboard.createGroupModal.description')}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="What's this group for?"
+          placeholder={t('dashboard.createGroupModal.descriptionPlaceholder')}
           maxLength={1000}
         />
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Timezone</label>
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('dashboard.createGroupModal.timezone')}</label>
           <select
             value={tzId}
             onChange={(e) => setTzId(e.target.value)}
@@ -146,6 +149,7 @@ function CreateGroupModal({
 }
 
 export function Dashboard() {
+  const { t } = useTranslation()
   const [showCreate, setShowCreate] = useState(false)
   const [showUpgrade, setShowUpgrade] = useState(false)
   const [resendSent, setResendSent] = useState(false)
@@ -189,27 +193,27 @@ export function Dashboard() {
     <Layout>
       {isGuest && (
         <div className="mb-4 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 text-sm text-amber-800 dark:text-amber-300 flex items-center justify-between gap-4">
-          <span>⚠️ You're using a guest account. Your session lasts 90 days — <Link to="/profile" className="underline font-medium">create an account</Link> to keep your data permanently.</span>
+          <span>{t('dashboard.guestBanner')} <Link to="/profile" className="underline font-medium">{t('dashboard.guestBannerLink')}</Link> {t('dashboard.guestBannerSuffix')}</span>
         </div>
       )}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">My Groups</h1>
-        <Button onClick={handleCreateGroup}>+ New group</Button>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('dashboard.title')}</h1>
+        <Button onClick={handleCreateGroup}>{t('dashboard.newGroup')}</Button>
       </div>
 
       {!isGuest && !isEmailVerified && (
         <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-3 mb-4 flex items-center justify-between">
           <span className="text-sm text-yellow-800 dark:text-yellow-200">
-            Please confirm your email address to unlock all features.
+            {t('dashboard.verifyEmailPrompt')}
           </span>
           {resendSent ? (
-            <span className="text-sm font-medium text-yellow-700 dark:text-yellow-300 ml-4">Sent!</span>
+            <span className="text-sm font-medium text-yellow-700 dark:text-yellow-300 ml-4">{t('dashboard.sent')}</span>
           ) : (
             <button
               onClick={handleResend}
               className="text-sm font-medium text-yellow-700 dark:text-yellow-300 hover:underline ml-4"
             >
-              Resend
+              {t('dashboard.resend')}
             </button>
           )}
         </div>
@@ -227,12 +231,12 @@ export function Dashboard() {
       {groups && groups.length === 0 && (
         <div className="rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 py-16 text-center">
           <p className="text-3xl mb-3">📋</p>
-          <p className="text-gray-500 dark:text-gray-400">No groups yet.</p>
+          <p className="text-gray-500 dark:text-gray-400">{t('dashboard.emptyState')}</p>
           <button
             className="mt-2 inline-flex items-center justify-center min-h-[44px] px-4 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
             onClick={handleCreateGroup}
           >
-            Create your first group →
+            {t('dashboard.createFirstGroup')}
           </button>
         </div>
       )}

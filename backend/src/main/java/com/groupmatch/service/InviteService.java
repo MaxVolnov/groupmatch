@@ -141,7 +141,7 @@ public class InviteService {
                     try {
                         emailService.sendMemberJoinedEmail(
                             owner.getEmail(),
-                            owner.getDisplayName(),
+                            owner.getLocale(),
                             joiner.getDisplayName(),
                             group.getTitle()
                         );

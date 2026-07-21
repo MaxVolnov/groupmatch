@@ -13,7 +13,8 @@ public record UserResponse(
         String plan,
         String role,
         boolean isEmailVerified,
-        Instant createdAt
+        Instant createdAt,
+        String locale
 ) {
     public static UserResponse from(User user) {
         return new UserResponse(
@@ -24,7 +25,8 @@ public record UserResponse(
                 user.getPlan().name(),
                 user.getRole().name(),
                 user.isEmailVerified(),
-                user.getCreatedAt()
+                user.getCreatedAt(),
+                user.getLocale()
         );
     }
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect, ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/store/auth'
 import { useThemeStore, applyTheme, type Theme } from '@/store/theme'
 import { Button } from './Button'
@@ -56,6 +57,7 @@ function GuestBadge() {
 export function Layout({ children }: LayoutProps) {
   const { isAuthenticated, displayName, email, isGuest, role, logout } = useAuthStore()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [menuOpen, setMenuOpen] = useState(false)
   const [showFeedback, setShowFeedback] = useState(false)
 
@@ -98,23 +100,23 @@ export function Layout({ children }: LayoutProps) {
                       className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-violet-600 hover:bg-violet-500 text-white transition-colors"
                     >
                       <span>⚙️</span>
-                      <span>Admin</span>
+                      <span>{t('nav.admin')}</span>
                     </Link>
                   )}
                   <Link
                     to="/pricing"
                     className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                   >
-                    Pricing
+                    {t('nav.pricing')}
                   </Link>
                   <button
                     onClick={() => setShowFeedback(true)}
                     className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                   >
-                    💬 Feedback
+                    {`💬 ${t('nav.feedback')}`}
                   </button>
                   <Button variant="secondary" size="sm" onClick={handleLogout}>
-                    Sign out
+                    {t('nav.signOut')}
                   </Button>
                 </div>
 
@@ -122,7 +124,7 @@ export function Layout({ children }: LayoutProps) {
                 <button
                   className="sm:hidden flex items-center justify-center w-11 h-11 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   onClick={() => setMenuOpen((v) => !v)}
-                  aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+                  aria-label={menuOpen ? t('nav.closeMenu') : t('nav.openMenu')}
                 >
                   {menuOpen ? (
                     <span className="text-lg leading-none">✕</span>
@@ -155,7 +157,7 @@ export function Layout({ children }: LayoutProps) {
                 onClick={() => setMenuOpen(false)}
               >
                 <span>⚙️</span>
-                <span>Admin Panel</span>
+                <span>{t('nav.adminPanel')}</span>
               </Link>
             )}
             <Link
@@ -163,16 +165,16 @@ export function Layout({ children }: LayoutProps) {
               onClick={() => setMenuOpen(false)}
               className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
             >
-              Pricing
+              {t('nav.pricing')}
             </Link>
             <button
               onClick={() => { setMenuOpen(false); setShowFeedback(true) }}
               className="text-left text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
             >
-              💬 Feedback
+              {`💬 ${t('nav.feedback')}`}
             </button>
             <Button variant="secondary" size="sm" onClick={handleLogout} className="w-full justify-center">
-              Sign out
+              {t('nav.signOut')}
             </Button>
           </div>
         )}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { groupsApi } from '@/api/groups'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export function EditGroupModal({ group, open, onClose }: Props) {
+  const { t } = useTranslation()
   const qc = useQueryClient()
   const [title, setTitle] = useState(group.title)
   const [description, setDescription] = useState(group.description ?? '')
@@ -47,41 +49,41 @@ export function EditGroupModal({ group, open, onClose }: Props) {
 
   return (
     <Modal
-      title="Edit group"
+      title={t('group.editGroupModal.title')}
       open={open}
       onClose={onClose}
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button variant="secondary" onClick={onClose}>{t('group.editGroupModal.cancel')}</Button>
           <Button
             loading={update.isPending}
             disabled={!title.trim()}
             onClick={() => update.mutate()}
           >
-            Save
+            {t('group.editGroupModal.save')}
           </Button>
         </>
       }
     >
       <div className="flex flex-col gap-4">
         <Input
-          label="Group name"
+          label={t('group.editGroupModal.groupName')}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="e.g. Weekly Sync"
+          placeholder={t('group.editGroupModal.groupNamePlaceholder')}
           minLength={3}
           maxLength={100}
           required
         />
         <Input
-          label="Description (optional)"
+          label={t('group.editGroupModal.description')}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="What's this group for?"
+          placeholder={t('group.editGroupModal.descriptionPlaceholder')}
           maxLength={1000}
         />
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Timezone</label>
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('group.editGroupModal.timezone')}</label>
           <select
             value={tzId}
             onChange={(e) => setTzId(e.target.value)}
@@ -100,7 +102,7 @@ export function EditGroupModal({ group, open, onClose }: Props) {
             className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
           />
           <span className="text-sm text-gray-700 dark:text-gray-300">
-            Show participant names to group members
+            {t('group.editGroupModal.showParticipants')}
           </span>
         </label>
         {update.error && <ErrorMessage error={update.error} />}

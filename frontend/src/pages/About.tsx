@@ -1,26 +1,26 @@
+import { useTranslation } from 'react-i18next'
 import { PublicLayout } from '@/components/PublicLayout'
 
 export function About() {
+  const { t } = useTranslation()
   return (
     <PublicLayout>
       <div className="max-w-2xl mx-auto py-12">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">
-          About GroupMatch
+          {t('about.title')}
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mb-4">
-          GroupMatch is a group scheduling tool that helps teams find the best time to meet.
-          Mark your availability, see the overlap on a heatmap, and schedule meetings — no
-          back-and-forth emails needed.
+          {t('about.description')}
         </p>
         <p className="text-gray-600 dark:text-gray-400 mb-8">
-          Built by Max Wave Studio.
+          {t('about.builtBy')}
         </p>
         <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide mb-3">
-            Contact
+            {t('about.contact')}
           </h2>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Email:{' '}
+            {t('about.emailLabel')}:{' '}
             <a
               href="mailto:volnov.max@yandex.ru"
               className="text-indigo-600 dark:text-indigo-400 hover:underline"
@@ -29,7 +29,7 @@ export function About() {
             </a>
           </p>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Phone:{' '}
+            {t('about.phoneLabel')}:{' '}
             <a
               href="tel:+79201655073"
               className="text-indigo-600 dark:text-indigo-400 hover:underline"

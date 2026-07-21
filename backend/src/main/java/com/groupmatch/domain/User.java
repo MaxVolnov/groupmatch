@@ -31,6 +31,9 @@ public class User {
     @Column(name = "tz_id", nullable = false)
     private String tzId = "Europe/Moscow";
 
+    @Column(nullable = false, length = 5)
+    private String locale = "ru";
+
     /**
      * Тарифный план. Хранится в БД как строка (FREE/PRO/TEAM).
      * Дублируется в JWT payload для быстрой проверки лимитов без обращения к БД.

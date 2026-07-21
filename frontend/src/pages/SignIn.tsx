@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { authApi } from '@/api/auth'
 import { useAuthStore } from '@/store/auth'
 import { Button } from '@/components/Button'
@@ -11,6 +12,7 @@ export function SignIn() {
   const navigate = useNavigate()
   const login = useAuthStore((s) => s.login)
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const { t } = useTranslation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -35,8 +37,8 @@ export function SignIn() {
     } catch (err) {
       const msg =
         err instanceof AxiosError
-          ? ((err.response?.data as ApiError)?.message ?? 'Invalid credentials')
-          : 'Something went wrong'
+          ? ((err.response?.data as ApiError)?.message ?? t('auth.invalidCredentials'))
+          : t('errors.somethingWrong')
       setError(msg)
     } finally {
       setLoading(false)
@@ -55,8 +57,8 @@ export function SignIn() {
     } catch (err) {
       const msg =
         err instanceof AxiosError
-          ? ((err.response?.data as ApiError)?.message ?? 'Something went wrong')
-          : 'Something went wrong'
+          ? ((err.response?.data as ApiError)?.message ?? t('errors.somethingWrong'))
+          : t('errors.somethingWrong')
       setGuestError(msg)
     } finally {
       setGuestLoading(false)
@@ -66,10 +68,10 @@ export function SignIn() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
       <div className="w-full max-w-sm rounded-xl bg-white dark:bg-gray-800 p-8 shadow-md">
-        <h1 className="mb-6 text-center text-2xl font-bold text-gray-900 dark:text-gray-100">Sign in</h1>
+        <h1 className="mb-6 text-center text-2xl font-bold text-gray-900 dark:text-gray-100">{t('auth.signIn')}</h1>
         <form onSubmit={submit} className="flex flex-col gap-4">
           <Input
-            label="Email"
+            label={t('auth.email')}
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -78,7 +80,7 @@ export function SignIn() {
           />
           <div className="flex flex-col gap-1">
             <Input
-              label="Password"
+              label={t('auth.password')}
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -89,25 +91,25 @@ export function SignIn() {
               to="/forgot-password"
               className="self-end text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
             >
-              Forgot password?
+              {t('auth.forgotPassword')}
             </Link>
           </div>
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
           <Button type="submit" loading={loading} className="mt-2 w-full justify-center">
-            Sign in
+            {t('auth.signIn')}
           </Button>
         </form>
 
         <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
-          No account?{' '}
+          {t('auth.noAccount')}{' '}
           <Link to="/signup" className="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300">
-            Sign up
+            {t('auth.signUp')}
           </Link>
         </p>
 
         <div className="mt-5 flex items-center gap-3">
           <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
-          <span className="text-xs text-gray-400 dark:text-gray-500">or</span>
+          <span className="text-xs text-gray-400 dark:text-gray-500">{t('auth.orContinueWith')}</span>
           <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
         </div>
 
@@ -117,15 +119,15 @@ export function SignIn() {
             onClick={() => setShowGuestForm(true)}
             className="mt-4 w-full rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
-            Continue as guest
+            {t('auth.continueAsGuest')}
           </button>
         ) : (
           <form onSubmit={submitGuest} className="mt-4 flex flex-col gap-3">
             <Input
-              label="Your name"
+              label={t('auth.yourName')}
               value={guestName}
               onChange={(e) => setGuestName(e.target.value)}
-              placeholder="Your name"
+              placeholder={t('auth.yourName')}
               minLength={2}
               maxLength={50}
               required
@@ -138,7 +140,7 @@ export function SignIn() {
               disabled={guestName.trim().length < 2}
               className="w-full justify-center"
             >
-              Enter as guest
+              {t('auth.enterAsGuest')}
             </Button>
           </form>
         )}

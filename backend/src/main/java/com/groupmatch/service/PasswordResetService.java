@@ -44,7 +44,7 @@ public class PasswordResetService {
             tokenRepository.save(prt);
 
             try {
-                emailService.sendPasswordResetEmail(user.getEmail(), user.getDisplayName(), prt.getToken());
+                emailService.sendPasswordResetEmail(user.getEmail(), user.getLocale(), prt.getToken());
                 log.info("Password reset email sent. userId={}", user.getId());
             } catch (Exception e) {
                 log.warn("Password reset email not sent for userId={}. error={}", user.getId(), e.getMessage());
