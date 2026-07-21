@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -38,8 +39,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final String BLACKLIST_PREFIX = "blacklist:access:";
 
+    // Must match exactly the permitAll() paths in SecurityConfig — not more, not less.
+    private static final Set<String> PUBLIC_PATHS = Set.of(
+            "/api/v1/auth/signup",
+            "/api/v1/auth/signin",
+            "/api/v1/auth/guest",
+            "/api/v1/auth/refresh",
+            "/api/v1/auth/verify-email",
+            "/api/v1/auth/forgot-password",
+            "/api/v1/auth/reset-password",
+            "/api/v1/payments/yookassa/webhook",
+            "/actuator/health",
+            "/actuator/info"
+    );
+
     private final JwtUtils jwtUtils;
     private final StringRedisTemplate redisTemplate;
+
+    @Override
+    protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
+        return PUBLIC_PATHS.contains(request.getRequestURI());
+    }
 
     @Override
     protected void doFilterInternal(
@@ -61,13 +81,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String jwt = authHeader.substring(7);
 
             if (!jwtUtils.validateToken(jwt)) {
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+                writeUnauthorized(response);
                 return;
             }
 
             // Проверяем blacklist (logout)
             if (Boolean.TRUE.equals(redisTemplate.hasKey(BLACKLIST_PREFIX + jwt))) {
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+                writeUnauthorized(response);
                 return;
             }
 
@@ -95,10 +115,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         if (!authenticated) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+            writeUnauthorized(response);
             return;
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private void writeUnauthorized(HttpServletResponse response) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write("{\"code\":\"UNAUTHORIZED\",\"message\":\"Authentication required\"}");
     }
 }
