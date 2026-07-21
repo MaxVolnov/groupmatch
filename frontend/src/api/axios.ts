@@ -30,8 +30,10 @@ api.interceptors.response.use(
     }
 
     original._retry = true
+    console.warn('[Interceptor] 401 detected, url:', original.url)
 
     if (refreshing) {
+      console.warn('[Interceptor] Already refreshing, queuing request')
       return new Promise((resolve, reject) => {
         queue.push({ resolve, reject })
       }).then((token) => {
@@ -43,6 +45,7 @@ api.interceptors.response.use(
     refreshing = true
     try {
       const newToken = await useAuthStore.getState().refresh()
+      console.warn('[Interceptor] Refresh success, retrying queued requests:', queue.length)
       queue.forEach((q) => q.resolve(newToken))
       queue = []
       refreshing = false  // сбрасываем ПОСЛЕ resolve очереди
@@ -53,7 +56,9 @@ api.interceptors.response.use(
       queue = []
       refreshing = false
       const errStatus = (e as { response?: { status?: number } })?.response?.status
+      console.warn('[Interceptor] Refresh failed, status:', errStatus)
       if (errStatus === 401 || errStatus === 403) {
+        console.warn('[Interceptor] Logging out due to 401/403 on refresh')
         useAuthStore.getState().logout()
         window.location.replace(`${window.location.origin}/signin`)
       }

@@ -54,6 +54,7 @@ public class RefreshTokenService {
         redis.opsForSet().add(REFRESH_USER_PREFIX + userId, token);
         redis.expire(REFRESH_USER_PREFIX + userId, ttl);
 
+        log.debug("Issued refresh token. userId={}, ttl={}ms", userId, ttl.toMillis());
         return token;
     }
 
@@ -66,6 +67,7 @@ public class RefreshTokenService {
         redis.opsForSet().add(REFRESH_USER_PREFIX + userId, token);
         redis.expire(REFRESH_USER_PREFIX + userId, ttl);
 
+        log.debug("Issued refresh token. userId={}, ttl={}ms", userId, ttl.toMillis());
         return token;
     }
 
@@ -76,16 +78,18 @@ public class RefreshTokenService {
      * Если не найден — возвращает null (вызывающий должен вернуть 401).
      */
     public UUID validateAndRotate(String token) {
+        log.debug("Refresh attempt. token={}", maskToken(token));
         String userIdStr = redis.opsForValue().getAndDelete(REFRESH_PREFIX + token);
 
         if (userIdStr == null) {
-            log.warn("Refresh token not found or already used: {}", maskToken(token));
+            log.warn("Refresh token not found in Redis (expired or already rotated). token={}", maskToken(token));
             return null;
         }
 
         UUID userId = UUID.fromString(userIdStr);
         // Удаляем из user-set (токен уже использован)
         redis.opsForSet().remove(REFRESH_USER_PREFIX + userId, token);
+        log.debug("Refresh token valid. userId={}, issuing new token", userId);
         return userId;
     }
 
