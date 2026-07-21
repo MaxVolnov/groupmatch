@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { meApi } from '@/api/me'
 import { paymentsApi } from '@/api/payments'
 import { preferencesApi } from '@/api/preferences'
 import { useAuthStore } from '@/store/auth'
+import { useLanguageStore } from '@/store/language'
 import { usePlanInfo } from '@/hooks/usePlanInfo'
 import { Layout } from '@/components/Layout'
 import { Button } from '@/components/Button'
@@ -17,6 +19,8 @@ export function Profile() {
   const qc = useQueryClient()
   const { isGuest, setProfile } = useAuthStore()
   const upgradeGuest = useAuthStore((s) => s.upgradeGuest)
+  const { language, setLanguage } = useLanguageStore()
+  const { t } = useTranslation()
 
   const { data, isLoading, error: loadError } = useQuery({
     queryKey: ['me'],
@@ -144,6 +148,36 @@ export function Profile() {
               <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Email</span>
               <span className="text-sm text-gray-900 dark:text-gray-100">{data.email}</span>
             </div>
+
+            {/* Language switcher */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t('profile.language')}
+              </label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setLanguage('ru')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    language === 'ru'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  {t('profile.languageRu')}
+                </button>
+                <button
+                  onClick={() => setLanguage('en')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    language === 'en'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  {t('profile.languageEn')}
+                </button>
+              </div>
+            </div>
+
             {import.meta.env.VITE_MONETIZATION_ENABLED !== 'true' && (
               <div className="flex flex-col gap-1">
                 <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
