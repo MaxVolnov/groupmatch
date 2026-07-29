@@ -1,19 +1,23 @@
 import { useState, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { notificationsApi } from '@/api/notifications'
 import type { NotificationResponse } from '@/types'
 
-function notificationText(n: NotificationResponse): string {
+type TranslateFn = (key: string, options?: Record<string, unknown>) => string
+
+function notificationText(n: NotificationResponse, t: TranslateFn): string {
   if (n.type === 'MEMBER_JOINED') {
-    return `${n.payload.joinerName} joined "${n.payload.groupTitle}"`
+    return t('notifications.memberJoined', { name: n.payload.joinerName, group: n.payload.groupTitle })
   }
   if (n.type === 'MEETING_CREATED') {
-    return `New meeting: "${n.payload.meetingTitle}"`
+    return t('notifications.meetingCreated', { title: n.payload.meetingTitle })
   }
-  return 'New notification'
+  return t('notifications.newNotification')
 }
 
 export function NotificationBell() {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const queryClient = useQueryClient()
@@ -51,7 +55,7 @@ export function NotificationBell() {
       <button
         onClick={() => setOpen((v) => !v)}
         className="relative flex items-center justify-center w-9 h-9 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-        aria-label="Notifications"
+        aria-label={t('nav.notifications')}
       >
         <svg
           className="w-5 h-5 text-gray-600 dark:text-gray-400"
@@ -77,21 +81,21 @@ export function NotificationBell() {
         <div className="absolute right-0 top-11 z-50 w-80 max-h-96 overflow-y-auto rounded-xl bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
             <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-              Notifications
+              {t('notifications.title')}
             </span>
             {unreadCount > 0 && (
               <button
                 onClick={() => markAllRead.mutate()}
                 className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
               >
-                Mark all read
+                {t('notifications.markAllRead')}
               </button>
             )}
           </div>
 
           {notifications.length === 0 ? (
             <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-8">
-              No notifications
+              {t('notifications.none')}
             </p>
           ) : (
             <ul>
@@ -106,7 +110,7 @@ export function NotificationBell() {
                   }`}
                 >
                   <p className="text-sm text-gray-900 dark:text-gray-100">
-                    {notificationText(n)}
+                    {notificationText(n, t)}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                     {new Date(n.createdAt).toLocaleString()}

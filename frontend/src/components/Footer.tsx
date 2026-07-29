@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { FeedbackModal } from './FeedbackModal'
 
 export function Footer() {
+  const { t } = useTranslation()
   const [showFeedback, setShowFeedback] = useState(false)
 
   return (
@@ -12,7 +14,7 @@ export function Footer() {
           {/* Brand */}
           <div>
             <p className="text-white font-bold mb-2">GroupMatch</p>
-            <p className="text-sm mb-4">Group scheduling made simple.</p>
+            <p className="text-sm mb-4">{t('footer.tagline')}</p>
             <p className="text-xs">© 2026 Max Wave Studio</p>
             <p className="text-xs">ИНН: 771887947687</p>
             <a
@@ -25,11 +27,11 @@ export function Footer() {
 
           {/* Product */}
           <div>
-            <p className="text-white font-medium mb-3 text-sm">Product</p>
+            <p className="text-white font-medium mb-3 text-sm">{t('footer.product')}</p>
             <ul className="flex flex-col gap-2 text-sm">
               <li>
                 <Link to="/pricing" className="hover:text-white transition-colors">
-                  Pricing
+                  {t('footer.pricing')}
                 </Link>
               </li>
               <li>
@@ -37,7 +39,7 @@ export function Footer() {
                   onClick={() => setShowFeedback(true)}
                   className="hover:text-white transition-colors"
                 >
-                  Feedback →
+                  {t('footer.feedback')} →
                 </button>
               </li>
             </ul>
@@ -45,21 +47,21 @@ export function Footer() {
 
           {/* Company */}
           <div>
-            <p className="text-white font-medium mb-3 text-sm">Company</p>
+            <p className="text-white font-medium mb-3 text-sm">{t('footer.company')}</p>
             <ul className="flex flex-col gap-2 text-sm">
               <li>
                 <Link to="/about" className="hover:text-white transition-colors">
-                  About
+                  {t('footer.about')}
                 </Link>
               </li>
               <li>
                 <Link to="/legal" className="hover:text-white transition-colors">
-                  Legal
+                  {t('footer.legal')}
                 </Link>
               </li>
               <li>
-                <span className="cursor-not-allowed text-gray-600" title="Coming soon">
-                  For Teams
+                <span className="cursor-not-allowed text-gray-600" title={t('footer.comingSoon')}>
+                  {t('footer.forTeams')}
                 </span>
               </li>
             </ul>

@@ -1,5 +1,6 @@
 import { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/store/auth'
 import { Footer } from './Footer'
 
@@ -9,6 +10,7 @@ interface Props {
 
 export function PublicLayout({ children }: Props) {
   const { isAuthenticated } = useAuthStore()
+  const { t } = useTranslation()
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
@@ -23,7 +25,7 @@ export function PublicLayout({ children }: Props) {
                 to="/"
                 className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
               >
-                Open app
+                {t('nav.openApp')}
               </Link>
             ) : (
               <>
@@ -31,13 +33,13 @@ export function PublicLayout({ children }: Props) {
                   to="/signin"
                   className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                 >
-                  Sign in
+                  {t('nav.signIn')}
                 </Link>
                 <Link
                   to="/signup"
                   className="text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors"
                 >
-                  Sign up
+                  {t('nav.signUp')}
                 </Link>
               </>
             )}

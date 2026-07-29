@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { adminApi } from '@/api/admin'
 import { useAuthStore } from '@/store/auth'
 import { Layout } from '@/components/Layout'
@@ -11,6 +12,11 @@ import type { AdminFeedbackItem, AdminGroup, AdminUser } from '@/types/admin'
 
 const TABS = ['Users', 'Feedback', 'Groups'] as const
 type Tab = typeof TABS[number]
+const TAB_LABEL_KEYS: Record<Tab, string> = {
+  Users: 'admin.tabs.users',
+  Feedback: 'admin.tabs.feedback',
+  Groups: 'admin.tabs.groups',
+}
 
 // ── Users tab ─────────────────────────────────────────────────────────────────
 
@@ -42,6 +48,7 @@ function RoleBadge({ role }: { role: AdminUser['role'] }) {
 }
 
 function UsersTab({ currentUserId }: { currentUserId: string }) {
+  const { t } = useTranslation()
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(0)
@@ -89,7 +96,7 @@ function UsersTab({ currentUserId }: { currentUserId: string }) {
           type="search"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          placeholder="Search by email or display name…"
+          placeholder={t('admin.searchUsers')}
           className="w-full sm:w-80 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
       </div>
@@ -105,11 +112,11 @@ function UsersTab({ currentUserId }: { currentUserId: string }) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60">
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Email</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Display name</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Role</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Plan</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t('admin.table.email')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t('admin.table.displayName')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t('admin.table.role')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t('admin.table.plan')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t('admin.table.status')}</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
@@ -117,7 +124,7 @@ function UsersTab({ currentUserId }: { currentUserId: string }) {
                 {data?.users.length === 0 && (
                   <tr>
                     <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-400 dark:text-gray-500">
-                      No users found.
+                      {t('admin.noUsersFound')}
                     </td>
                   </tr>
                 )}
@@ -129,7 +136,7 @@ function UsersTab({ currentUserId }: { currentUserId: string }) {
                     <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
                       {u.displayName}
                       {u.isGuest && (
-                        <span className="ml-1.5 text-xs text-gray-400 dark:text-gray-500">guest</span>
+                        <span className="ml-1.5 text-xs text-gray-400 dark:text-gray-500">{t('admin.guestBadge')}</span>
                       )}
                     </td>
                     <td className="px-4 py-3">
@@ -139,11 +146,11 @@ function UsersTab({ currentUserId }: { currentUserId: string }) {
                     <td className="px-4 py-3">
                       {u.isBanned ? (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400">
-                          Banned
+                          {t('admin.banned')}
                         </span>
                       ) : (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400">
-                          Active
+                          {t('admin.active')}
                         </span>
                       )}
                     </td>
@@ -160,7 +167,7 @@ function UsersTab({ currentUserId }: { currentUserId: string }) {
                             role: u.role === 'ADMIN' ? 'USER' : 'ADMIN',
                           })}
                         >
-                          {u.role === 'ADMIN' ? 'Revoke Admin' : 'Make Admin'}
+                          {u.role === 'ADMIN' ? t('admin.revokeAdmin') : t('admin.makeAdmin')}
                         </Button>
 
                         {/* Plan toggle */}
@@ -187,7 +194,7 @@ function UsersTab({ currentUserId }: { currentUserId: string }) {
                               loading={unban.isPending && unban.variables === u.id}
                               onClick={() => unban.mutate(u.id)}
                             >
-                              Unban
+                              {t('admin.unban')}
                             </Button>
                           ) : (
                             <Button
@@ -195,7 +202,7 @@ function UsersTab({ currentUserId }: { currentUserId: string }) {
                               size="sm"
                               onClick={() => setBanTarget(u)}
                             >
-                              Ban
+                              {t('admin.ban')}
                             </Button>
                           )
                         )}
@@ -211,7 +218,7 @@ function UsersTab({ currentUserId }: { currentUserId: string }) {
           {data && data.totalPages > 1 && (
             <div className="mt-4 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
               <span>
-                Page {data.page + 1} of {data.totalPages} — {data.totalElements} users
+                {t('admin.page')} {data.page + 1} {t('admin.of')} {data.totalPages} — {data.totalElements} {t('admin.users')}
               </span>
               <div className="flex gap-2">
                 <Button
@@ -220,7 +227,7 @@ function UsersTab({ currentUserId }: { currentUserId: string }) {
                   disabled={data.page === 0}
                   onClick={() => setPage((p) => p - 1)}
                 >
-                  ← Prev
+                  {t('admin.prev')}
                 </Button>
                 <Button
                   variant="secondary"
@@ -228,7 +235,7 @@ function UsersTab({ currentUserId }: { currentUserId: string }) {
                   disabled={data.page + 1 >= data.totalPages}
                   onClick={() => setPage((p) => p + 1)}
                 >
-                  Next →
+                  {t('admin.next')}
                 </Button>
               </div>
             </div>
@@ -244,16 +251,16 @@ function UsersTab({ currentUserId }: { currentUserId: string }) {
 // ── Feedback tab ──────────────────────────────────────────────────────────────
 
 const CATEGORY_OPTIONS = [
-  { value: '', label: 'All' },
-  { value: 'BUG', label: 'Bug' },
-  { value: 'FEATURE_REQUEST', label: 'Feature Request' },
-  { value: 'OTHER', label: 'Other' },
+  { value: '', labelKey: 'admin.categoryAll' },
+  { value: 'BUG', labelKey: 'admin.categoryBug' },
+  { value: 'FEATURE_REQUEST', labelKey: 'admin.categoryFeature' },
+  { value: 'OTHER', labelKey: 'admin.categoryOther' },
 ] as const
 
 const RESOLVED_OPTIONS = [
-  { value: undefined as boolean | undefined, label: 'All' },
-  { value: false, label: 'Pending' },
-  { value: true, label: 'Resolved' },
+  { value: undefined as boolean | undefined, labelKey: 'admin.resolvedAll' },
+  { value: false, labelKey: 'admin.resolvedPending' },
+  { value: true, labelKey: 'admin.resolvedResolved' },
 ]
 
 function FeedbackCardSkeleton() {
@@ -274,19 +281,20 @@ function FeedbackCardSkeleton() {
 }
 
 function CategoryBadge({ category }: { category: AdminFeedbackItem['category'] }) {
+  const { t } = useTranslation()
   const styles: Record<AdminFeedbackItem['category'], string> = {
     BUG: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400',
     FEATURE_REQUEST: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400',
     OTHER: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400',
   }
-  const labels: Record<AdminFeedbackItem['category'], string> = {
-    BUG: 'Bug',
-    FEATURE_REQUEST: 'Feature',
-    OTHER: 'Other',
+  const labelKeys: Record<AdminFeedbackItem['category'], string> = {
+    BUG: 'admin.categoryBug',
+    FEATURE_REQUEST: 'admin.categoryFeature',
+    OTHER: 'admin.categoryOther',
   }
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${styles[category]}`}>
-      {labels[category]}
+      {t(labelKeys[category])}
     </span>
   )
 }
@@ -304,6 +312,7 @@ function FeedbackCard({
   resolving: boolean
   unresolving: boolean
 }) {
+  const { t } = useTranslation()
   const date = new Date(item.createdAt).toLocaleDateString(undefined, {
     year: 'numeric', month: 'short', day: 'numeric',
   })
@@ -314,22 +323,22 @@ function FeedbackCard({
         <CategoryBadge category={item.category} />
         {item.resolved && (
           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400">
-            Resolved
+            {t('admin.resolvedResolved')}
           </span>
         )}
       </div>
       <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{item.message}</p>
       <div className="flex items-center justify-between gap-2 flex-wrap mt-1">
         <span className="text-xs text-gray-400 dark:text-gray-500">
-          {item.authorDisplayName ?? 'Unknown'} · {item.authorEmail ?? '—'} · {date}
+          {item.authorDisplayName ?? t('admin.unknown')} · {item.authorEmail ?? '—'} · {date}
         </span>
         {item.resolved ? (
           <Button variant="ghost" size="sm" loading={unresolving} onClick={onUnresolve}>
-            Unresolve
+            {t('admin.unresolve')}
           </Button>
         ) : (
           <Button variant="ghost" size="sm" loading={resolving} onClick={onResolve}>
-            Resolve
+            {t('admin.resolve')}
           </Button>
         )}
       </div>
@@ -338,6 +347,7 @@ function FeedbackCard({
 }
 
 function FeedbackTab() {
+  const { t } = useTranslation()
   const [category, setCategory] = useState('')
   const [resolved, setResolved] = useState<boolean | undefined>(undefined)
   const [page, setPage] = useState(0)
@@ -384,7 +394,7 @@ function FeedbackTab() {
                   : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500'
               }`}
             >
-              {opt.label}
+              {t(opt.labelKey)}
             </button>
           ))}
         </div>
@@ -399,7 +409,7 @@ function FeedbackTab() {
                   : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500'
               }`}
             >
-              {opt.label}
+              {t(opt.labelKey)}
             </button>
           ))}
         </div>
@@ -414,7 +424,7 @@ function FeedbackTab() {
       ) : (
         <>
           {data?.items.length === 0 && (
-            <p className="py-8 text-center text-sm text-gray-400 dark:text-gray-500">No feedback found.</p>
+            <p className="py-8 text-center text-sm text-gray-400 dark:text-gray-500">{t('admin.noFeedbackFound')}</p>
           )}
           <div className="flex flex-col gap-3">
             {data?.items.map((item) => (
@@ -432,7 +442,7 @@ function FeedbackTab() {
           {data && data.totalPages > 1 && (
             <div className="mt-4 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
               <span>
-                Page {data.page + 1} of {data.totalPages} — {data.totalElements} items
+                {t('admin.page')} {data.page + 1} {t('admin.of')} {data.totalPages} — {data.totalElements} {t('admin.items')}
               </span>
               <div className="flex gap-2">
                 <Button
@@ -441,7 +451,7 @@ function FeedbackTab() {
                   disabled={data.page === 0}
                   onClick={() => setPage((p) => p - 1)}
                 >
-                  ← Prev
+                  {t('admin.prev')}
                 </Button>
                 <Button
                   variant="secondary"
@@ -449,7 +459,7 @@ function FeedbackTab() {
                   disabled={data.page + 1 >= data.totalPages}
                   onClick={() => setPage((p) => p + 1)}
                 >
-                  Next →
+                  {t('admin.next')}
                 </Button>
               </div>
             </div>
@@ -479,6 +489,7 @@ function GroupTableSkeleton() {
 }
 
 function GroupsTab() {
+  const { t } = useTranslation()
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(0)
@@ -504,7 +515,7 @@ function GroupsTab() {
   })
 
   const handleDelete = (group: AdminGroup) => {
-    if (!window.confirm(`Delete group "${group.title}"? This cannot be undone.`)) return
+    if (!window.confirm(t('admin.deleteGroupConfirm', { title: group.title }))) return
     deleteGroup.mutate(group.id)
   }
 
@@ -516,7 +527,7 @@ function GroupsTab() {
           type="search"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          placeholder="Search by group title…"
+          placeholder={t('admin.searchGroups')}
           className="w-full sm:w-80 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
       </div>
@@ -531,12 +542,12 @@ function GroupsTab() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60">
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Title</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Owner</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Members</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Timezone</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Locked</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Created</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t('admin.table.title')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t('admin.table.owner')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t('admin.table.members')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t('admin.table.timezone')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t('admin.table.locked')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t('admin.table.created')}</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
@@ -544,7 +555,7 @@ function GroupsTab() {
                 {data?.groups.length === 0 && (
                   <tr>
                     <td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-400 dark:text-gray-500">
-                      No groups found.
+                      {t('admin.noGroupsFound')}
                     </td>
                   </tr>
                 )}
@@ -566,7 +577,7 @@ function GroupsTab() {
                     <td className="px-4 py-3">
                       {g.isLocked && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
-                          Locked
+                          {t('admin.table.locked')}
                         </span>
                       )}
                     </td>
@@ -580,7 +591,7 @@ function GroupsTab() {
                         loading={deleteGroup.isPending && deleteGroup.variables === g.id}
                         onClick={() => handleDelete(g)}
                       >
-                        Delete
+                        {t('admin.delete')}
                       </Button>
                     </td>
                   </tr>
@@ -592,7 +603,7 @@ function GroupsTab() {
           {data && data.totalPages > 1 && (
             <div className="mt-4 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
               <span>
-                Page {data.page + 1} of {data.totalPages} — {data.totalElements} groups
+                {t('admin.page')} {data.page + 1} {t('admin.of')} {data.totalPages} — {data.totalElements} {t('admin.groups')}
               </span>
               <div className="flex gap-2">
                 <Button
@@ -601,7 +612,7 @@ function GroupsTab() {
                   disabled={data.page === 0}
                   onClick={() => setPage((p) => p - 1)}
                 >
-                  ← Prev
+                  {t('admin.prev')}
                 </Button>
                 <Button
                   variant="secondary"
@@ -609,7 +620,7 @@ function GroupsTab() {
                   disabled={data.page + 1 >= data.totalPages}
                   onClick={() => setPage((p) => p + 1)}
                 >
-                  Next →
+                  {t('admin.next')}
                 </Button>
               </div>
             </div>
@@ -623,13 +634,14 @@ function GroupsTab() {
 // ── AdminPage ─────────────────────────────────────────────────────────────────
 
 export default function AdminPage() {
+  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<Tab>('Users')
   const { userId } = useAuthStore()
 
   return (
     <Layout>
       <div className="max-w-6xl">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Admin Panel</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">{t('admin.title')}</h1>
 
         {/* Tabs */}
         <div className="mb-6 border-b border-gray-200 dark:border-gray-700">
@@ -644,7 +656,7 @@ export default function AdminPage() {
                     : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                 }`}
               >
-                {tab}
+                {t(TAB_LABEL_KEYS[tab])}
               </button>
             ))}
           </nav>
