@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { invitesApi } from '@/api/invites'
 import { authApi } from '@/api/auth'
 import { useAuthStore } from '@/store/auth'
@@ -8,6 +9,7 @@ import { Input } from '@/components/Input'
 import { Spinner } from '@/components/Spinner'
 
 export function JoinInvite() {
+  const { t } = useTranslation()
   const { token } = useParams<{ token: string }>()
   const navigate = useNavigate()
   const { isAuthenticated, login } = useAuthStore()
@@ -20,10 +22,10 @@ export function JoinInvite() {
       .join(token)
       .then((invite) => navigate(`/groups/${invite.groupId}`))
       .catch((err) => {
-        const msg = err?.response?.data?.message ?? 'This invite is invalid or has expired'
+        const msg = err?.response?.data?.message ?? t('auth.invalidInviteMessage')
         setError(msg)
       })
-  }, [isAuthenticated, token, navigate])
+  }, [isAuthenticated, token, navigate, t])
 
   // ── Unauthenticated path: guest join form ───────────────────────────────────
   const [displayName, setDisplayName] = useState('')
@@ -41,7 +43,7 @@ export function JoinInvite() {
       navigate(`/groups/${invite.groupId}`)
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-        ?? 'Something went wrong. Please try again.'
+        ?? t('errors.somethingWrong')
       setError(msg)
     } finally {
       setLoading(false)
@@ -52,10 +54,10 @@ export function JoinInvite() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="rounded-xl bg-white dark:bg-gray-800 p-8 shadow-md text-center">
-          <p className="text-lg font-semibold text-red-600 dark:text-red-400 mb-2">Unable to join</p>
+          <p className="text-lg font-semibold text-red-600 dark:text-red-400 mb-2">{t('auth.unableToJoin')}</p>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{error}</p>
           <Link to="/" className="text-indigo-600 dark:text-indigo-400 hover:underline text-sm">
-            Go to dashboard
+            {t('auth.goToDashboard')}
           </Link>
         </div>
       </div>
@@ -67,7 +69,7 @@ export function JoinInvite() {
       <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="flex flex-col items-center gap-3">
           <Spinner size="lg" />
-          <p className="text-sm text-gray-600 dark:text-gray-400">Joining group…</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">{t('auth.joiningGroup')}</p>
         </div>
       </div>
     )
@@ -77,17 +79,17 @@ export function JoinInvite() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
       <div className="w-full max-w-sm rounded-xl bg-white dark:bg-gray-800 p-8 shadow-md">
         <h1 className="mb-1 text-center text-2xl font-bold text-gray-900 dark:text-gray-100">
-          You've been invited
+          {t('auth.invitedTitle')}
         </h1>
         <p className="mb-6 text-center text-sm text-gray-500 dark:text-gray-400">
-          Enter your name to join
+          {t('auth.invitedSubtitle')}
         </p>
         <form onSubmit={submitGuest} className="flex flex-col gap-4">
           <Input
-            label="Your name"
+            label={t('auth.yourName')}
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="Your name"
+            placeholder={t('auth.yourName')}
             minLength={2}
             maxLength={50}
             required
@@ -100,16 +102,16 @@ export function JoinInvite() {
             disabled={displayName.trim().length < 2}
             className="w-full justify-center"
           >
-            Join as guest
+            {t('auth.joinAsGuest')}
           </Button>
         </form>
         <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
-          Already have an account?{' '}
+          {t('auth.hasAccount')}{' '}
           <Link
             to={`/signin?next=/join/${token}`}
             className="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
           >
-            Sign in
+            {t('auth.signIn')}
           </Link>
         </p>
       </div>
