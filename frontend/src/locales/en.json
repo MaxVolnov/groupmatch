@@ -267,6 +267,7 @@
     "resolve": "Resolve",
     "unresolve": "Unresolve",
     "unknown": "Unknown",
+    "guestBadge": "guest",
     "deleteGroupConfirm": "Delete group \"{{title}}\"? This cannot be undone."
   },
   "pricing": {
@@ -310,6 +311,10 @@
     "tagline": "Group scheduling made simple.",
     "product": "Product",
     "company": "Company",
+    "pricing": "Pricing",
+    "feedback": "Feedback",
+    "about": "About",
+    "legal": "Legal",
     "forTeams": "For Teams",
     "comingSoon": "Coming soon"
   },

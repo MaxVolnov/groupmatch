@@ -1,4 +1,5 @@
 import { ReactNode, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button } from './Button'
 
 interface ModalProps {
@@ -10,6 +11,7 @@ interface ModalProps {
 }
 
 export function Modal({ title, open, onClose, children, footer }: ModalProps) {
+  const { t } = useTranslation()
   useEffect(() => {
     const handler = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
     document.addEventListener('keydown', handler)
@@ -24,7 +26,7 @@ export function Modal({ title, open, onClose, children, footer }: ModalProps) {
       <div className="relative w-full sm:max-w-md rounded-t-2xl sm:rounded-xl bg-white dark:bg-gray-800 shadow-xl">
         <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 py-4">
           <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">{title}</h2>
-          <Button variant="ghost" size="sm" onClick={onClose} aria-label="Close">
+          <Button variant="ghost" size="sm" onClick={onClose} aria-label={t('common.close')}>
             ✕
           </Button>
         </div>
