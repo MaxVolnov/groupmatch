@@ -26,8 +26,14 @@ document.addEventListener('DOMContentLoaded', () => {
   if (utmParams.toString().length === 0) return
 
   document.querySelectorAll<HTMLAnchorElement>('a[data-cta]').forEach((cta) => {
-    const url = new URL(cta.href, location.origin)
+    // Read the literal attribute, not the .href property: the property
+    // resolves against the current origin, so on www.groupmatch.app it would
+    // bake the www hostname into the link. Write back a relative path so the
+    // CTA always stays on whatever origin the visitor is already on.
+    const raw = cta.getAttribute('href')
+    if (!raw) return
+    const url = new URL(raw, location.origin)
     utmParams.forEach((value, key) => url.searchParams.set(key, value))
-    cta.href = url.toString()
+    cta.setAttribute('href', `${url.pathname}${url.search}${url.hash}`)
   })
 })
