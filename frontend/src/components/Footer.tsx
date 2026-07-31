@@ -1,11 +1,19 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useAuthStore } from '@/store/auth'
 import { FeedbackModal } from './FeedbackModal'
 
 export function Footer() {
   const { t } = useTranslation()
+  const { isAuthenticated } = useAuthStore()
   const [showFeedback, setShowFeedback] = useState(false)
+
+  // POST /api/v1/feedback requires an authenticated principal, so the entry
+  // point is hidden from anonymous visitors on public routes. Guests are
+  // included on purpose: they get a normal ROLE_USER principal and the
+  // endpoint accepts them, and their feedback is worth collecting.
+  const canSendFeedback = isAuthenticated
 
   return (
     <footer className="bg-gray-900 text-gray-400 border-t border-gray-800">
@@ -34,14 +42,16 @@ export function Footer() {
                   {t('footer.pricing')}
                 </Link>
               </li>
-              <li>
-                <button
-                  onClick={() => setShowFeedback(true)}
-                  className="hover:text-white transition-colors"
-                >
-                  {t('footer.feedback')} →
-                </button>
-              </li>
+              {canSendFeedback && (
+                <li>
+                  <button
+                    onClick={() => setShowFeedback(true)}
+                    className="hover:text-white transition-colors"
+                  >
+                    {t('footer.feedback')} →
+                  </button>
+                </li>
+              )}
             </ul>
           </div>
 
@@ -69,7 +79,9 @@ export function Footer() {
         </div>
       </div>
 
-      <FeedbackModal open={showFeedback} onClose={() => setShowFeedback(false)} />
+      {canSendFeedback && (
+        <FeedbackModal open={showFeedback} onClose={() => setShowFeedback(false)} />
+      )}
     </footer>
   )
 }

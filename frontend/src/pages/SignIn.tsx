@@ -5,6 +5,7 @@ import { authApi } from '@/api/auth'
 import { useAuthStore } from '@/store/auth'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
+import { PublicLayout } from '@/components/PublicLayout'
 import { AxiosError } from 'axios'
 import type { ApiError } from '@/types'
 
@@ -66,8 +67,8 @@ export function SignIn() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
-      <div className="w-full max-w-sm rounded-xl bg-white dark:bg-gray-800 p-8 shadow-md">
+    <PublicLayout>
+      <div className="mx-auto w-full max-w-sm rounded-xl bg-white dark:bg-gray-800 p-8 shadow-md">
         <h1 className="mb-6 text-center text-2xl font-bold text-gray-900 dark:text-gray-100">{t('auth.signIn')}</h1>
         <form onSubmit={submit} className="flex flex-col gap-4">
           <Input
@@ -145,6 +146,6 @@ export function SignIn() {
           </form>
         )}
       </div>
-    </div>
+    </PublicLayout>
   )
 }
