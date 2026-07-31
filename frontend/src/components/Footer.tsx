@@ -59,15 +59,17 @@ export function Footer() {
           <div>
             <p className="text-white font-medium mb-3 text-sm">{t('footer.company')}</p>
             <ul className="flex flex-col gap-2 text-sm">
+              {/* Full page loads: /about and /legal are separate static
+                  entries, not SPA routes — <Link> would 404 inside the router. */}
               <li>
-                <Link to="/about" className="hover:text-white transition-colors">
+                <a href="/about" className="hover:text-white transition-colors">
                   {t('footer.about')}
-                </Link>
+                </a>
               </li>
               <li>
-                <Link to="/legal" className="hover:text-white transition-colors">
+                <a href="/legal" className="hover:text-white transition-colors">
                   {t('footer.legal')}
-                </Link>
+                </a>
               </li>
               <li>
                 <span className="cursor-not-allowed text-gray-600" title={t('footer.comingSoon')}>
