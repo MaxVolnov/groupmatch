@@ -6,12 +6,14 @@ import { FeedbackModal } from './FeedbackModal'
 
 export function Footer() {
   const { t } = useTranslation()
-  const { isAuthenticated, isGuest } = useAuthStore()
+  const { isAuthenticated } = useAuthStore()
   const [showFeedback, setShowFeedback] = useState(false)
 
   // POST /api/v1/feedback requires an authenticated principal, so the entry
-  // point is hidden for anonymous and guest visitors on public routes.
-  const canSendFeedback = isAuthenticated && !isGuest
+  // point is hidden from anonymous visitors on public routes. Guests are
+  // included on purpose: they get a normal ROLE_USER principal and the
+  // endpoint accepts them, and their feedback is worth collecting.
+  const canSendFeedback = isAuthenticated
 
   return (
     <footer className="bg-gray-900 text-gray-400 border-t border-gray-800">
