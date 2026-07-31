@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#040929">
     <title>GroupMatch — общее время для встречи без переписок</title>
     <meta name="description" content="Участники отмечают, когда им удобно, — GroupMatch показывает на тепловой карте окна, где свободны максимум людей.">
     <link rel="canonical" href="https://groupmatch.app/promo">
@@ -15,8 +16,8 @@
     <meta property="og:image" content="https://groupmatch.app/og-image.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="GroupMatch — тепловая карта доступности группы">
     <meta name="twitter:card" content="summary_large_image">
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <script type="module" src="/src/promo/main.ts"></script>
   </head>
   <body class="bg-[var(--gm-bg)] text-[var(--gm-text)]">
@@ -25,20 +26,20 @@
     <!-- Top bar -->
     <header class="border-b border-[var(--gm-border)]">
       <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
-        <a href="#top" class="flex items-center gap-2 min-h-[44px]">
-          <img src="/logo.svg" alt="GroupMatch" width="32" height="32">
+        <a href="#top" class="flex min-h-[44px] items-center gap-2">
+          <img src="/logo.svg" alt="" width="32" height="32" onerror="this.remove()">
           <span class="text-lg font-bold">GroupMatch</span>
         </a>
         <nav class="hidden items-center gap-6 text-sm text-[var(--gm-muted)] sm:flex">
-          <a href="#how-it-works" class="min-h-[44px] flex items-center hover:text-[var(--gm-text)] transition-colors">Как это работает</a>
-          <a href="#premium" class="min-h-[44px] flex items-center hover:text-[var(--gm-text)] transition-colors">Premium</a>
+          <a href="#how-it-works" class="flex min-h-[44px] items-center transition-colors hover:text-[var(--gm-text)]">Как это работает</a>
+          <a href="#premium" class="flex min-h-[44px] items-center transition-colors hover:text-[var(--gm-text)]">Premium</a>
         </nav>
         <div class="flex items-center gap-3">
-          <a href="/signin" class="min-h-[44px] flex items-center text-sm text-[var(--gm-muted)] hover:text-[var(--gm-text)] transition-colors">Войти</a>
+          <a href="/signin" class="flex min-h-[44px] items-center text-sm text-[var(--gm-muted)] transition-colors hover:text-[var(--gm-text)]">Войти</a>
           <a
             data-cta
             href="/signup"
-            class="min-h-[44px] inline-flex items-center rounded-lg bg-[var(--gm-accent)] px-4 text-sm font-semibold text-white transition-colors hover:bg-[var(--gm-accent-light)]"
+            class="inline-flex min-h-[44px] items-center rounded-lg bg-[var(--gm-accent)] px-4 text-sm font-semibold text-[var(--gm-text)] transition-colors hover:bg-[var(--gm-accent-hover)]"
           >
             Начать бесплатно
           </a>
@@ -49,6 +50,11 @@
     <main id="top">
       <!-- Hero -->
       <section class="mx-auto max-w-3xl px-4 pb-16 pt-14 text-center sm:px-6 sm:pt-20">
+        <div class="mb-6 flex items-center justify-center gap-3">
+          <img src="/logo.svg" alt="" width="40" height="40" onerror="this.remove()">
+          <span class="text-2xl font-bold">GroupMatch</span>
+        </div>
+
         <span class="inline-flex items-center rounded-full border border-[var(--gm-border)] bg-[var(--gm-surface)] px-4 py-1.5 text-sm font-medium text-[var(--gm-accent-light)]">
           Ранний доступ · Premium бесплатно
         </span>
@@ -65,7 +71,7 @@
           <a
             data-cta
             href="/signup"
-            class="inline-flex min-h-[44px] items-center justify-center rounded-lg bg-[var(--gm-accent)] px-6 text-base font-semibold text-white transition-colors hover:bg-[var(--gm-accent-light)]"
+            class="inline-flex min-h-[44px] items-center justify-center rounded-lg bg-[var(--gm-accent)] px-6 text-base font-semibold text-[var(--gm-text)] transition-colors hover:bg-[var(--gm-accent-hover)]"
           >
             Получить 3 месяца Premium бесплатно
           </a>
@@ -77,12 +83,16 @@
       <section id="screenshots" class="mx-auto max-w-5xl px-4 pb-20 sm:px-6">
         <div class="grid gap-8 sm:grid-cols-3">
           <figure>
-            <div class="aspect-[16/10] overflow-hidden rounded-xl border border-[var(--gm-border)] bg-[var(--gm-surface)]">
+            <div class="relative aspect-[16/10] overflow-hidden rounded-xl border border-[var(--gm-border)] bg-[var(--gm-surface)]">
+              <div class="absolute inset-0 flex items-center justify-center px-4 text-center text-sm text-[var(--gm-muted)]">
+                Скриншот скоро появится
+              </div>
               <img
                 src="/promo/screen-heatmap.png"
                 alt="Тепловая карта доступности группы GroupMatch"
                 loading="lazy"
-                class="h-full w-full object-cover"
+                onerror="this.remove()"
+                class="relative h-full w-full object-cover"
               >
             </div>
             <figcaption class="mt-3">
@@ -92,12 +102,16 @@
           </figure>
 
           <figure>
-            <div class="aspect-[16/10] overflow-hidden rounded-xl border border-[var(--gm-border)] bg-[var(--gm-surface)]">
+            <div class="relative aspect-[16/10] overflow-hidden rounded-xl border border-[var(--gm-border)] bg-[var(--gm-surface)]">
+              <div class="absolute inset-0 flex items-center justify-center px-4 text-center text-sm text-[var(--gm-muted)]">
+                Скриншот скоро появится
+              </div>
               <img
                 src="/promo/screen-availability.png"
                 alt="Отметка своего свободного времени в GroupMatch"
                 loading="lazy"
-                class="h-full w-full object-cover"
+                onerror="this.remove()"
+                class="relative h-full w-full object-cover"
               >
             </div>
             <figcaption class="mt-3">
@@ -107,12 +121,16 @@
           </figure>
 
           <figure>
-            <div class="aspect-[16/10] overflow-hidden rounded-xl border border-[var(--gm-border)] bg-[var(--gm-surface)]">
+            <div class="relative aspect-[16/10] overflow-hidden rounded-xl border border-[var(--gm-border)] bg-[var(--gm-surface)]">
+              <div class="absolute inset-0 flex items-center justify-center px-4 text-center text-sm text-[var(--gm-muted)]">
+                Скриншот скоро появится
+              </div>
               <img
                 src="/promo/screen-meeting.png"
                 alt="Создание встречи в GroupMatch по клику на слот тепловой карты"
                 loading="lazy"
-                class="h-full w-full object-cover"
+                onerror="this.remove()"
+                class="relative h-full w-full object-cover"
               >
             </div>
             <figcaption class="mt-3">
@@ -161,11 +179,11 @@
           </li>
           <li class="flex items-center gap-3">
             <span class="text-[var(--gm-accent-light)]">✓</span>
-            <span>Неограниченное участие в группах</span>
+            <span>До 30 участников в группе вместо 15</span>
           </li>
           <li class="flex items-center gap-3">
             <span class="text-[var(--gm-accent-light)]">✓</span>
-            <span>Всё из Free</span>
+            <span>Неограниченное участие в группах</span>
           </li>
           <li class="flex items-center gap-3">
             <span class="text-[var(--gm-accent-light)]">✓</span>
@@ -187,7 +205,7 @@
           <a
             data-cta
             href="/signup"
-            class="mt-8 inline-flex min-h-[44px] items-center justify-center rounded-lg bg-[var(--gm-accent)] px-6 text-base font-semibold text-white transition-colors hover:bg-[var(--gm-accent-light)]"
+            class="mt-8 inline-flex min-h-[44px] items-center justify-center rounded-lg bg-[var(--gm-accent)] px-6 text-base font-semibold text-[var(--gm-text)] transition-colors hover:bg-[var(--gm-accent-hover)]"
           >
             Получить 3 месяца Premium бесплатно
           </a>
@@ -204,10 +222,10 @@
         <p class="font-semibold text-[var(--gm-text)]">GroupMatch</p>
         <p>ИНН 771887947687</p>
         <nav class="flex items-center gap-4">
-          <a href="/legal" class="min-h-[44px] flex items-center hover:text-[var(--gm-text)] transition-colors">Оферта и конфиденциальность</a>
-          <a href="/about" class="min-h-[44px] flex items-center hover:text-[var(--gm-text)] transition-colors">О сервисе</a>
+          <a href="/legal" class="flex min-h-[44px] items-center transition-colors hover:text-[var(--gm-text)]">Оферта и конфиденциальность</a>
+          <a href="/about" class="flex min-h-[44px] items-center transition-colors hover:text-[var(--gm-text)]">О сервисе</a>
         </nav>
-        <!-- <a href="https://t.me/groupmatch" class="hover:text-[var(--gm-text)] transition-colors">Telegram-канал</a> -->
+        <!-- <a href="https://t.me/groupmatch" class="transition-colors hover:text-[var(--gm-text)]">Telegram-канал</a> -->
         <p>© 2026 GroupMatch</p>
       </div>
     </footer>
