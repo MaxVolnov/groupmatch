@@ -77,6 +77,7 @@ export function Layout({ children }: LayoutProps) {
             onClick={() => setMenuOpen(false)}
           >
             GroupMatch
+            <span className="ml-1.5 align-top text-[11px] font-normal text-gray-500 dark:text-gray-400">beta</span>
           </Link>
 
           <div className="flex items-center gap-2">

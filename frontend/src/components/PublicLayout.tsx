@@ -19,6 +19,7 @@ export function PublicLayout({ children }: Props) {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <Link to="/" className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
             GroupMatch
+            <span className="ml-1.5 align-top text-[11px] font-normal text-gray-500 dark:text-gray-400">beta</span>
           </Link>
           <div className="flex items-center gap-3">
             {isAuthenticated ? (

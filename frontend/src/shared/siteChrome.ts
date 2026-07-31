@@ -13,7 +13,7 @@ export const HEADER_HTML = `
   <div class="mx-auto flex max-w-3xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
     <a href="/" class="flex min-h-[44px] items-center gap-2">
       <img src="/logo.svg" alt="" width="32" height="32" onerror="this.remove()">
-      <span class="text-lg font-bold text-[var(--gm-text)]">GroupMatch</span>
+      <span class="text-lg font-bold text-[var(--gm-text)]">GroupMatch<span class="ml-1.5 align-top text-[11px] font-normal text-[var(--gm-muted)]">beta</span></span>
     </a>
     <div class="flex items-center gap-3">
       <a href="/signin" class="flex min-h-[44px] items-center text-sm text-[var(--gm-muted)] transition-colors hover:text-[var(--gm-text)]">Войти</a>
