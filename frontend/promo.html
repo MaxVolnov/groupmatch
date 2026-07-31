@@ -12,7 +12,7 @@
     <meta property="og:site_name" content="GroupMatch">
     <meta property="og:url" content="https://groupmatch.app/promo">
     <meta property="og:title" content="GroupMatch — общее время для встречи без переписок">
-    <meta property="og:description" content="Тепловая карта доступности группы. Ранним пользователям — Premium бесплатно.">
+    <meta property="og:description" content="Тепловая карта доступности группы. Pro на 3 месяца бесплатно с момента регистрации.">
     <meta property="og:image" content="https://groupmatch.app/og-image.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
@@ -21,7 +21,7 @@
     <script type="module" src="/src/promo/main.ts"></script>
   </head>
   <body class="bg-[var(--gm-bg)] text-[var(--gm-text)]">
-    <!-- PROMO CONSTANTS: TRIAL_MONTHS = 3 | EARLY_ACCESS_UNTIL = 15 сентября 2026 -->
+    <!-- PROMO CONSTANTS: TRIAL_MONTHS = 3 -->
 
     <!-- Top bar -->
     <header class="border-b border-[var(--gm-border)]">
@@ -32,7 +32,7 @@
         </a>
         <nav class="hidden items-center gap-6 text-sm text-[var(--gm-muted)] sm:flex">
           <a href="#how-it-works" class="flex min-h-[44px] items-center transition-colors hover:text-[var(--gm-text)]">Как это работает</a>
-          <a href="#premium" class="flex min-h-[44px] items-center transition-colors hover:text-[var(--gm-text)]">Premium</a>
+          <a href="#premium" class="flex min-h-[44px] items-center transition-colors hover:text-[var(--gm-text)]">Pro</a>
         </nav>
         <div class="flex items-center gap-3">
           <a href="/signin" class="flex min-h-[44px] items-center text-sm text-[var(--gm-muted)] transition-colors hover:text-[var(--gm-text)]">Войти</a>
@@ -56,7 +56,7 @@
         </div>
 
         <span class="inline-flex items-center rounded-full border border-[var(--gm-border)] bg-[var(--gm-surface)] px-4 py-1.5 text-sm font-medium text-[var(--gm-accent-light)]">
-          Ранний доступ · Premium бесплатно
+          Ранний доступ · Pro бесплатно
         </span>
 
         <h1 class="mt-6 text-4xl font-bold leading-tight sm:text-5xl">
@@ -73,7 +73,7 @@
             href="/signup"
             class="inline-flex min-h-[44px] items-center justify-center rounded-lg bg-[var(--gm-accent)] px-6 text-base font-semibold text-[var(--gm-text)] transition-colors hover:bg-[var(--gm-accent-hover)]"
           >
-            Получить 3 месяца Premium бесплатно
+            Получить 3 месяца Pro бесплатно
           </a>
           <p class="text-sm text-[var(--gm-muted)]">Регистрация по email за 30 секунд. Карта не нужна.</p>
         </div>
@@ -165,11 +165,11 @@
         </div>
       </section>
 
-      <!-- Premium -->
+      <!-- Pro trial -->
       <section id="premium" class="mx-auto max-w-3xl px-4 py-20 sm:px-6">
-        <h2 class="text-center text-3xl font-bold">Ранним пользователям — Premium бесплатно</h2>
+        <h2 class="text-center text-3xl font-bold">Pro на 3 месяца — бесплатно</h2>
         <p class="mx-auto mt-4 max-w-2xl text-center text-[var(--gm-muted)]">
-          GroupMatch запускается в бете. Первым пользователям мы включаем Premium на 3 месяца — бесплатно и без привязки карты.
+          GroupMatch запускается в бете. Каждый новый аккаунт получает Pro на 3 месяца с момента регистрации — бесплатно и без привязки карты.
         </p>
 
         <ul class="mx-auto mt-8 flex max-w-md flex-col gap-3">
@@ -189,7 +189,7 @@
 
         <div class="mx-auto mt-10 max-w-2xl rounded-xl border border-[var(--gm-border)] bg-[var(--gm-surface)] p-6">
           <p class="text-base leading-relaxed text-[var(--gm-text)]">
-            Честно о будущем: после беты GroupMatch станет платным. Аккаунты, созданные до 15 сентября 2026, получают Premium на 3 месяца с момента регистрации. Автосписаний не будет — мы напомним по email за 14 дней до окончания, и без вашего действия аккаунт просто перейдёт на бесплатный тариф.
+            Честно о будущем: после беты GroupMatch станет платным. Регистрируясь сейчас, вы получаете Pro на 3 месяца с момента регистрации — бесплатно, без привязки карты. Автосписаний не будет: мы напомним по email за 14 дней до окончания триала, и без вашего действия аккаунт просто перейдёт на бесплатный тариф.
           </p>
         </div>
       </section>
@@ -203,7 +203,7 @@
             href="/signup"
             class="mt-8 inline-flex min-h-[44px] items-center justify-center rounded-lg bg-[var(--gm-accent)] px-6 text-base font-semibold text-[var(--gm-text)] transition-colors hover:bg-[var(--gm-accent-hover)]"
           >
-            Получить 3 месяца Premium бесплатно
+            Получить 3 месяца Pro бесплатно
           </a>
           <p class="mt-4 text-sm text-[var(--gm-muted)]">
             Уже есть аккаунт? <a href="/signin" class="text-[var(--gm-accent-light)] hover:underline">Войти</a>
