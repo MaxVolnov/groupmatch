@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import { resolve } from 'node:path'
 
 export default defineConfig(({ mode }) => ({
   plugins: [react()],
@@ -21,5 +22,13 @@ export default defineConfig(({ mode }) => ({
           },
         }
       : undefined,
+  },
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        promo: resolve(__dirname, 'promo.html'),
+      },
+    },
   },
 }))
