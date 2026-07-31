@@ -1,5 +1,5 @@
 import { ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/store/auth'
 import { Footer } from './Footer'
@@ -11,6 +11,7 @@ interface Props {
 export function PublicLayout({ children }: Props) {
   const { isAuthenticated } = useAuthStore()
   const { t } = useTranslation()
+  const { pathname } = useLocation()
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
@@ -29,18 +30,23 @@ export function PublicLayout({ children }: Props) {
               </Link>
             ) : (
               <>
-                <Link
-                  to="/signin"
-                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-                >
-                  {t('nav.signIn')}
-                </Link>
-                <Link
-                  to="/signup"
-                  className="text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors"
-                >
-                  {t('nav.signUp')}
-                </Link>
+                {/* Don't offer the action the visitor is already on */}
+                {pathname !== '/signin' && (
+                  <Link
+                    to="/signin"
+                    className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                  >
+                    {t('nav.signIn')}
+                  </Link>
+                )}
+                {pathname !== '/signup' && (
+                  <Link
+                    to="/signup"
+                    className="text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors"
+                  >
+                    {t('nav.signUp')}
+                  </Link>
+                )}
               </>
             )}
           </div>
