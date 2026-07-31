@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GroupMatch — общее время для встречи без переписок</title>
+    <meta name="description" content="Участники отмечают, когда им удобно, — GroupMatch показывает на тепловой карте окна, где свободны максимум людей.">
+    <link rel="canonical" href="https://groupmatch.app/promo">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="ru_RU">
+    <meta property="og:site_name" content="GroupMatch">
+    <meta property="og:url" content="https://groupmatch.app/promo">
+    <meta property="og:title" content="GroupMatch — общее время для встречи без переписок">
+    <meta property="og:description" content="Тепловая карта доступности группы. Ранним пользователям — Premium бесплатно.">
+    <meta property="og:image" content="https://groupmatch.app/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <script type="module" src="/src/promo/main.ts"></script>
+  </head>
+  <body class="bg-[var(--gm-bg)] text-[var(--gm-text)]">
+    <!-- PROMO CONSTANTS: TRIAL_MONTHS = 3 | EARLY_ACCESS_UNTIL = 15 сентября 2026 -->
+
+    <!-- Top bar -->
+    <header class="border-b border-[var(--gm-border)]">
+      <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
+        <a href="#top" class="flex items-center gap-2 min-h-[44px]">
+          <img src="/logo.svg" alt="GroupMatch" width="32" height="32">
+          <span class="text-lg font-bold">GroupMatch</span>
+        </a>
+        <nav class="hidden items-center gap-6 text-sm text-[var(--gm-muted)] sm:flex">
+          <a href="#how-it-works" class="min-h-[44px] flex items-center hover:text-[var(--gm-text)] transition-colors">Как это работает</a>
+          <a href="#premium" class="min-h-[44px] flex items-center hover:text-[var(--gm-text)] transition-colors">Premium</a>
+        </nav>
+        <div class="flex items-center gap-3">
+          <a href="/signin" class="min-h-[44px] flex items-center text-sm text-[var(--gm-muted)] hover:text-[var(--gm-text)] transition-colors">Войти</a>
+          <a
+            data-cta
+            href="/signup"
+            class="min-h-[44px] inline-flex items-center rounded-lg bg-[var(--gm-accent)] px-4 text-sm font-semibold text-white transition-colors hover:bg-[var(--gm-accent-light)]"
+          >
+            Начать бесплатно
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <main id="top">
+      <!-- Hero -->
+      <section class="mx-auto max-w-3xl px-4 pb-16 pt-14 text-center sm:px-6 sm:pt-20">
+        <span class="inline-flex items-center rounded-full border border-[var(--gm-border)] bg-[var(--gm-surface)] px-4 py-1.5 text-sm font-medium text-[var(--gm-accent-light)]">
+          Ранний доступ · Premium бесплатно
+        </span>
+
+        <h1 class="mt-6 text-4xl font-bold leading-tight sm:text-5xl">
+          Общее время для встречи — за одну минуту
+        </h1>
+
+        <p class="mx-auto mt-5 max-w-2xl text-lg text-[var(--gm-muted)]">
+          GroupMatch собирает доступность всех участников и показывает на тепловой карте окна, когда свободны максимум людей. Без опросов в чате и цепочек «а когда тебе удобно?».
+        </p>
+
+        <div class="mt-8 flex flex-col items-center gap-3">
+          <a
+            data-cta
+            href="/signup"
+            class="inline-flex min-h-[44px] items-center justify-center rounded-lg bg-[var(--gm-accent)] px-6 text-base font-semibold text-white transition-colors hover:bg-[var(--gm-accent-light)]"
+          >
+            Получить 3 месяца Premium бесплатно
+          </a>
+          <p class="text-sm text-[var(--gm-muted)]">Регистрация по email за 30 секунд. Карта не нужна.</p>
+        </div>
+      </section>
+
+      <!-- Screenshots -->
+      <section id="screenshots" class="mx-auto max-w-5xl px-4 pb-20 sm:px-6">
+        <div class="grid gap-8 sm:grid-cols-3">
+          <figure>
+            <div class="aspect-[16/10] overflow-hidden rounded-xl border border-[var(--gm-border)] bg-[var(--gm-surface)]">
+              <img
+                src="/promo/screen-heatmap.png"
+                alt="Тепловая карта доступности группы GroupMatch"
+                loading="lazy"
+                class="h-full w-full object-cover"
+              >
+            </div>
+            <figcaption class="mt-3">
+              <p class="font-semibold">Тепловая карта доступности</p>
+              <p class="mt-1 text-sm text-[var(--gm-muted)]">Чем зеленее слот, тем больше участников свободны в это время.</p>
+            </figcaption>
+          </figure>
+
+          <figure>
+            <div class="aspect-[16/10] overflow-hidden rounded-xl border border-[var(--gm-border)] bg-[var(--gm-surface)]">
+              <img
+                src="/promo/screen-availability.png"
+                alt="Отметка своего свободного времени в GroupMatch"
+                loading="lazy"
+                class="h-full w-full object-cover"
+              >
+            </div>
+            <figcaption class="mt-3">
+              <p class="font-semibold">Отметка своего времени</p>
+              <p class="mt-1 text-sm text-[var(--gm-muted)]">Отмечаете свои окна в один тап — с телефона или с компьютера.</p>
+            </figcaption>
+          </figure>
+
+          <figure>
+            <div class="aspect-[16/10] overflow-hidden rounded-xl border border-[var(--gm-border)] bg-[var(--gm-surface)]">
+              <img
+                src="/promo/screen-meeting.png"
+                alt="Создание встречи в GroupMatch по клику на слот тепловой карты"
+                loading="lazy"
+                class="h-full w-full object-cover"
+              >
+            </div>
+            <figcaption class="mt-3">
+              <p class="font-semibold">Создание встречи</p>
+              <p class="mt-1 text-sm text-[var(--gm-muted)]">Клик по слоту — встреча создана. Участники получают уведомление и файл для календаря.</p>
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <!-- How it works -->
+      <section id="how-it-works" class="border-t border-[var(--gm-border)] bg-[var(--gm-surface)]">
+        <div class="mx-auto max-w-5xl px-4 py-16 sm:px-6">
+          <h2 class="text-center text-3xl font-bold">Как это работает</h2>
+          <div class="mt-10 grid gap-8 sm:grid-cols-3">
+            <div>
+              <span class="text-sm font-semibold text-[var(--gm-accent-light)]">01</span>
+              <p class="mt-2 text-lg font-semibold">Создайте группу</p>
+              <p class="mt-2 text-sm text-[var(--gm-muted)]">Отправьте участникам ссылку-приглашение. Регистрироваться необязательно — можно зайти гостем.</p>
+            </div>
+            <div>
+              <span class="text-sm font-semibold text-[var(--gm-accent-light)]">02</span>
+              <p class="mt-2 text-lg font-semibold">Все отмечают доступность</p>
+              <p class="mt-2 text-sm text-[var(--gm-muted)]">Каждый указывает свои окна в своём часовом поясе. GroupMatch сам сводит их к общему времени.</p>
+            </div>
+            <div>
+              <span class="text-sm font-semibold text-[var(--gm-accent-light)]">03</span>
+              <p class="mt-2 text-lg font-semibold">Выбираете общее окно</p>
+              <p class="mt-2 text-sm text-[var(--gm-muted)]">Тепловая карта показывает, когда свободны максимум людей. Кликаете — и встреча появляется в календаре у всех.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Premium -->
+      <section id="premium" class="mx-auto max-w-3xl px-4 py-20 sm:px-6">
+        <h2 class="text-center text-3xl font-bold">Ранним пользователям — Premium бесплатно</h2>
+        <p class="mx-auto mt-4 max-w-2xl text-center text-[var(--gm-muted)]">
+          GroupMatch запускается в бете. Первым пользователям мы включаем Premium на 3 месяца — бесплатно и без привязки карты.
+        </p>
+
+        <ul class="mx-auto mt-8 flex max-w-md flex-col gap-3">
+          <li class="flex items-center gap-3">
+            <span class="text-[var(--gm-accent-light)]">✓</span>
+            <span>Неограниченно групп в роли владельца</span>
+          </li>
+          <li class="flex items-center gap-3">
+            <span class="text-[var(--gm-accent-light)]">✓</span>
+            <span>Неограниченное участие в группах</span>
+          </li>
+          <li class="flex items-center gap-3">
+            <span class="text-[var(--gm-accent-light)]">✓</span>
+            <span>Всё из Free</span>
+          </li>
+          <li class="flex items-center gap-3">
+            <span class="text-[var(--gm-accent-light)]">✓</span>
+            <span>Приоритетная поддержка</span>
+          </li>
+        </ul>
+
+        <div class="mx-auto mt-10 max-w-2xl rounded-xl border border-[var(--gm-border)] bg-[var(--gm-surface)] p-6">
+          <p class="text-base leading-relaxed text-[var(--gm-text)]">
+            Честно о будущем: после беты GroupMatch станет платным. Аккаунты, созданные до 15 сентября 2026, получают Premium на 3 месяца с момента регистрации. Автосписаний не будет — мы напомним по email за 14 дней до окончания, и без вашего действия аккаунт просто перейдёт на бесплатный тариф.
+          </p>
+        </div>
+      </section>
+
+      <!-- Final CTA -->
+      <section class="border-t border-[var(--gm-border)] bg-[var(--gm-surface)]">
+        <div class="mx-auto max-w-2xl px-4 py-20 text-center sm:px-6">
+          <h2 class="text-3xl font-bold">Соберите первую встречу сегодня</h2>
+          <a
+            data-cta
+            href="/signup"
+            class="mt-8 inline-flex min-h-[44px] items-center justify-center rounded-lg bg-[var(--gm-accent)] px-6 text-base font-semibold text-white transition-colors hover:bg-[var(--gm-accent-light)]"
+          >
+            Получить 3 месяца Premium бесплатно
+          </a>
+          <p class="mt-4 text-sm text-[var(--gm-muted)]">
+            Уже есть аккаунт? <a href="/signin" class="text-[var(--gm-accent-light)] hover:underline">Войти</a>
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-[var(--gm-border)]">
+      <div class="mx-auto flex max-w-5xl flex-col items-center gap-3 px-4 py-10 text-center text-sm text-[var(--gm-muted)] sm:px-6">
+        <p class="font-semibold text-[var(--gm-text)]">GroupMatch</p>
+        <p>ИНН 771887947687</p>
+        <nav class="flex items-center gap-4">
+          <a href="/legal" class="min-h-[44px] flex items-center hover:text-[var(--gm-text)] transition-colors">Оферта и конфиденциальность</a>
+          <a href="/about" class="min-h-[44px] flex items-center hover:text-[var(--gm-text)] transition-colors">О сервисе</a>
+        </nav>
+        <!-- <a href="https://t.me/groupmatch" class="hover:text-[var(--gm-text)] transition-colors">Telegram-канал</a> -->
+        <p>© 2026 GroupMatch</p>
+      </div>
+    </footer>
+
+    <!-- ANALYTICS SLOT: Yandex.Metrika counter -->
+  </body>
+</html>
