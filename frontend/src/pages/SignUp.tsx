@@ -84,10 +84,10 @@ export function SignUp() {
             />
             <span>
               {t('auth.agreeToTerms')}{' '}
-              <a href={`${import.meta.env.BASE_URL}legal#terms`} target="_blank" rel="noopener noreferrer"
+              <a href="/legal#terms" target="_blank" rel="noopener noreferrer"
                  className="text-indigo-600 hover:underline">{t('auth.termsOfService')}</a>
               {' '}{t('auth.and')}{' '}
-              <a href={`${import.meta.env.BASE_URL}legal#privacy`} target="_blank" rel="noopener noreferrer"
+              <a href="/legal#privacy" target="_blank" rel="noopener noreferrer"
                  className="text-indigo-600 hover:underline">{t('auth.privacyPolicy')}</a>
             </span>
           </label>

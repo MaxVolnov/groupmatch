@@ -1,7 +1,14 @@
 {
+  "redirects": [
+    { "source": "/terms", "destination": "/legal#terms", "permanent": true }
+  ],
   "rewrites": [
     { "source": "/promo", "destination": "/promo.html" },
     { "source": "/promo/", "destination": "/promo.html" },
+    { "source": "/legal", "destination": "/legal.html" },
+    { "source": "/legal/", "destination": "/legal.html" },
+    { "source": "/about", "destination": "/about.html" },
+    { "source": "/about/", "destination": "/about.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

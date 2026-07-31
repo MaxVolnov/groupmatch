@@ -28,6 +28,8 @@ export default defineConfig(({ mode }) => ({
       input: {
         main: resolve(__dirname, 'index.html'),
         promo: resolve(__dirname, 'promo.html'),
+        legal: resolve(__dirname, 'legal.html'),
+        about: resolve(__dirname, 'about.html'),
       },
     },
   },

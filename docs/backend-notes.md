@@ -66,19 +66,40 @@ Records are immutable by design — no setters needed, Jackson deserialises them
 
 Migrations live in `src/main/resources/db/migration/` and are named `V{n}__{description}.sql`.
 
-Current sequence:
+Current sequence (V1–V18, no gaps — mirrors the actual contents of the
+migration directory as of 2026-07-31):
 
-| Version | Description |
-|---|---|
-| V1 | Create `app_user` table |
-| V2 | Create `refresh_token` table |
-| V3 | Create `groups` and `group_members` tables |
-| V4 | Create `group_invites` table |
-| V5 | Create `availability` table |
-| V6 | Create `meetings` table |
-| V7 | Create `feedback` table |
+| Version | File | Description |
+|---|---|---|
+| V1 | `V1__create-users-table.sql` | Create `app_user` table |
+| V2 | `V2__create-groups-table.sql` | Create `grp` table |
+| V3 | `V3__create-group-members-table.sql` | Create `grp_member` table |
+| V4 | `V4__create-availability-table.sql` | Create `availability` table |
+| V5 | `V5__create-meetings-table.sql` | Create `meeting` table |
+| V6 | `V6__add_user_role_and_missing_tables.sql` | Add `role` to `app_user`; create `invite`, `subscription` (stub), `report` |
+| V7 | `V7__create_feedback_table.sql` | Create `feedback` table |
+| V8 | `V8__add_is_guest_to_users.sql` | Add `is_guest` to `app_user` |
+| V9 | `V9__add_role_index.sql` | Index on `app_user(role)` |
+| V10 | `V10__add_ban_fields.sql` | Add `is_banned` / `ban_reason` to `app_user` |
+| V11 | `V11__add_feedback_resolve_fields.sql` | Add `is_resolved` / `resolved_at` / `resolved_by` to `feedback` |
+| V12 | `V12__add_cascade_delete_on_user_fk.sql` | `ON DELETE CASCADE` on user FKs |
+| V13 | `V13__email_verification_and_password_reset.sql` | Create `email_verification_token`, `password_reset_token` |
+| V14 | `V14__notifications.sql` | Create `notification` table |
+| V15 | `V15__meeting_reminder_sent.sql` | Add `reminder_sent` to `meeting` |
+| V16 | `V16__notification_preferences.sql` | Create `notification_preferences` table |
+| V17 | `V17__subscription.sql` | Drop the V6 `subscription` stub, create the real table |
+| V18 | `V18__add_user_locale.sql` | Add `locale` to `app_user` (default `ru`) |
 
 Never edit a committed migration — create a new one instead.
+
+Known cleanup candidates (tracked in `development-plan.md` §9.3):
+- `report` table from V6 has no entity, repository or controller — dead schema
+- `idx_feedback_created_at` is created twice (V7 and V11; the second is a
+  no-op thanks to `IF NOT EXISTS`)
+- V13 declares explicit indexes on `token` columns that already carry a
+  `UNIQUE` constraint
+- `subscription.yookassa_payment_id` has no index despite being the webhook
+  lookup path
 
 ## Auth flow
 

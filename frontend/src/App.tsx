@@ -12,8 +12,6 @@ import { ForgotPassword } from '@/pages/ForgotPassword'
 import { ResetPassword } from '@/pages/ResetPassword'
 import AdminPage from '@/pages/AdminPage'
 import { Pricing } from '@/pages/Pricing'
-import { About } from '@/pages/About'
-import { Legal } from '@/pages/Legal'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -64,10 +62,9 @@ function App() {
               </AdminRoute>
             }
           />
-          <Route path="/terms" element={<Navigate to="/legal#terms" replace />} />
+          {/* /legal, /about and /terms are standalone static entries served
+              by vercel.json — deliberately outside the SPA bundle. */}
           <Route path="/pricing" element={<Pricing />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/legal" element={<Legal />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
