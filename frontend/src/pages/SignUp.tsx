@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { authApi } from '@/api/auth'
 import { useAuthStore } from '@/store/auth'
+import { useLanguageStore } from '@/store/language'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
 import { PublicLayout } from '@/components/PublicLayout'
@@ -13,6 +14,7 @@ export function SignUp() {
   const navigate = useNavigate()
   const login = useAuthStore((s) => s.login)
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const language = useLanguageStore((s) => s.language)
   const { t } = useTranslation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -30,7 +32,7 @@ export function SignUp() {
     setError('')
     setLoading(true)
     try {
-      await authApi.signup({ email, password, displayName })
+      await authApi.signup({ email, password, displayName, locale: language })
       const data = await authApi.signin({ email, password })
       login(data.accessToken, data.refreshToken)
       navigate('/')

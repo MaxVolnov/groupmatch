@@ -4,6 +4,7 @@ import com.groupmatch.admin.AdminTest;
 import com.groupmatch.auth.AuthTest;
 import com.groupmatch.auth.GuestCleanupTest;
 import com.groupmatch.auth.GuestUpgradeTest;
+import com.groupmatch.auth.LocaleTest;
 import com.groupmatch.availability.AvailabilityTest;
 import com.groupmatch.groups.GroupErrorPathTest;
 import com.groupmatch.groups.GroupTest;
@@ -27,6 +28,7 @@ import org.junit.platform.suite.api.Suite;
     AuthTest.class,
     GuestUpgradeTest.class,
     GuestCleanupTest.class,
+    LocaleTest.class,
     AdminTest.class,
     GroupTest.class,
     GroupErrorPathTest.class,
