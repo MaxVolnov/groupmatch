@@ -7,7 +7,7 @@ import { Button } from './Button'
 import { FeedbackModal } from './FeedbackModal'
 import { Footer } from './Footer'
 import { NotificationBell } from './NotificationBell'
-import { PremiumBadge } from './PremiumBadge'
+import { ProBadge } from './ProBadge'
 
 interface LayoutProps {
   children: ReactNode
@@ -95,7 +95,7 @@ export function Layout({ children }: LayoutProps) {
                   >
                     {displayName ?? email}
                     {isGuest && <GuestBadge />}
-              {!isGuest && plan === 'PRO' && <PremiumBadge />}
+                    {!isGuest && plan === 'PRO' && <ProBadge />}
                   </Link>
                   {role === 'ADMIN' && (
                     <Link
@@ -152,7 +152,7 @@ export function Layout({ children }: LayoutProps) {
             >
               {displayName ?? email}
               {isGuest && <GuestBadge />}
-              {!isGuest && plan === 'PRO' && <PremiumBadge />}
+              {!isGuest && plan === 'PRO' && <ProBadge />}
             </Link>
             {role === 'ADMIN' && (
               <Link
