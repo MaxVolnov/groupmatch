@@ -69,7 +69,9 @@ public class PaymentTest extends BaseIntegrationTest {
         assertThat(resp.getBody().get("confirmationUrl").toString()).contains("stub");
     }
 
-    // 4. POST /payments/yookassa/webhook without auth → 200 (public endpoint)
+    // 4. POST /payments/yookassa/webhook — публичный эндпоинт (без JWT).
+    // В stub-режиме проверка подписи выключена; боевой режим покрыт
+    // YooKassaWebhookAuthTest (невалидная подпись → 401).
     @Test @Order(4)
     void webhookEndpointIsPublic() {
         // Unknown event — service logs a warning and returns normally

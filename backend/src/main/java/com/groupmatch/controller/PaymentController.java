@@ -3,8 +3,11 @@ package com.groupmatch.controller;
 import com.groupmatch.dto.payment.CreatePaymentRequest;
 import com.groupmatch.dto.payment.CreatePaymentResponse;
 import com.groupmatch.dto.payment.SubscriptionResponse;
+import com.groupmatch.security.ClientIpResolver;
 import com.groupmatch.security.UserPrincipal;
+import com.groupmatch.security.YooKassaWebhookVerifier;
 import com.groupmatch.service.YooKassaService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +20,8 @@ import org.springframework.web.bind.annotation.*;
 public class PaymentController {
 
     private final YooKassaService yooKassaService;
+    private final YooKassaWebhookVerifier webhookVerifier;
+    private final ClientIpResolver clientIpResolver;
 
     @PostMapping("/yookassa/create")
     public CreatePaymentResponse createPayment(
@@ -25,8 +30,16 @@ public class PaymentController {
         return yooKassaService.createPayment(principal.getId(), req);
     }
 
+    /**
+     * Публичный эндпоинт: авторизации по JWT здесь быть не может, поэтому
+     * подлинность проверяется подписью и/или IP-источником до разбора тела.
+     */
     @PostMapping("/yookassa/webhook")
-    public ResponseEntity<Void> webhook(@RequestBody String body) {
+    public ResponseEntity<Void> webhook(@RequestBody String body, HttpServletRequest request) {
+        webhookVerifier.verify(
+                body,
+                request.getHeader(webhookVerifier.signatureHeaderName()),
+                clientIpResolver.resolve(request));
         yooKassaService.handleWebhook(body);
         return ResponseEntity.ok().build();
     }

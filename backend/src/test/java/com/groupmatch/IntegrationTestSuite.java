@@ -12,8 +12,10 @@ import com.groupmatch.meetings.MeetingTest;
 import com.groupmatch.notifications.NotificationPreferencesTest;
 import com.groupmatch.notifications.NotificationTest;
 import com.groupmatch.payments.PaymentTest;
+import com.groupmatch.payments.YooKassaWebhookAuthTest;
 import com.groupmatch.security.ClientIpResolverTest;
 import com.groupmatch.security.RateLimitBypassTest;
+import com.groupmatch.security.YooKassaWebhookVerifierTest;
 import com.groupmatch.util.CidrMatcherTest;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
@@ -34,6 +36,8 @@ import org.junit.platform.suite.api.Suite;
     PaymentTest.class,
     CidrMatcherTest.class,
     ClientIpResolverTest.class,
-    RateLimitBypassTest.class
+    RateLimitBypassTest.class,
+    YooKassaWebhookVerifierTest.class,
+    YooKassaWebhookAuthTest.class
 })
 public class IntegrationTestSuite {}
