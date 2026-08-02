@@ -1,5 +1,6 @@
 package com.groupmatch.filter;
 
+import com.groupmatch.security.ClientIpResolver;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.ConsumptionProbe;
@@ -23,15 +24,18 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private final int signupCapacity;
     private final int signinCapacity;
     private final int refreshCapacity;
+    private final ClientIpResolver clientIpResolver;
 
     private final Map<String, Bucket> signupBuckets = new ConcurrentHashMap<>();
     private final Map<String, Bucket> signinBuckets = new ConcurrentHashMap<>();
     private final Map<String, Bucket> refreshBuckets = new ConcurrentHashMap<>();
 
-    public RateLimitFilter(int signupCapacity, int signinCapacity, int refreshCapacity) {
+    public RateLimitFilter(int signupCapacity, int signinCapacity, int refreshCapacity,
+                           ClientIpResolver clientIpResolver) {
         this.signupCapacity = signupCapacity;
         this.signinCapacity = signinCapacity;
         this.refreshCapacity = refreshCapacity;
+        this.clientIpResolver = clientIpResolver;
     }
 
     @Override
@@ -64,7 +68,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
             return;
         }
 
-        String ip = resolveClientIp(request);
+        String ip = clientIpResolver.resolve(request);
         log.debug("RateLimit check: ip={}, path={}", ip, path);
 
         Bucket bucket = bucketMap.computeIfAbsent(ip, k -> newBucket(capacity));
@@ -91,13 +95,5 @@ public class RateLimitFilter extends OncePerRequestFilter {
                 .refillGreedy(capacity, Duration.ofHours(1))
                 .build();
         return Bucket.builder().addLimit(limit).build();
-    }
-
-    private String resolveClientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
-        }
-        return request.getRemoteAddr();
     }
 }

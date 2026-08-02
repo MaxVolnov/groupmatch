@@ -17,6 +17,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Service
@@ -60,7 +61,7 @@ public class AuthService {
 
     // ─── Signin ───────────────────────────────────────────────────────────────
 
-    @Transactional(readOnly = true)
+    @Transactional
     public AuthResponse signin(SigninRequest request) {
         log.info("Signin attempt for email: {}", request.email());
 
@@ -79,6 +80,7 @@ public class AuthService {
             throw new ForbiddenException("Account is banned");
         }
 
+        touchActivity(user.getId());
         log.info("User signed in: userId={}", user.getId());
         return issueTokenPair(user.getId(), user.getEmail(), user.getRole(), user.getPlan(), user.isGuest());
     }
@@ -113,7 +115,7 @@ public class AuthService {
      *   - Выдаётся новая пара (access + refresh).
      *   - Если токен не найден → 401 (уже использован или истёк).
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public AuthResponse refresh(RefreshRequest request) {
         log.debug("Token refresh requested. refreshToken={}", maskToken(request.refreshToken()));
         UUID userId = refreshTokenService.validateAndRotate(request.refreshToken());
@@ -134,6 +136,7 @@ public class AuthService {
             throw new ForbiddenException("Account is banned");
         }
 
+        touchActivity(userId);
         log.info("Token refreshed. userId={}", userId);
         return issueTokenPair(user.getId(), user.getEmail(), user.getRole(), user.getPlan(), user.isGuest());
     }
@@ -191,6 +194,15 @@ public class AuthService {
     }
 
     // ─── Внутреннее ───────────────────────────────────────────────────────────
+
+    /**
+     * Отмечает активность пользователя. Вызывается на входе и на каждой ротации
+     * refresh-токена (не чаще раза в 15 минут на сессию), поэтому дешёвая.
+     * От этой отметки {@code GuestCleanupJob} считает срок жизни гостя.
+     */
+    private void touchActivity(UUID userId) {
+        userRepository.touchLastActivity(userId, Instant.now());
+    }
 
     private static String maskToken(String token) {
         if (token == null || token.length() < 8) return "***";

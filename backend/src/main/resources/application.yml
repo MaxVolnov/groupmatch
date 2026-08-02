@@ -62,10 +62,14 @@ app:
     monetization-enabled: ${MONETIZATION_ENABLED:false}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
+  # X-Forwarded-For учитывается, только если TCP-пир входит в этот список.
+  # По умолчанию — loopback и приватные диапазоны: на Railway приложение
+  # видит edge-прокси именно оттуда. Пустое значение = XFF не доверять вовсе.
+  trusted-proxies: ${TRUSTED_PROXIES:127.0.0.1/32,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,100.64.0.0/10,fd00::/8}
   admin:
     email: ${ADMIN_EMAIL:}
   guest:
-    retention-days: ${GUEST_RETENTION_DAYS:30}
+    retention-days: ${GUEST_RETENTION_DAYS:90}
   rate-limit:
     signup: 5
     signin: 10
@@ -83,6 +87,14 @@ app:
 yookassa:
   shop-id: ${YOOKASSA_SHOP_ID:stub}
   secret-key: ${YOOKASSA_SECRET_KEY:stub}
+  webhook:
+    # HMAC-SHA256 по сырому телу запроса. Пусто = проверка подписи выключена.
+    secret: ${YOOKASSA_WEBHOOK_SECRET:}
+    signature-header: ${YOOKASSA_WEBHOOK_SIGNATURE_HEADER:X-Webhook-Signature}
+    # Официальный механизм ЮKassa — уведомления только с их диапазонов.
+    # Требует корректно настроенных app.trusted-proxies, иначе IP будет чужим.
+    ip-check-enabled: ${YOOKASSA_WEBHOOK_IP_CHECK:false}
+    allowed-ips: ${YOOKASSA_WEBHOOK_ALLOWED_IPS:185.71.76.0/27,185.71.77.0/27,77.75.153.0/25,77.75.156.11,77.75.156.35,77.75.154.128/25,2a02:5180::/32}
 
 logging:
   level:

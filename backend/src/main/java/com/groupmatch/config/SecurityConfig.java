@@ -1,6 +1,7 @@
 package com.groupmatch.config;
 
 import com.groupmatch.filter.RateLimitFilter;
+import com.groupmatch.security.ClientIpResolver;
 import com.groupmatch.security.JwtAuthenticationFilter;
 import com.groupmatch.security.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Value;
@@ -72,14 +73,15 @@ public class SecurityConfig {
     private int rateLimitRefresh;
 
     @Bean
-    public RateLimitFilter rateLimitFilter() {
-        return new RateLimitFilter(rateLimitSignup, rateLimitSignin, rateLimitRefresh);
+    public RateLimitFilter rateLimitFilter(ClientIpResolver clientIpResolver) {
+        return new RateLimitFilter(rateLimitSignup, rateLimitSignin, rateLimitRefresh, clientIpResolver);
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                     JwtAuthenticationFilter jwtAuthFilter,
-                                                    DaoAuthenticationProvider authProvider) throws Exception {
+                                                    DaoAuthenticationProvider authProvider,
+                                                    RateLimitFilter rateLimitFilter) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -116,7 +118,7 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authProvider)
-            .addFilterBefore(rateLimitFilter(), UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

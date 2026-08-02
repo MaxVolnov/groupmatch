@@ -72,10 +72,19 @@ public class User {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    /**
+     * Последняя активность пользователя (вход или обновление токена).
+     * По этому полю {@code GuestCleanupJob} решает, что гостевой аккаунт
+     * заброшен — не по возрасту аккаунта, иначе активный гость терял данные.
+     */
+    @Column(name = "last_activity_at", nullable = false)
+    private Instant lastActivityAt;
+
     @PrePersist
     protected void onCreate() {
         createdAt = Instant.now();
         updatedAt = Instant.now();
+        if (lastActivityAt == null) lastActivityAt = Instant.now();
     }
 
     @PreUpdate

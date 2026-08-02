@@ -11,6 +11,7 @@ import com.groupmatch.repository.GrpMemberRepository;
 import com.groupmatch.repository.GroupRepository;
 import com.groupmatch.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +32,9 @@ public class AvailabilityService {
     private final UserRepository userRepository;
     private final HeatmapCacheService heatmapCacheService;
 
+    @Value("${app.features.monetization-enabled}")
+    private boolean monetizationEnabled;
+
     @Transactional
     public AvailabilityResponse addSlot(UUID groupId, UUID callerId, Plan callerPlan,
                                         AvailabilityRequest req) {
@@ -42,11 +46,15 @@ public class AvailabilityService {
             throw new NotGroupOwnerException();
         }
 
-        long existing = availabilityRepository.countByGroupIdAndUserId(groupId, callerId);
-        int maxSlots = callerPlan.limits().maxSlotsPerMember();
-        if (existing >= maxSlots) {
-            throw new PlanLimitExceededException(
-                    "Plan limit reached: max " + maxSlots + " slots per group for " + callerPlan + " plan");
+        // Лимит слотов — часть платной модели, как лимиты групп и участников
+        // в GroupService: при выключенной монетизации не применяется.
+        if (monetizationEnabled) {
+            long existing = availabilityRepository.countByGroupIdAndUserId(groupId, callerId);
+            int maxSlots = callerPlan.limits().maxSlotsPerMember();
+            if (existing >= maxSlots) {
+                throw new PlanLimitExceededException(
+                        "Plan limit reached: max " + maxSlots + " slots per group for " + callerPlan + " plan");
+            }
         }
 
         Availability slot = availabilityRepository.save(
