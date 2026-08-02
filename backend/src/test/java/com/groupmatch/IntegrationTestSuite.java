@@ -5,6 +5,8 @@ import com.groupmatch.auth.AuthTest;
 import com.groupmatch.auth.GuestCleanupTest;
 import com.groupmatch.auth.GuestUpgradeTest;
 import com.groupmatch.auth.LocaleTest;
+import com.groupmatch.auth.TrialPremiumTest;
+import com.groupmatch.auth.TrialServiceTest;
 import com.groupmatch.availability.AvailabilityTest;
 import com.groupmatch.groups.GroupErrorPathTest;
 import com.groupmatch.groups.GroupTest;
@@ -31,6 +33,8 @@ import org.junit.platform.suite.api.Suite;
     GuestUpgradeTest.class,
     GuestCleanupTest.class,
     LocaleTest.class,
+    TrialServiceTest.class,
+    TrialPremiumTest.class,
     AdminTest.class,
     GroupTest.class,
     GroupErrorPathTest.class,

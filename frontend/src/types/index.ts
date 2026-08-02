@@ -14,6 +14,8 @@ export interface UserResponse {
   isEmailVerified: boolean
   createdAt: string
   locale?: Language
+  /** Окончание псевдо-премиума; null — триала нет или он уже закрыт. */
+  trialExpiresAt?: string | null
 }
 
 export interface NotificationBannerProps {

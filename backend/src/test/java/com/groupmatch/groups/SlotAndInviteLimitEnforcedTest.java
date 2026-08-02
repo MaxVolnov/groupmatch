@@ -49,6 +49,8 @@ public class SlotAndInviteLimitEnforcedTest extends BaseIntegrationTest {
         rest.exchange(url("/api/v1/auth/signup"), HttpMethod.POST,
                 new HttpEntity<>(Map.of("email", EMAIL, "password", PASSWORD,
                         "displayName", "Slot Limit On"), jsonHeaders()), Map.class);
+        // Лимиты здесь — FREE-шные, поэтому триальный PRO снимаем до signin.
+        downgradeToFree(EMAIL);
         accessToken = rest.exchange(url("/api/v1/auth/signin"), HttpMethod.POST,
                         new HttpEntity<>(Map.of("email", EMAIL, "password", PASSWORD),
                                 jsonHeaders()), Map.class)

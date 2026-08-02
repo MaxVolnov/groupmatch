@@ -70,6 +70,14 @@ app:
     email: ${ADMIN_EMAIL:}
   guest:
     retention-days: ${GUEST_RETENTION_DAYS:90}
+  # Псевдо-премиум первым пользователям: PRO на N календарных месяцев с момента
+  # регистрации. Срок в конфиге, чтобы поменять 3 → 6 переменной окружения.
+  trial:
+    enabled: ${TRIAL_ENABLED:true}
+    duration-months: ${TRIAL_DURATION_MONTHS:3}
+    # Расписание PlanExpiryJob. В конфиге, чтобы на стенде прогон можно было
+    # ускорить, не пересобирая приложение.
+    expiry-cron: ${TRIAL_EXPIRY_CRON:0 30 2 * * *}
   rate-limit:
     signup: 5
     signin: 10

@@ -30,6 +30,7 @@ public class AuthService {
     private final JwtUtils jwtUtils;
     private final RefreshTokenService refreshTokenService;
     private final EmailVerificationService emailVerificationService;
+    private final TrialService trialService;
 
     // ─── Signup ───────────────────────────────────────────────────────────────
 
@@ -50,9 +51,11 @@ public class AuthService {
         user.setPlan(Plan.FREE);
         user.setRole(Role.USER);
         user.setBlocked(false);
+        trialService.grantTrial(user);
 
         user = userRepository.save(user);
-        log.info("User created: userId={}", user.getId());
+        log.info("User created: userId={}, plan={}, trialUntil={}",
+                user.getId(), user.getPlan(), user.getTrialExpiresAt());
 
         emailVerificationService.sendVerification(user);
 
@@ -161,6 +164,9 @@ public class AuthService {
         user.setDisplayName(request.displayName());
         user.setGuest(false);
         user.setEmailVerified(false);
+        // Апгрейд гостя — тот же момент «появился новый пользователь»,
+        // иначе путь через гостевой вход молча лишал бы человека триала.
+        trialService.grantTrial(user);
         userRepository.save(user);
 
         refreshTokenService.invalidateAllForUser(userId);
