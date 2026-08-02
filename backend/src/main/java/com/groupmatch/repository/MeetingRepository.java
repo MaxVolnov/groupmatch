@@ -17,4 +17,10 @@ public interface MeetingRepository extends JpaRepository<Meeting, UUID> {
 
     @Query("SELECT m FROM Meeting m WHERE m.startsAt >= :from AND m.startsAt < :to AND m.reminderSent = false")
     List<Meeting> findUpcomingForReminder(@Param("from") Instant from, @Param("to") Instant to);
+
+    /**
+     * Будущие встречи группы для .ics-фида. Отсекаем по времени окончания:
+     * встреча, которая идёт прямо сейчас, для подписчика всё ещё актуальна.
+     */
+    List<Meeting> findByGroupIdAndEndsAtAfterOrderByStartsAtAsc(UUID groupId, Instant from);
 }

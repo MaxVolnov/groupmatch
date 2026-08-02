@@ -1,6 +1,11 @@
 import { api } from './axios'
 import { IS_MOCK, mockApi } from './mock'
-import type { GroupRequest, GroupResponse, MemberResponse } from '@/types'
+import type {
+  CalendarSubscriptionResponse,
+  GroupRequest,
+  GroupResponse,
+  MemberResponse,
+} from '@/types'
 
 export const groupsApi = {
   list: (): Promise<GroupResponse[]> =>
@@ -34,4 +39,15 @@ export const groupsApi = {
     IS_MOCK
       ? mockApi.groups.removeMember(id, userId)
       : api.delete(`/groups/${id}/members/${userId}`).then(() => undefined),
+
+  calendarSubscription: (id: string): Promise<CalendarSubscriptionResponse> =>
+    IS_MOCK
+      ? Promise.resolve({
+          url: `https://example.invalid/api/v1/groups/${id}/calendar.ics?token=mock`,
+          webcalUrl: `webcal://example.invalid/api/v1/groups/${id}/calendar.ics?token=mock`,
+          refreshMinutes: 60,
+        })
+      : api
+          .get<CalendarSubscriptionResponse>(`/groups/${id}/calendar-subscription`)
+          .then((r) => r.data),
 }

@@ -84,6 +84,10 @@ app:
     refresh: 20
   cache:
     heatmap-ttl-minutes: 60
+  # Публичный адрес самого API — нужен для ссылки на .ics-подписку: фронт
+  # живёт на Vercel, бэкенд на Railway, и фид отдаёт бэкенд. Пусто =
+  # «фронт и API в одном домене», тогда берётся app.mail.base-url.
+  api-base-url: ${API_BASE_URL:}
   mail:
     from: ${MAIL_FROM:noreply@groupmatch.app}
     base-url: ${APP_BASE_URL:http://localhost:3000}

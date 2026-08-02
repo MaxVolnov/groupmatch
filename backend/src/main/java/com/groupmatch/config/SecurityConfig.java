@@ -7,6 +7,7 @@ import com.groupmatch.security.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -114,6 +115,11 @@ public class SecurityConfig {
                     "/actuator/health",
                     "/actuator/info"
                 ).permitAll()
+                // .ics-фид группы: календарные клиенты не шлют Authorization,
+                // доступ авторизует токен в query (см. GroupCalendarService).
+                // Дублируется в JwtAuthenticationFilter.shouldNotFilter —
+                // списки обязаны совпадать.
+                .requestMatchers(HttpMethod.GET, "/api/v1/groups/*/calendar.ics").permitAll()
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )

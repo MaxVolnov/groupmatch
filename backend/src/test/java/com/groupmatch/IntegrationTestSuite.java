@@ -15,6 +15,7 @@ import com.groupmatch.groups.MemberLimitEnforcedTest;
 import com.groupmatch.groups.MemberLimitFlagTest;
 import com.groupmatch.groups.SlotAndInviteLimitEnforcedTest;
 import com.groupmatch.groups.SlotAndInviteLimitFlagTest;
+import com.groupmatch.meetings.GroupCalendarFeedTest;
 import com.groupmatch.meetings.MeetingTest;
 import com.groupmatch.notifications.NotificationPreferencesTest;
 import com.groupmatch.notifications.NotificationTest;
@@ -44,6 +45,7 @@ import org.junit.platform.suite.api.Suite;
     SlotAndInviteLimitFlagTest.class,
     SlotAndInviteLimitEnforcedTest.class,
     MeetingTest.class,
+    GroupCalendarFeedTest.class,
     NotificationTest.class,
     NotificationPreferencesTest.class,
     AvailabilityTest.class,

@@ -150,6 +150,15 @@ export interface MeetingRequest {
   endsAt: string
 }
 
+/** Ссылки на .ics-подписку календаря группы. */
+export interface CalendarSubscriptionResponse {
+  /** https-адрес фида — для копирования в любой календарь */
+  url: string
+  /** тот же адрес по схеме webcal:// — открывает календарь ОС */
+  webcalUrl: string
+  refreshMinutes: number
+}
+
 // ── Feedback ──────────────────────────────────────────────────────────────────
 
 export type FeedbackCategory = 'BUG' | 'FEATURE_REQUEST' | 'OTHER'
