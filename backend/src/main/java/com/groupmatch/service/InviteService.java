@@ -47,15 +47,19 @@ public class InviteService {
                                        CreateInviteRequest req) {
         requireOwner(groupId, callerId);
 
-        // Rate-limit: invitesPerHour per plan
-        int limit = callerPlan.limits().invitesPerHour();
-        if (limit != Integer.MAX_VALUE) {
-            Instant oneHourAgo = Instant.now().minus(1, ChronoUnit.HOURS);
-            long recentCount = inviteRepository
-                    .countByGroupIdAndCreatedByAndCreatedAtAfter(groupId, callerId, oneHourAgo);
-            if (recentCount >= limit) {
-                throw new PlanLimitExceededException(
-                        "Rate limit: max " + limit + " invites per hour for " + callerPlan + " plan");
+        // Rate-limit: invitesPerHour per plan.
+        // Тарифное ограничение, а не защита от абьюза, поэтому — под тем же
+        // флагом монетизации, что и остальные платные лимиты.
+        if (monetizationEnabled) {
+            int limit = callerPlan.limits().invitesPerHour();
+            if (limit != Integer.MAX_VALUE) {
+                Instant oneHourAgo = Instant.now().minus(1, ChronoUnit.HOURS);
+                long recentCount = inviteRepository
+                        .countByGroupIdAndCreatedByAndCreatedAtAfter(groupId, callerId, oneHourAgo);
+                if (recentCount >= limit) {
+                    throw new PlanLimitExceededException(
+                            "Rate limit: max " + limit + " invites per hour for " + callerPlan + " plan");
+                }
             }
         }
 
