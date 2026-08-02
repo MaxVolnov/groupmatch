@@ -8,6 +8,8 @@ import com.groupmatch.availability.AvailabilityTest;
 import com.groupmatch.groups.GroupErrorPathTest;
 import com.groupmatch.groups.GroupTest;
 import com.groupmatch.groups.InviteTest;
+import com.groupmatch.groups.MemberLimitEnforcedTest;
+import com.groupmatch.groups.MemberLimitFlagTest;
 import com.groupmatch.meetings.MeetingTest;
 import com.groupmatch.notifications.NotificationPreferencesTest;
 import com.groupmatch.notifications.NotificationTest;
@@ -29,6 +31,8 @@ import org.junit.platform.suite.api.Suite;
     GroupTest.class,
     GroupErrorPathTest.class,
     InviteTest.class,
+    MemberLimitFlagTest.class,
+    MemberLimitEnforcedTest.class,
     MeetingTest.class,
     NotificationTest.class,
     NotificationPreferencesTest.class,

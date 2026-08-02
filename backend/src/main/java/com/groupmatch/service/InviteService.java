@@ -10,6 +10,7 @@ import com.groupmatch.repository.InviteRepository;
 import com.groupmatch.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +38,9 @@ public class InviteService {
     private final NotificationService notificationService;
     private final NotificationPreferencesService notificationPreferencesService;
     private final EmailService emailService;
+
+    @Value("${app.features.monetization-enabled}")
+    private boolean monetizationEnabled;
 
     @Transactional
     public InviteResponse createInvite(UUID groupId, UUID callerId, Plan callerPlan,
@@ -105,13 +109,26 @@ public class InviteService {
             if (status == MemberStatus.ACTIVE) return toResponse(invite);
         }
 
-        // Check group member limit against the OWNER's plan
-        // (owner is the one whose plan governs the group capacity)
-        // We rely on addMember plan-check — here we just do a best-effort check
         GrpMember ownerMembership = grpMemberRepository
                 .findByGroupAndStatus(groupId, MemberStatus.ACTIVE)
                 .stream().filter(GrpMember::isOwner).findFirst()
                 .orElseThrow(() -> new GroupNotFoundException(groupId));
+
+        // Лимит участников считается по плану ВЛАДЕЛЬЦА (его тариф определяет
+        // вместимость группы), а не по плану входящего. Раньше проверки здесь не
+        // было вовсе: лимит из GroupService.addMember обходился ссылкой-инвайтом.
+        // Под тем же флагом монетизации, что и остальные платные лимиты.
+        if (monetizationEnabled) {
+            Plan ownerPlan = userRepository.findById(ownerMembership.getUser())
+                    .map(User::getPlan)
+                    .orElse(Plan.FREE);
+            long current = grpMemberRepository.countByGroupAndStatus(groupId, MemberStatus.ACTIVE);
+            int maxMembers = ownerPlan.limits().maxMembersPerGroup();
+            if (current >= maxMembers) {
+                throw new PlanLimitExceededException(
+                        "Plan limit reached: max " + maxMembers + " members per group for " + ownerPlan + " plan");
+            }
+        }
 
         // Reuse existing LEFT member record if present, otherwise create new
         GrpMember member = existingMember

@@ -141,11 +141,15 @@ public class GroupService {
             if (m.getStatus() == MemberStatus.ACTIVE) throw new MemberAlreadyExistsException();
         });
 
-        long current = grpMemberRepository.countByGroupAndStatus(groupId, MemberStatus.ACTIVE);
-        int maxMembers = callerPlan.limits().maxMembersPerGroup();
-        if (current >= maxMembers) {
-            throw new PlanLimitExceededException(
-                    "Plan limit reached: max " + maxMembers + " members per group for " + callerPlan + " plan");
+        // Лимит участников — часть платной модели, как и лимит групп в createGroup:
+        // при выключенной монетизации не применяется.
+        if (monetizationEnabled) {
+            long current = grpMemberRepository.countByGroupAndStatus(groupId, MemberStatus.ACTIVE);
+            int maxMembers = callerPlan.limits().maxMembersPerGroup();
+            if (current >= maxMembers) {
+                throw new PlanLimitExceededException(
+                        "Plan limit reached: max " + maxMembers + " members per group for " + callerPlan + " plan");
+            }
         }
 
         GrpMember member = grpMemberRepository.findByGroupAndUser(groupId, targetId)
