@@ -2,6 +2,7 @@
 
 export type Role = 'USER' | 'ADMIN'
 export type Plan = 'FREE' | 'PRO' | 'TEAM'
+export type Language = 'ru' | 'en'
 
 export interface UserResponse {
   id: string
@@ -12,6 +13,7 @@ export interface UserResponse {
   role: Role
   isEmailVerified: boolean
   createdAt: string
+  locale?: Language
 }
 
 export interface NotificationBannerProps {
@@ -31,6 +33,8 @@ export interface SignupRequest {
   password: string
   displayName: string
   tzid?: string
+  /** Язык интерфейса на момент регистрации — им же уходят письма. */
+  locale?: Language
 }
 
 export interface SigninRequest {

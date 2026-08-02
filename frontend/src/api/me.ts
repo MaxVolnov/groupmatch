@@ -1,10 +1,11 @@
 import { api } from './axios'
 import { IS_MOCK, mockApi } from './mock'
-import type { PlanInfoResponse, UserResponse } from '@/types'
+import type { Language, PlanInfoResponse, UserResponse } from '@/types'
 
 export interface UpdateMeRequest {
   displayName?: string
   tzId?: string
+  locale?: Language
 }
 
 export const meApi = {

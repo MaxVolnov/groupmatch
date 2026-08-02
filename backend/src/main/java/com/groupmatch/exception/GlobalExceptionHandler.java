@@ -38,6 +38,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
     
+    @ExceptionHandler(WebhookVerificationException.class)
+    public ResponseEntity<ErrorResponse> handleWebhookVerification(WebhookVerificationException ex) {
+        // Наружу — только код, без подробностей: не подсказываем, что именно не сошлось.
+        return ResponseEntity.status(UNAUTHORIZED).body(
+                new ErrorResponse("webhook_unauthorized", "Webhook verification failed", null, Instant.now()));
+    }
+
     @ExceptionHandler(GroupNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleGroupNotFound(GroupNotFoundException ex) {
         return ResponseEntity.status(NOT_FOUND).body(
