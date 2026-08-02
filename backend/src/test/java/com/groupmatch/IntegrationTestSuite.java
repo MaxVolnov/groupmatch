@@ -12,6 +12,9 @@ import com.groupmatch.meetings.MeetingTest;
 import com.groupmatch.notifications.NotificationPreferencesTest;
 import com.groupmatch.notifications.NotificationTest;
 import com.groupmatch.payments.PaymentTest;
+import com.groupmatch.security.ClientIpResolverTest;
+import com.groupmatch.security.RateLimitBypassTest;
+import com.groupmatch.util.CidrMatcherTest;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
@@ -28,6 +31,9 @@ import org.junit.platform.suite.api.Suite;
     NotificationTest.class,
     NotificationPreferencesTest.class,
     AvailabilityTest.class,
-    PaymentTest.class
+    PaymentTest.class,
+    CidrMatcherTest.class,
+    ClientIpResolverTest.class,
+    RateLimitBypassTest.class
 })
 public class IntegrationTestSuite {}
