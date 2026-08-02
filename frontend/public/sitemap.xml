@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Три публичные точки входа GroupMatch. Все они — статические MPA-страницы
+  (Vite multi-entry), а не SPA-роуты: краулер получает готовый HTML с
+  метатегами, без выполнения JavaScript.
+
+  Апекс без поддомена www: тот отдаёт 308 на groupmatch.app, и указывать
+  в карте адрес, который редиректится, — лишний хоп для краулера.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://groupmatch.app/promo</loc>
+    <lastmod>2026-08-02</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://groupmatch.app/about</loc>
+    <lastmod>2026-08-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://groupmatch.app/legal</loc>
+    <lastmod>2026-08-02</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+</urlset>

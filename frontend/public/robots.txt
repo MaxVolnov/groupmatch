@@ -1,0 +1,31 @@
+# GroupMatch — https://groupmatch.app
+#
+# Индексируем только публичные точки входа: /promo, /legal, /about, /pricing.
+# Всё остальное в SPA либо требует авторизации, либо является формой без
+# содержимого, которое имело бы смысл в выдаче.
+
+User-agent: *
+
+# Личный кабинет и данные групп — под авторизацией.
+Disallow: /groups/
+Disallow: /profile
+Disallow: /admin
+
+# Одноразовые ссылки и формы: индексировать нечего, а /join/ ещё и содержит
+# токен приглашения, которому не место в поисковом индексе.
+Disallow: /join/
+Disallow: /verify-email
+Disallow: /reset-password
+Disallow: /forgot-password
+Disallow: /signin
+Disallow: /signup
+
+# Служебное
+Disallow: /api/
+
+Allow: /promo
+Allow: /legal
+Allow: /about
+Allow: /pricing
+
+Sitemap: https://groupmatch.app/sitemap.xml
