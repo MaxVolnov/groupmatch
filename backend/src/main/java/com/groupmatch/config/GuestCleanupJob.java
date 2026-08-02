@@ -18,19 +18,24 @@ public class GuestCleanupJob {
 
     private final UserRepository userRepository;
 
-    @Value("${app.guest.retention-days:30}")
+    /**
+     * Срок неактивности, после которого гостевой аккаунт удаляется.
+     * Совпадает с TTL гостевого refresh-токена (90 дней): пока живёт сессия,
+     * живут и данные.
+     */
+    @Value("${app.guest.retention-days:90}")
     private int retentionDays;
 
     @Scheduled(cron = "0 0 3 * * *") // every day at 03:00 UTC
     @Transactional
     public void cleanupExpiredGuestAccounts() {
         Instant cutoff = Instant.now().minus(retentionDays, ChronoUnit.DAYS);
-        int deleted = userRepository.deleteGuestAccountsOlderThan(cutoff);
+        int deleted = userRepository.deleteGuestAccountsInactiveSince(cutoff);
         if (deleted > 0) {
-            log.info("Guest cleanup: deleted {} expired guest accounts older than {} days",
+            log.info("Guest cleanup: deleted {} guest accounts inactive for more than {} days",
                     deleted, retentionDays);
         } else {
-            log.debug("Guest cleanup: no expired guest accounts found");
+            log.debug("Guest cleanup: no inactive guest accounts found");
         }
     }
 }

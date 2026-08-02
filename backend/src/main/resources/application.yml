@@ -65,7 +65,7 @@ app:
   admin:
     email: ${ADMIN_EMAIL:}
   guest:
-    retention-days: ${GUEST_RETENTION_DAYS:30}
+    retention-days: ${GUEST_RETENTION_DAYS:90}
   rate-limit:
     signup: 5
     signin: 10

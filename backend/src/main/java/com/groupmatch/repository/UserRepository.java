@@ -23,7 +23,17 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Page<User> findByEmailContainingIgnoreCaseOrDisplayNameContainingIgnoreCase(
             String email, String displayName, Pageable pageable);
 
+    /**
+     * Удаляет гостевые аккаунты, неактивные дольше указанного срока.
+     * Считается от последней активности, а НЕ от даты создания — иначе
+     * ежедневно работающий гость терял все данные по возрасту аккаунта.
+     */
     @Modifying(clearAutomatically = true)
-    @Query("DELETE FROM User u WHERE u.guest = true AND u.createdAt < :cutoff")
-    int deleteGuestAccountsOlderThan(@Param("cutoff") Instant cutoff);
+    @Query("DELETE FROM User u WHERE u.guest = true AND u.lastActivityAt < :cutoff")
+    int deleteGuestAccountsInactiveSince(@Param("cutoff") Instant cutoff);
+
+    /** Отметка активности. Отдельный UPDATE, чтобы не тащить сущность в память. */
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE User u SET u.lastActivityAt = :now WHERE u.id = :userId")
+    int touchLastActivity(@Param("userId") UUID userId, @Param("now") Instant now);
 }

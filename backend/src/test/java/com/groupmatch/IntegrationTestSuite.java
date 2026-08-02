@@ -2,6 +2,7 @@ package com.groupmatch;
 
 import com.groupmatch.admin.AdminTest;
 import com.groupmatch.auth.AuthTest;
+import com.groupmatch.auth.GuestCleanupTest;
 import com.groupmatch.auth.GuestUpgradeTest;
 import com.groupmatch.availability.AvailabilityTest;
 import com.groupmatch.groups.GroupErrorPathTest;
@@ -18,6 +19,7 @@ import org.junit.platform.suite.api.Suite;
 @SelectClasses({
     AuthTest.class,
     GuestUpgradeTest.class,
+    GuestCleanupTest.class,
     AdminTest.class,
     GroupTest.class,
     GroupErrorPathTest.class,
