@@ -30,6 +30,15 @@ spring:
   
   data:
     redis:
+      # НЕ УБИРАТЬ плейсхолдер. В Railway переменная называется
+      # SPRING_REDIS_URL — это имя из Spring Boot 2 (spring.redis.url), и по
+      # правилам relaxed binding оно НЕ соответствует spring.data.redis.url,
+      # который читает RedisConfig. Связку держит именно эта строка: она
+      # ссылается на переменную по литеральному имени. Убрать её или заменить
+      # на «канонический» вид — значит увести прод на localhost:6379 и
+      # разлогинить всех, причём тихо: health останется UP.
+      # Разбор с экспериментом — docs/session-audit-2026-08.md, раздел 9.
+      # SPRING_DATA_REDIS_URL тоже работает и при конфликте выигрывает.
       url: ${SPRING_REDIS_URL:redis://localhost:6379}
 
   mail:
