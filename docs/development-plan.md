@@ -194,16 +194,19 @@
 
 ### 9.2 Важные P1 (закрыть до или сразу после запуска беты)
 
+- **Origin доступен напрямую в обход Cloudflare-прокси** — **риск принят, не чинить сейчас**. `groupmatch-production.up.railway.app` остаётся публично доступным мимо `api.groupmatch.app`, а `TRUSTED_PROXIES` с переездом на Cloudflare теперь доверяет всем его диапазонам (иначе rate-limit считал бы всех пользователей одним IP эджа — см. `docs/api-subdomain-migration.md`). Из двух этих фактов вместе следует: атакующий может завести собственную зону в Cloudflare, направить её на прямой адрес origin и слать запросы с поддельным `X-Forwarded-For` — хоп окажется из доверенных диапазонов, и подделка сработает. Это частично обходит P0-фикс на перебор паролей.
+  **Почему принято:** атака требует знания прямого адреса origin, настроенной собственной зоны в Cloudflare и всё равно упирается в Argon2 на каждой попытке — порог высокий, выигрыш низкий. До масштабирования приемлемо.
+  **Полное решение (на будущее):** закрыть origin так, чтобы Railway отвечал только на запросы, реально прошедшие через наш Cloudflare — Authenticated Origin Pulls (Cloudflare → SSL/TLS → Origin Server) либо секретный заголовок из Transform Rule с проверкой на бэкенде.
 - **Backend-сообщения об ошибках не переведены** — `ErrorMessage.tsx` использует английский текст исключений как приоритетный источник поверх переведённых фолбэков; русскоязычный пользователь видит английские ошибки при неверном пароле, бане, лимите плана. Ветвиться по `code`, переводить на фронте
 - **Невалидированные параметры хитмапа** — `granularityMinutes`, `from`/`to` не ограничены; `granularityMinutes=1` на большом окне создаёт ~500k+ бакетов за один запрос. Добавить `@Min/@Max`, ограничить окно (напр. 31 день)
-- **N+1 при создании встречи** — `MeetingService.createMeeting()` вызывает `notificationPreferencesService.getOrCreate()` в цикле по каждому участнику. Пакетная загрузка одним запросом
+- ✅ **N+1 при создании встречи** — закрыто в v0.9.0: `getOrCreateAll()` одним запросом, прирост SQL перестал зависеть от размера группы
 - **Список встреч без пагинации** — `MeetingRepository.findByGroupIdOrderByStartsAtDesc` растёт неограниченно. Добавить `Pageable`
-- **`Retry-After` не доезжает до браузера** — CORS не имеет `exposedHeaders`, фикс из Фазы 4.5 инертен в проде. Добавить `setExposedHeaders(List.of("Retry-After"))`
+- ✅ **`Retry-After` не доезжает до браузера** — закрыто в v0.9.0: `setExposedHeaders(List.of("Retry-After"))` в CORS, обратный отсчёт в `ErrorMessage.tsx` ожил
 - **Rate limit не покрывает reset-password/verify-email** — оба `permitAll`, оба без лимита (перебор токенов)
-- **Активный GitHub Pages workflow** — `.github/workflows/deploy-frontend.yml` всё ещё пушит устаревшую копию на GH Pages при каждом мерже в `main`. Удалить или задизейблить
+- ✅ **Активный GitHub Pages workflow** — закрыто в v0.9.0: workflow удалён, ссылки в README переведены на `groupmatch.app`. Сама площадка GH Pages в настройках репозитория остаётся включённой — выключить вручную
 - **`vite.config.ts` base зависит от недокументированной env переменной** — `VITE_DEPLOY_TARGET=vercel` задана только в дашборде Vercel, не зафиксирована в репо. Preview-деплой без этой переменной ломает все пути к ассетам
 - **`GlobalExceptionHandler.handleGenericException()` не логирует** — 500-ки в проде невидимы. Добавить `log.error` со стектрейсом
-- **DEBUG-логи в проде** — `application.yml` без prod-профиля, `com.groupmatch` и `org.springframework.security` на DEBUG в проде. Завести `application-prod.yml` с `INFO`
+- ✅ **DEBUG-логи в проде** — закрыто в v0.9.0: DEBUG убран из дефолтов и переехал в `application-dev.yml`, заведён `application-prod.yml`. Требует `SPRING_PROFILES_ACTIVE=prod` в Railway
 - **`<html lang="en">` не синхронизирован с i18n** — жёстко задан на английском при русском дефолте. Обновлять `document.documentElement.lang` в `setLanguage`
 - **Модалки без focus trap / aria-атрибутов** — `Modal.tsx` без `role="dialog"`, `aria-modal`, без возврата фокуса
 - **Форма апгрейда гостя без `<label>`** — только placeholder на трёх полях в `Profile.tsx`
