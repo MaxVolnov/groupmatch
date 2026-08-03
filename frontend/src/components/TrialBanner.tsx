@@ -47,12 +47,12 @@ export function TrialBanner({ trialExpiresAt }: { trialExpiresAt?: string | null
   return (
     <div className="mb-4 flex items-start justify-between gap-4 rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/20 px-4 py-3 text-sm text-indigo-800 dark:text-indigo-300">
       <span>
-        {t('premium.bannerTitle')} {t('premium.bannerUntil', { date: until })}{' '}
-        <span className="opacity-90">{t('premium.bannerAfter')}</span>
+        {t('trial.bannerTitle')} {t('trial.bannerUntil', { date: until })}{' '}
+        <span className="opacity-90">{t('trial.bannerAfter')}</span>
       </span>
       <button
         onClick={dismiss}
-        aria-label={t('premium.bannerDismiss')}
+        aria-label={t('trial.bannerDismiss')}
         className="shrink-0 rounded px-2 text-indigo-500 transition-colors hover:text-indigo-700 dark:hover:text-indigo-200"
       >
         ✕

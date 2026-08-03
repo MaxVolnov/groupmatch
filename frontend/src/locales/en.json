@@ -393,13 +393,13 @@
     "cannotConnect": "Cannot connect to the server. Check your connection.",
     "somethingWrong": "Something went wrong"
   },
-  "premium": {
-    "badge": "Premium",
-    "badgeHint": "Premium is free during early access — it becomes paid afterwards",
-    "bannerTitle": "⚡ Premium is on us — a thank-you to our first users.",
+  "trial": {
+    "badge": "Pro",
+    "badgeHint": "Pro is free during early access — it becomes paid afterwards",
+    "bannerTitle": "⚡ The Pro plan is on us — a thank-you to our first users.",
     "bannerUntil": "Valid until {{date}}.",
-    "bannerAfter": "After that it's the regular Pro plan, 199 ₽ per month. Nothing is charged without your consent.",
+    "bannerAfter": "After that it's the regular Pro subscription, 199 ₽ per month. Nothing is charged without your consent.",
     "bannerDismiss": "Dismiss",
-    "profileNote": "Premium is free until {{date}}. After that it's the regular Pro plan — you'll need to subscribe to keep these features."
+    "profileNote": "Pro is free until {{date}}. After that it's a paid subscription — you'll need to subscribe to keep these features."
   }
 }
