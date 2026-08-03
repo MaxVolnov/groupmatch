@@ -8,6 +8,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -21,6 +27,33 @@ public class NotificationPreferencesService {
         return prefsRepository.findById(userId)
                 .orElseGet(() -> prefsRepository.save(
                         NotificationPreferences.defaultsFor(userId)));
+    }
+
+    /**
+     * Пакетный вариант {@link #getOrCreate(UUID)}: один SELECT ... IN на всех
+     * вместо запроса на каждого. Нужен там, где настройки читаются по списку
+     * участников — например при рассылке уведомлений о новой встрече.
+     *
+     * Гарантия: в результате есть запись для каждого переданного id.
+     *
+     * @return настройки по userId; пустая карта, если список пуст
+     */
+    @Transactional
+    public Map<UUID, NotificationPreferences> getOrCreateAll(Collection<UUID> userIds) {
+        if (userIds == null || userIds.isEmpty()) return Map.of();
+
+        Set<UUID> ids = new LinkedHashSet<>(userIds);
+        Map<UUID, NotificationPreferences> byUser = new HashMap<>();
+        prefsRepository.findAllById(ids).forEach(p -> byUser.put(p.getUserId(), p));
+
+        List<NotificationPreferences> missing = ids.stream()
+                .filter(id -> !byUser.containsKey(id))
+                .map(NotificationPreferences::defaultsFor)
+                .toList();
+        if (!missing.isEmpty()) {
+            prefsRepository.saveAll(missing).forEach(p -> byUser.put(p.getUserId(), p));
+        }
+        return byUser;
     }
 
     @Transactional
