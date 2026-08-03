@@ -31,7 +31,7 @@
 
 | Service | URL |
 |---|---|
-| Frontend | https://maxvolnov.github.io/groupmatch/ |
+| Frontend | https://groupmatch.app |
 
 ## Local development
 
