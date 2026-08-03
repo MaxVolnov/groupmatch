@@ -31,7 +31,7 @@
 
 | Сервис | URL |
 |---|---|
-| Фронтенд | https://maxvolnov.github.io/groupmatch/ |
+| Фронтенд | https://groupmatch.app |
 
 ## Локальная разработка
 

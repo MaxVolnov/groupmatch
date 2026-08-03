@@ -1,0 +1,11 @@
+# Профиль локальной разработки: SPRING_PROFILES_ACTIVE=dev.
+#
+# Сюда переехал DEBUG, который раньше стоял в дефолтах application.yml и
+# поэтому действовал и в проде. Локально включается явно — например
+# `SPRING_PROFILES_ACTIVE=dev ./gradlew bootRun`.
+
+logging:
+  level:
+    com.groupmatch: DEBUG
+    org.springframework.security: DEBUG
+    org.flywaydb: DEBUG

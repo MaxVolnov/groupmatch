@@ -22,6 +22,11 @@ spring:
   jpa:
     hibernate:
       ddl-auto: none
+    properties:
+      hibernate:
+        # Нужно MeetingNPlusOneTest, который считает JDBC-запросы на создание
+        # встречи. Оверхед на остальных тестах пренебрежимо мал.
+        generate_statistics: true
 
 logging:
   level:
@@ -38,10 +43,16 @@ jwt:
 app:
   cors:
     allowed-origins: http://localhost:3000
+  # Бакеты rate-limit'а живут в памяти фильтра и общие на весь дефолтный
+  # контекст: все тесты сьюта ходят с 127.0.0.1 и делят один счётчик. При
+  # лимите 30 суммы регистраций по классам хватило, чтобы поздние тесты
+  # начали получать 429 на ровном месте. Здесь лимит нужен только чтобы не
+  # мешать; само поведение проверяется в RateLimitBypassTest, у которого
+  # свой контекст и свой низкий лимит.
   rate-limit:
-    signup: 30
-    signin: 30
-    refresh: 30
+    signup: 500
+    signin: 500
+    refresh: 500
   cache:
     heatmap-ttl-minutes: 60
   mail:

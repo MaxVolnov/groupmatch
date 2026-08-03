@@ -117,9 +117,14 @@ yookassa:
     ip-check-enabled: ${YOOKASSA_WEBHOOK_IP_CHECK:false}
     allowed-ips: ${YOOKASSA_WEBHOOK_ALLOWED_IPS:185.71.76.0/27,185.71.77.0/27,77.75.153.0/25,77.75.156.11,77.75.156.35,77.75.154.128/25,2a02:5180::/32}
 
+# Уровни по умолчанию — безопасные для прода. DEBUG живёт в профиле dev
+# (application-dev.yml), а не здесь: если бы DEBUG стоял в дефолте, забытая
+# переменная SPRING_PROFILES_ACTIVE молча оставляла бы прод болтливым, и
+# заметить это можно было бы только по счёту за логи. Профиль prod
+# (application-prod.yml) уровни дополнительно фиксирует явно.
 logging:
   level:
-    com.groupmatch: DEBUG
+    com.groupmatch: INFO
     org.springframework.web: INFO
-    org.springframework.security: DEBUG
-    org.flywaydb: DEBUG
+    org.springframework.security: INFO
+    org.flywaydb: INFO
