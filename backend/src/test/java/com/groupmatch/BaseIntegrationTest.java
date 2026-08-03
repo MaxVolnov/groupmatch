@@ -84,4 +84,18 @@ public abstract class BaseIntegrationTest {
     protected void cleanupUser(String email) {
         jdbcTemplate.update("DELETE FROM app_user WHERE email = ?", email);
     }
+
+    /**
+     * Сбрасывает аккаунт на FREE и гасит триал.
+     *
+     * Нужен тестам про лимиты бесплатного плана: регистрация выдаёт
+     * псевдо-премиум (PRO на срок из {@code app.trial.*}), поэтому
+     * «свежезарегистрированный пользователь» по умолчанию уже не FREE.
+     *
+     * Вызывать ДО signin — план едет в JWT, и по нему считаются лимиты.
+     */
+    protected void downgradeToFree(String email) {
+        jdbcTemplate.update(
+                "UPDATE app_user SET plan = 'FREE', trial_expires_at = NULL WHERE email = ?", email);
+    }
 }

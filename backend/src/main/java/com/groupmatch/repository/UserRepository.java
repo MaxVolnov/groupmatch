@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -31,6 +32,9 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Modifying(clearAutomatically = true)
     @Query("DELETE FROM User u WHERE u.guest = true AND u.lastActivityAt < :cutoff")
     int deleteGuestAccountsInactiveSince(@Param("cutoff") Instant cutoff);
+
+    /** Аккаунты, у которых закончился псевдо-премиум и его пора отработать. */
+    List<User> findByTrialExpiresAtBefore(Instant threshold);
 
     /** Отметка активности. Отдельный UPDATE, чтобы не тащить сущность в память. */
     @Modifying(clearAutomatically = true)

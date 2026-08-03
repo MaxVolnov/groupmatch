@@ -123,6 +123,18 @@
         "cancel": "Cancel",
         "add": "Add"
       }
+    },
+    "calendar": {
+      "subscribe": "📅 Subscribe to calendar",
+      "title": "Group calendar",
+      "description": "Group meetings will show up in your calendar automatically — the subscription refreshes itself, no need to re-download a file.",
+      "openInApp": "Open in calendar app",
+      "orCopyLink": "Or copy the link",
+      "copy": "Copy",
+      "copied": "Copied",
+      "loading": "Preparing the link…",
+      "error": "Could not fetch the subscription link.",
+      "privacyNote": "The link contains the group's secret key — anyone who gets it can see upcoming meetings. Share it with members only."
     }
   },
   "auth": {
@@ -380,5 +392,14 @@
     "tooManyRequestsGeneric": "Too many attempts. Please wait a moment and try again.",
     "cannotConnect": "Cannot connect to the server. Check your connection.",
     "somethingWrong": "Something went wrong"
+  },
+  "premium": {
+    "badge": "Premium",
+    "badgeHint": "Premium is free during early access — it becomes paid afterwards",
+    "bannerTitle": "⚡ Premium is on us — a thank-you to our first users.",
+    "bannerUntil": "Valid until {{date}}.",
+    "bannerAfter": "After that it's the regular Pro plan, 199 ₽ per month. Nothing is charged without your consent.",
+    "bannerDismiss": "Dismiss",
+    "profileNote": "Premium is free until {{date}}. After that it's the regular Pro plan — you'll need to subscribe to keep these features."
   }
 }

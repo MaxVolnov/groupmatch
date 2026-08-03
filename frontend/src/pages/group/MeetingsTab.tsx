@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { meetingsApi } from '@/api/meetings'
 import { Button } from '@/components/Button'
+import { CalendarSubscribeButton } from '@/components/CalendarSubscribeButton'
 import { Skeleton } from '@/components/Skeleton'
 import { ErrorMessage } from '@/components/ErrorMessage'
 import type { GroupResponse } from '@/types'
@@ -77,13 +78,14 @@ export function MeetingsTab({ group, currentUserId, onScheduleClick }: Props) {
 
   return (
     <div>
-      {isOwner && (
-        <div className="mb-4 flex justify-end">
+      <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
+        <CalendarSubscribeButton groupId={group.id} />
+        {isOwner && (
           <Button size="sm" onClick={onScheduleClick}>
             {t('group.meetingsTab.schedule')}
           </Button>
-        </div>
-      )}
+        )}
+      </div>
 
       {meetings && meetings.length === 0 && (
         <div className="py-12 text-center">

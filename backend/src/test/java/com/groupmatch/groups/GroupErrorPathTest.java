@@ -36,6 +36,10 @@ public class GroupErrorPathTest extends BaseIntegrationTest {
                 new HttpEntity<>(Map.of("email", OTHER_EMAIL, "password", OTHER_PASSWORD,
                         "displayName", "Other User"), jsonHeaders()), Map.class);
 
+        // Тест про лимит FREE-плана — снимаем триальный PRO до выдачи токена.
+        downgradeToFree(EMAIL);
+        downgradeToFree(OTHER_EMAIL);
+
         accessToken = rest.exchange(url("/api/v1/auth/signin"), HttpMethod.POST,
                 new HttpEntity<>(Map.of("email", EMAIL, "password", PASSWORD), jsonHeaders()), Map.class)
                 .getBody().get("accessToken").toString();

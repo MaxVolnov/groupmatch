@@ -5,6 +5,8 @@ import com.groupmatch.auth.AuthTest;
 import com.groupmatch.auth.GuestCleanupTest;
 import com.groupmatch.auth.GuestUpgradeTest;
 import com.groupmatch.auth.LocaleTest;
+import com.groupmatch.auth.TrialPremiumTest;
+import com.groupmatch.auth.TrialServiceTest;
 import com.groupmatch.availability.AvailabilityTest;
 import com.groupmatch.groups.GroupErrorPathTest;
 import com.groupmatch.groups.GroupTest;
@@ -13,6 +15,7 @@ import com.groupmatch.groups.MemberLimitEnforcedTest;
 import com.groupmatch.groups.MemberLimitFlagTest;
 import com.groupmatch.groups.SlotAndInviteLimitEnforcedTest;
 import com.groupmatch.groups.SlotAndInviteLimitFlagTest;
+import com.groupmatch.meetings.GroupCalendarFeedTest;
 import com.groupmatch.meetings.MeetingTest;
 import com.groupmatch.notifications.NotificationPreferencesTest;
 import com.groupmatch.notifications.NotificationTest;
@@ -31,6 +34,8 @@ import org.junit.platform.suite.api.Suite;
     GuestUpgradeTest.class,
     GuestCleanupTest.class,
     LocaleTest.class,
+    TrialServiceTest.class,
+    TrialPremiumTest.class,
     AdminTest.class,
     GroupTest.class,
     GroupErrorPathTest.class,
@@ -40,6 +45,7 @@ import org.junit.platform.suite.api.Suite;
     SlotAndInviteLimitFlagTest.class,
     SlotAndInviteLimitEnforcedTest.class,
     MeetingTest.class,
+    GroupCalendarFeedTest.class,
     NotificationTest.class,
     NotificationPreferencesTest.class,
     AvailabilityTest.class,

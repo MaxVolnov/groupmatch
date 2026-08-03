@@ -12,8 +12,32 @@ import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
 import { Skeleton } from '@/components/Skeleton'
 import { ErrorMessage } from '@/components/ErrorMessage'
+import { PremiumBadge } from '@/components/PremiumBadge'
 import { TIMEZONES } from '@/utils/timezones'
 import type { NotificationPreferences } from '@/types'
+
+/** Дата окончания триала, если он ещё идёт; иначе null. */
+function activeTrialDate(trialExpiresAt: string | null | undefined): Date | null {
+  if (!trialExpiresAt) return null
+  const date = new Date(trialExpiresAt)
+  if (Number.isNaN(date.getTime()) || date.getTime() <= Date.now()) return null
+  return date
+}
+
+/** Явно проговаривает, что после этой даты тариф станет платным. */
+function TrialNote({ until }: { until: Date }) {
+  const { t, i18n } = useTranslation()
+  const date = until.toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'ru-RU', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+  return (
+    <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+      {t('premium.profileNote', { date })}
+    </p>
+  )
+}
 
 export function Profile() {
   const qc = useQueryClient()
@@ -62,6 +86,7 @@ export function Profile() {
   }
 
   const { data: planInfo } = usePlanInfo()
+  const trialUntil = activeTrialDate(data?.trialExpiresAt)
 
   const { data: subscription } = useQuery({
     queryKey: ['subscription'],
@@ -183,9 +208,11 @@ export function Profile() {
                 <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                   {t('profile.plan')}
                 </span>
-                <span className="text-sm text-gray-900 dark:text-gray-100">
+                <span className="flex items-center gap-2 text-sm text-gray-900 dark:text-gray-100">
                   {data.plan === 'PRO' ? t('profile.pro') : t('profile.free')}
+                  {data.plan === 'PRO' && trialUntil && <PremiumBadge />}
                 </span>
+                {trialUntil && <TrialNote until={trialUntil} />}
               </div>
             )}
             {import.meta.env.VITE_MONETIZATION_ENABLED === 'true' && (
@@ -228,7 +255,9 @@ export function Profile() {
                     <div>
                       <span className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 dark:text-indigo-400">
                         <span>⚡</span> {t('pricing.pro')}
+                        {trialUntil && <PremiumBadge />}
                       </span>
+                      {trialUntil && <TrialNote until={trialUntil} />}
                       {subscription?.status === 'ACTIVE' && subscription.expiresAt && (
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                           {t('profile.renews')} {new Date(subscription.expiresAt).toLocaleDateString('ru-RU')}

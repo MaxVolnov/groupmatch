@@ -12,6 +12,7 @@ import { Modal } from '@/components/Modal'
 import { Skeleton } from '@/components/Skeleton'
 import { ErrorMessage } from '@/components/ErrorMessage'
 import { UpgradeModal } from '@/components/UpgradeModal'
+import { TrialBanner } from '@/components/TrialBanner'
 import type { GroupResponse } from '@/types'
 import { Layout } from '@/components/Layout'
 import { TIMEZONES, getBrowserTimezone } from '@/utils/timezones'
@@ -200,6 +201,8 @@ export function Dashboard() {
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('dashboard.title')}</h1>
         <Button onClick={handleCreateGroup}>{t('dashboard.newGroup')}</Button>
       </div>
+
+      {!isGuest && <TrialBanner trialExpiresAt={meData?.trialExpiresAt} />}
 
       {!isGuest && !isEmailVerified && (
         <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-3 mb-4 flex items-center justify-between">

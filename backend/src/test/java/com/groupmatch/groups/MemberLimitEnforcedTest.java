@@ -109,6 +109,8 @@ public class MemberLimitEnforcedTest extends BaseIntegrationTest {
         rest.exchange(url("/api/v1/auth/signup"), HttpMethod.POST,
                 new HttpEntity<>(Map.of("email", email, "password", PASSWORD,
                         "displayName", displayName), jsonHeaders()), Map.class);
+        // Лимит здесь — FREE-шный, поэтому триальный PRO снимаем до signin.
+        downgradeToFree(email);
         return rest.exchange(url("/api/v1/auth/signin"), HttpMethod.POST,
                         new HttpEntity<>(Map.of("email", email, "password", PASSWORD),
                                 jsonHeaders()), Map.class)

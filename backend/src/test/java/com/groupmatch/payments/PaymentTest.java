@@ -26,6 +26,10 @@ public class PaymentTest extends BaseIntegrationTest {
                 new HttpEntity<>(Map.of("email", EMAIL, "password", PASSWORD,
                         "displayName", "Pay Tester"), jsonHeaders()), Map.class);
 
+        // Тест описывает поведение FREE-аккаунта — снимаем триальный PRO,
+        // который регистрация выдаёт по умолчанию, до выдачи токена.
+        downgradeToFree(EMAIL);
+
         accessToken = rest.exchange(url("/api/v1/auth/signin"), HttpMethod.POST,
                 new HttpEntity<>(Map.of("email", EMAIL, "password", PASSWORD),
                         jsonHeaders()), Map.class)
