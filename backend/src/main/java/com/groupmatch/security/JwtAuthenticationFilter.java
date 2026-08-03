@@ -58,7 +58,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
-        return PUBLIC_PATHS.contains(request.getRequestURI());
+        String uri = request.getRequestURI();
+        return PUBLIC_PATHS.contains(uri) || isGroupCalendarFeed(uri);
+    }
+
+    /**
+     * {@code GET /api/v1/groups/{id}/calendar.ics} — .ics-фид для календарных
+     * клиентов: Authorization они не шлют, доступ даёт токен в query.
+     *
+     * Ровно тот же путь, что и в {@code SecurityConfig}: проверяем количество
+     * сегментов, чтобы не оказаться шире permitAll-матчера.
+     */
+    private static boolean isGroupCalendarFeed(String uri) {
+        if (!uri.endsWith("/calendar.ics")) return false;
+        String[] parts = uri.split("/");
+        // ["", "api", "v1", "groups", "{id}", "calendar.ics"]
+        return parts.length == 6
+                && "api".equals(parts[1])
+                && "v1".equals(parts[2])
+                && "groups".equals(parts[3]);
     }
 
     @Override

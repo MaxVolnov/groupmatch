@@ -14,4 +14,5 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, UUID
     Optional<Subscription> findTopByUserIdAndStatusOrderByCreatedAtDesc(UUID userId, SubscriptionStatus status);
     List<Subscription> findByStatusAndExpiresAtBefore(SubscriptionStatus status, Instant threshold);
     boolean existsByUserIdAndStatusAndIdNot(UUID userId, SubscriptionStatus status, UUID id);
+    boolean existsByUserIdAndStatus(UUID userId, SubscriptionStatus status);
 }

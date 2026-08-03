@@ -80,6 +80,15 @@ public class User {
     @Column(name = "last_activity_at", nullable = false)
     private Instant lastActivityAt;
 
+    /**
+     * Окончание псевдо-премиума, выданного при регистрации.
+     * {@code null} — триала не было (гость, аккаунт старше фичи) либо он уже
+     * отработан {@code PlanExpiryJob}. Наличие даты в будущем при
+     * {@code plan != FREE} означает «PRO по триалу, а не по подписке».
+     */
+    @Column(name = "trial_expires_at")
+    private Instant trialExpiresAt;
+
     @PrePersist
     protected void onCreate() {
         createdAt = Instant.now();

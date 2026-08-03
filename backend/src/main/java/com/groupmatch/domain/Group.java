@@ -5,7 +5,9 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
 
+import java.security.SecureRandom;
 import java.time.Instant;
+import java.util.HexFormat;
 import java.util.UUID;
 
 @Entity
@@ -54,6 +56,14 @@ public class Group {
     @Column(nullable = false)
     private int version = 0;
 
+    /**
+     * Секрет для .ics-фида группы. Календарные клиенты (Google Calendar,
+     * Apple Calendar) не умеют слать Authorization, поэтому подписка работает
+     * по неугадываемому токену в URL — как ссылки-приглашения.
+     */
+    @Column(name = "calendar_token", nullable = false, updatable = false, length = 64)
+    private String calendarToken;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -64,6 +74,14 @@ public class Group {
     protected void onCreate() {
         createdAt = Instant.now();
         updatedAt = Instant.now();
+        if (calendarToken == null) calendarToken = generateCalendarToken();
+    }
+
+    /** 24 случайных байта в hex — как токены приглашений. */
+    private static String generateCalendarToken() {
+        byte[] bytes = new byte[24];
+        new SecureRandom().nextBytes(bytes);
+        return HexFormat.of().formatHex(bytes);
     }
 
     @PreUpdate

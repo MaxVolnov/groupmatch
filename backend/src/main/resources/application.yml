@@ -30,6 +30,15 @@ spring:
   
   data:
     redis:
+      # НЕ УБИРАТЬ плейсхолдер. В Railway переменная называется
+      # SPRING_REDIS_URL — это имя из Spring Boot 2 (spring.redis.url), и по
+      # правилам relaxed binding оно НЕ соответствует spring.data.redis.url,
+      # который читает RedisConfig. Связку держит именно эта строка: она
+      # ссылается на переменную по литеральному имени. Убрать её или заменить
+      # на «канонический» вид — значит увести прод на localhost:6379 и
+      # разлогинить всех, причём тихо: health останется UP.
+      # Разбор с экспериментом — docs/session-audit-2026-08.md, раздел 9.
+      # SPRING_DATA_REDIS_URL тоже работает и при конфликте выигрывает.
       url: ${SPRING_REDIS_URL:redis://localhost:6379}
 
   mail:
@@ -70,12 +79,24 @@ app:
     email: ${ADMIN_EMAIL:}
   guest:
     retention-days: ${GUEST_RETENTION_DAYS:90}
+  # Псевдо-премиум первым пользователям: PRO на N календарных месяцев с момента
+  # регистрации. Срок в конфиге, чтобы поменять 3 → 6 переменной окружения.
+  trial:
+    enabled: ${TRIAL_ENABLED:true}
+    duration-months: ${TRIAL_DURATION_MONTHS:3}
+    # Расписание PlanExpiryJob. В конфиге, чтобы на стенде прогон можно было
+    # ускорить, не пересобирая приложение.
+    expiry-cron: ${TRIAL_EXPIRY_CRON:0 30 2 * * *}
   rate-limit:
     signup: 5
     signin: 10
     refresh: 20
   cache:
     heatmap-ttl-minutes: 60
+  # Публичный адрес самого API — нужен для ссылки на .ics-подписку: фронт
+  # живёт на Vercel, бэкенд на Railway, и фид отдаёт бэкенд. Пусто =
+  # «фронт и API в одном домене», тогда берётся app.mail.base-url.
+  api-base-url: ${API_BASE_URL:}
   mail:
     from: ${MAIL_FROM:noreply@groupmatch.app}
     base-url: ${APP_BASE_URL:http://localhost:3000}

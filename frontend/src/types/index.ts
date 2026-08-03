@@ -14,6 +14,8 @@ export interface UserResponse {
   isEmailVerified: boolean
   createdAt: string
   locale?: Language
+  /** Окончание псевдо-премиума; null — триала нет или он уже закрыт. */
+  trialExpiresAt?: string | null
 }
 
 export interface NotificationBannerProps {
@@ -146,6 +148,15 @@ export interface MeetingRequest {
   description?: string
   startsAt: string
   endsAt: string
+}
+
+/** Ссылки на .ics-подписку календаря группы. */
+export interface CalendarSubscriptionResponse {
+  /** https-адрес фида — для копирования в любой календарь */
+  url: string
+  /** тот же адрес по схеме webcal:// — открывает календарь ОС */
+  webcalUrl: string
+  refreshMinutes: number
 }
 
 // ── Feedback ──────────────────────────────────────────────────────────────────

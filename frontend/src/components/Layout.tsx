@@ -7,6 +7,7 @@ import { Button } from './Button'
 import { FeedbackModal } from './FeedbackModal'
 import { Footer } from './Footer'
 import { NotificationBell } from './NotificationBell'
+import { ProBadge } from './ProBadge'
 
 interface LayoutProps {
   children: ReactNode
@@ -55,7 +56,7 @@ function GuestBadge() {
 }
 
 export function Layout({ children }: LayoutProps) {
-  const { isAuthenticated, displayName, email, isGuest, role, logout } = useAuthStore()
+  const { isAuthenticated, displayName, email, isGuest, role, plan, logout } = useAuthStore()
   const navigate = useNavigate()
   const { t } = useTranslation()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -94,6 +95,7 @@ export function Layout({ children }: LayoutProps) {
                   >
                     {displayName ?? email}
                     {isGuest && <GuestBadge />}
+                    {!isGuest && plan === 'PRO' && <ProBadge />}
                   </Link>
                   {role === 'ADMIN' && (
                     <Link
@@ -150,6 +152,7 @@ export function Layout({ children }: LayoutProps) {
             >
               {displayName ?? email}
               {isGuest && <GuestBadge />}
+              {!isGuest && plan === 'PRO' && <ProBadge />}
             </Link>
             {role === 'ADMIN' && (
               <Link

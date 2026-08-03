@@ -14,7 +14,9 @@ public record UserResponse(
         String role,
         boolean isEmailVerified,
         Instant createdAt,
-        String locale
+        String locale,
+        /** Окончание псевдо-премиума; null — триала нет или он уже закрыт. */
+        Instant trialExpiresAt
 ) {
     public static UserResponse from(User user) {
         return new UserResponse(
@@ -26,7 +28,8 @@ public record UserResponse(
                 user.getRole().name(),
                 user.isEmailVerified(),
                 user.getCreatedAt(),
-                user.getLocale()
+                user.getLocale(),
+                user.getTrialExpiresAt()
         );
     }
 }
