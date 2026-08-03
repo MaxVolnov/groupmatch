@@ -42,6 +42,20 @@ public class CidrMatcherTest {
         assertThat(m.matches("::1")).isFalse();
     }
 
+    /**
+     * Единственный префикс Cloudflare, не выровненный по байту: /29 значит,
+     * что от четвёртого байта значимы 5 бит, то есть диапазон c0…c7.
+     */
+    @Test
+    void respectsNonByteAlignedIpv6Prefix() {
+        CidrMatcher m = CidrMatcher.parse("2a06:98c0::/29");
+        assertThat(m.matches("2a06:98c0::1")).isTrue();
+        assertThat(m.matches("2a06:98c5::1")).isTrue();
+        assertThat(m.matches("2a06:98c7:ffff:ffff:ffff:ffff:ffff:ffff")).isTrue();
+        assertThat(m.matches("2a06:98c8::1")).isFalse();
+        assertThat(m.matches("2a06:98bf:ffff::1")).isFalse();
+    }
+
     @Test
     void ipv4AndIpv6NeverCrossMatch() {
         assertThat(CidrMatcher.parse("0.0.0.0/0").matches("2a02:5180::1")).isFalse();
