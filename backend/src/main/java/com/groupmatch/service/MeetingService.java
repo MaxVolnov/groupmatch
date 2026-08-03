@@ -43,18 +43,7 @@ public class MeetingService {
 
         Meeting saved = meetingRepository.save(meeting);
 
-        grpMemberRepository.findByGroupAndStatus(groupId, MemberStatus.ACTIVE).forEach(m -> {
-            if (!m.getUser().equals(callerId)) {
-                NotificationPreferences memberPrefs = notificationPreferencesService.getOrCreate(m.getUser());
-                if (memberPrefs.isInappMeetingCreated()) {
-                    notificationService.create(m.getUser(), NotificationType.MEETING_CREATED, Map.of(
-                        "groupId", groupId.toString(),
-                        "meetingId", saved.getId().toString(),
-                        "meetingTitle", req.title()
-                    ));
-                }
-            }
-        });
+        notifyMembers(groupId, callerId, saved, req.title());
 
         return toResponse(saved);
     }
@@ -112,6 +101,41 @@ public class MeetingService {
     }
 
     // --- helpers ---
+
+    /**
+     * Уведомляет участников о новой встрече.
+     *
+     * Настройки уведомлений забираются одним запросом на всех: раньше здесь
+     * был getOrCreate() в цикле, то есть SELECT на каждого участника — в
+     * группе на 30 человек это 30 лишних round-trip'ов на одно создание
+     * встречи. Сами вставки уведомлений остаются поштучными: это отдельная
+     * строка на получателя, их не сократить.
+     */
+    private void notifyMembers(UUID groupId, UUID callerId, Meeting saved, String title) {
+        List<UUID> recipients = grpMemberRepository
+                .findByGroupAndStatus(groupId, MemberStatus.ACTIVE).stream()
+                .map(GrpMember::getUser)
+                .filter(userId -> !userId.equals(callerId))
+                .toList();
+        if (recipients.isEmpty()) return;
+
+        Map<UUID, NotificationPreferences> prefs =
+                notificationPreferencesService.getOrCreateAll(recipients);
+
+        for (UUID userId : recipients) {
+            // getOrCreateAll гарантирует запись на каждого; defaults — страховка,
+            // чтобы дырка в настройках не роняла создание встречи целиком.
+            NotificationPreferences p = prefs.getOrDefault(
+                    userId, NotificationPreferences.defaultsFor(userId));
+            if (!p.isInappMeetingCreated()) continue;
+
+            notificationService.create(userId, NotificationType.MEETING_CREATED, Map.of(
+                    "groupId", groupId.toString(),
+                    "meetingId", saved.getId().toString(),
+                    "meetingTitle", title
+            ));
+        }
+    }
 
     private void requireActiveMember(UUID groupId, UUID callerId) {
         grpMemberRepository.findByGroupAndUser(groupId, callerId)

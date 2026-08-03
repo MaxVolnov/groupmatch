@@ -1,6 +1,7 @@
 package com.groupmatch;
 
 import com.groupmatch.admin.AdminTest;
+import com.groupmatch.config.LoggingLevelsTest;
 import com.groupmatch.auth.AuthTest;
 import com.groupmatch.auth.GuestCleanupTest;
 import com.groupmatch.auth.GuestUpgradeTest;
@@ -16,6 +17,7 @@ import com.groupmatch.groups.MemberLimitFlagTest;
 import com.groupmatch.groups.SlotAndInviteLimitEnforcedTest;
 import com.groupmatch.groups.SlotAndInviteLimitFlagTest;
 import com.groupmatch.meetings.GroupCalendarFeedTest;
+import com.groupmatch.meetings.MeetingNPlusOneTest;
 import com.groupmatch.meetings.MeetingTest;
 import com.groupmatch.notifications.NotificationPreferencesTest;
 import com.groupmatch.notifications.NotificationTest;
@@ -30,6 +32,7 @@ import org.junit.platform.suite.api.Suite;
 
 @Suite
 @SelectClasses({
+    LoggingLevelsTest.class,
     AuthTest.class,
     GuestUpgradeTest.class,
     GuestCleanupTest.class,
@@ -46,6 +49,7 @@ import org.junit.platform.suite.api.Suite;
     SlotAndInviteLimitEnforcedTest.class,
     MeetingTest.class,
     GroupCalendarFeedTest.class,
+    MeetingNPlusOneTest.class,
     NotificationTest.class,
     NotificationPreferencesTest.class,
     AvailabilityTest.class,

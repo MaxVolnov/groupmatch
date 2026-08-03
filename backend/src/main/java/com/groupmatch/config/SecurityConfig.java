@@ -163,6 +163,12 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
+        // Браузер прячет от JS все заголовки ответа, кроме CORS-safelisted, пока
+        // они не перечислены здесь явно. Без Retry-After фронтенд видел 429, но
+        // не мог сказать, сколько ждать: обратный отсчёт в ErrorMessage.tsx был
+        // написан и мёртв. Звёздочка тут не работает — с allowCredentials=true
+        // wildcard в Access-Control-Expose-Headers браузером игнорируется.
+        configuration.setExposedHeaders(List.of("Retry-After"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

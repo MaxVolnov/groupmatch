@@ -1,0 +1,22 @@
+# Профиль прода. Активируется переменной SPRING_PROFILES_ACTIVE=prod.
+#
+# Дефолты в application.yml уже безопасны (INFO), поэтому забытая переменная
+# не делает прод болтливым — этот файл фиксирует намерение явно и даёт место
+# под будущие прод-специфичные настройки.
+
+logging:
+  level:
+    root: INFO
+    com.groupmatch: INFO
+    org.springframework: INFO
+    # Security на DEBUG печатает содержимое цепочки фильтров и детали
+    # аутентификации на каждый запрос — в проде это и шум, и утечка.
+    org.springframework.security: INFO
+    # Flyway на DEBUG выливает весь SQL миграций при каждом старте.
+    org.flywaydb: INFO
+    # Hibernate: следим только за проблемами, не за каждым запросом.
+    org.hibernate: WARN
+
+spring:
+  jpa:
+    show-sql: false
