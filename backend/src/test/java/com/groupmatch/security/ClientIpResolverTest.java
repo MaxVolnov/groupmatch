@@ -88,4 +88,115 @@ public class ClientIpResolverTest {
         assertThat(resolver.isTrusted("10.1.2.3")).isTrue();
         assertThat(resolver.isTrusted("203.0.113.9")).isFalse();
     }
+
+    // ── Конфигурация прода: Cloudflare перед Railway ─────────────────────────
+
+    /**
+     * Значение, которое лежит в TRUSTED_PROXIES на Railway: loopback и
+     * приватные диапазоны (TCP-пиром приложение видит внутренний прокси
+     * Railway) плюс IPv4-диапазоны Cloudflare, который проксирует
+     * api.groupmatch.app.
+     *
+     * Копия, а не источник истины: в yml список намеренно не зашит, чтобы
+     * обновлять его переменной окружения без релиза. Тесты ниже проверяют
+     * логику резолвинга на этом списке, а не актуальность самого списка —
+     * за ней следить по cloudflare.com/ips-v4.
+     */
+    private static final String PROD_PROXIES = String.join(",",
+            "127.0.0.1/32", "::1/128",
+            "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "100.64.0.0/10", "fd00::/8",
+            // Cloudflare IPv4
+            "173.245.48.0/20", "103.21.244.0/22", "103.22.200.0/22", "103.31.4.0/22",
+            "141.101.64.0/18", "108.162.192.0/18", "190.93.240.0/20", "188.114.96.0/20",
+            "197.234.240.0/22", "198.41.128.0/17", "162.158.0.0/15", "104.16.0.0/13",
+            "104.24.0.0/14", "172.64.0.0/13", "131.0.72.0/22");
+
+    /** По одному представителю каждого диапазона Cloudflare. */
+    private static final String[] CLOUDFLARE_SAMPLES = {
+            "173.245.48.1", "103.21.244.1", "103.22.200.1", "103.31.4.1",
+            "141.101.64.1", "108.162.192.1", "190.93.240.1", "188.114.96.1",
+            "197.234.240.1", "198.41.128.1", "162.158.0.1", "104.16.0.1",
+            "104.24.0.1", "172.64.0.1", "131.0.72.1"};
+
+    @Test
+    void prodListParsesAndCoversEveryCloudflareRange() {
+        ClientIpResolver resolver = new ClientIpResolver(PROD_PROXIES);
+        for (String ip : CLOUDFLARE_SAMPLES) {
+            assertThat(resolver.isTrusted(ip)).as("диапазон Cloudflare с адресом %s", ip).isTrue();
+        }
+        // Приватные диапазоны никуда не делись — ими приходит пир Railway.
+        assertThat(resolver.isTrusted("10.0.0.5")).isTrue();
+        assertThat(resolver.isTrusted("100.64.1.1")).isTrue();
+    }
+
+    /** Обычный пользователь не должен случайно попасть в доверенные. */
+    @Test
+    void prodListDoesNotTrustArbitraryAddresses() {
+        ClientIpResolver resolver = new ClientIpResolver(PROD_PROXIES);
+        for (String ip : new String[]{"203.0.113.9", "8.8.8.8", "173.245.64.1",
+                                      "104.28.0.1", "172.32.0.1", "131.0.76.1"}) {
+            assertThat(resolver.isTrusted(ip)).as("%s не должен считаться прокси", ip).isFalse();
+        }
+    }
+
+    /**
+     * Целевой сценарий после переключения: клиент → Cloudflare → Railway → мы.
+     * Railway дописывает в цепочку адрес своего пира (Cloudflare), поэтому
+     * самый правый хоп — это Cloudflare, а пользователь левее.
+     */
+    @Test
+    void resolvesRealClientBehindCloudflare() {
+        ClientIpResolver resolver = new ClientIpResolver(PROD_PROXIES);
+        assertThat(resolver.resolve(request("10.0.0.5", "203.0.113.9, 162.158.0.1")))
+                .as("нужен адрес пользователя, а не эджа Cloudflare")
+                .isEqualTo("203.0.113.9");
+    }
+
+    /** Двое пользователей за одним эджем Cloudflare не должны слиться в один IP. */
+    @Test
+    void separatesUsersSharingOneCloudflareEdge() {
+        ClientIpResolver resolver = new ClientIpResolver(PROD_PROXIES);
+        String first = resolver.resolve(request("10.0.0.5", "203.0.113.9, 104.16.0.1"));
+        String second = resolver.resolve(request("10.0.0.5", "198.51.100.7, 104.16.0.1"));
+        assertThat(first).isNotEqualTo(second);
+        assertThat(first).isEqualTo("203.0.113.9");
+        assertThat(second).isEqualTo("198.51.100.7");
+    }
+
+    // ── Регрессия к P0: подделка XFF по-прежнему не проходит ────────────────
+
+    /**
+     * Атакующий стучится прямо в Railway, минуя Cloudflare, и подставляет
+     * чужой XFF. Railway допишет его настоящий адрес справа — по нему и
+     * считаем, лимит не обходится.
+     */
+    @Test
+    void forgedForwardedForStillCannotBypassLimit() {
+        ClientIpResolver resolver = new ClientIpResolver(PROD_PROXIES);
+        assertThat(resolver.resolve(request("10.0.0.5", "1.2.3.4, 203.0.113.9")))
+                .isEqualTo("203.0.113.9");
+        assertThat(resolver.resolve(request("10.0.0.5", "9.9.9.9, 8.8.8.8, 203.0.113.9")))
+                .isEqualTo("203.0.113.9");
+    }
+
+    /**
+     * Самый неприятный вариант подделки: атакующий дописывает справа адрес
+     * Cloudflare, изображая проход через прокси. Пока его собственный адрес
+     * (который Railway допишет ещё правее) не из доверенных, подмена не
+     * работает — берётся именно он.
+     */
+    @Test
+    void forgedCloudflareHopDoesNotHelp() {
+        ClientIpResolver resolver = new ClientIpResolver(PROD_PROXIES);
+        assertThat(resolver.resolve(request("10.0.0.5", "1.2.3.4, 162.158.0.1, 203.0.113.9")))
+                .isEqualTo("203.0.113.9");
+    }
+
+    /** Клиент ходит напрямую (недоверенный пир) — XFF игнорируется целиком. */
+    @Test
+    void directRequestIgnoresForwardedForEvenWithProdList() {
+        ClientIpResolver resolver = new ClientIpResolver(PROD_PROXIES);
+        assertThat(resolver.resolve(request("203.0.113.9", "1.2.3.4, 162.158.0.1")))
+                .isEqualTo("203.0.113.9");
+    }
 }
