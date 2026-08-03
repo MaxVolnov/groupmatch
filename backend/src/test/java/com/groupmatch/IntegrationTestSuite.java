@@ -1,6 +1,7 @@
 package com.groupmatch;
 
 import com.groupmatch.admin.AdminTest;
+import com.groupmatch.config.LoggingLevelsTest;
 import com.groupmatch.auth.AuthTest;
 import com.groupmatch.auth.GuestCleanupTest;
 import com.groupmatch.auth.GuestUpgradeTest;
@@ -30,6 +31,7 @@ import org.junit.platform.suite.api.Suite;
 
 @Suite
 @SelectClasses({
+    LoggingLevelsTest.class,
     AuthTest.class,
     GuestUpgradeTest.class,
     GuestCleanupTest.class,
