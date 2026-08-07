@@ -33,7 +33,7 @@ export function isAuthenticated(): boolean {
 
 const BRAND_HTML = `
     <a href="/" class="flex min-h-[44px] items-center gap-2">
-      <img src="/logo.svg" alt="" width="32" height="32" onerror="this.remove()">
+      <img src="/logo-on-dark.svg" alt="" width="32" height="32" onerror="this.remove()">
       <span class="text-lg font-bold text-[var(--gm-text)]">GroupMatch<span class="ml-1.5 align-top text-[11px] font-normal text-[var(--gm-muted)]">beta</span></span>
     </a>`
 
