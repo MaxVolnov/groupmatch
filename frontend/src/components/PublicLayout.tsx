@@ -17,7 +17,7 @@ export function PublicLayout({ children }: Props) {
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       <nav className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <Link to="/" className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
+          <Link to="/" className="text-lg font-bold text-gm-600 dark:text-gm-400">
             GroupMatch
             <span className="ml-1.5 align-top text-[11px] font-normal text-gray-500 dark:text-gray-400">beta</span>
           </Link>
@@ -25,7 +25,7 @@ export function PublicLayout({ children }: Props) {
             {isAuthenticated ? (
               <Link
                 to="/"
-                className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
+                className="text-sm font-medium text-gm-600 dark:text-gm-400 hover:text-gm-700 dark:hover:text-gm-300 transition-colors"
               >
                 {t('nav.openApp')}
               </Link>
@@ -35,7 +35,7 @@ export function PublicLayout({ children }: Props) {
                 {pathname !== '/signin' && (
                   <Link
                     to="/signin"
-                    className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                    className="text-sm text-gray-600 dark:text-gray-400 hover:text-gm-600 dark:hover:text-gm-400 transition-colors"
                   >
                     {t('nav.signIn')}
                   </Link>
@@ -43,7 +43,7 @@ export function PublicLayout({ children }: Props) {
                 {pathname !== '/signup' && (
                   <Link
                     to="/signup"
-                    className="text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors"
+                    className="text-sm font-medium bg-gm-600 hover:bg-gm-700 text-white px-4 py-2 rounded-lg transition-colors"
                   >
                     {t('nav.signUp')}
                   </Link>

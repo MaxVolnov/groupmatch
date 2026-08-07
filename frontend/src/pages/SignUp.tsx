@@ -82,15 +82,15 @@ export function SignUp() {
               type="checkbox"
               checked={agreedToTerms}
               onChange={(e) => setAgreedToTerms(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-gm-600 focus:ring-gm-500 cursor-pointer"
             />
             <span>
               {t('auth.agreeToTerms')}{' '}
               <a href="/legal#terms" target="_blank" rel="noopener noreferrer"
-                 className="text-indigo-600 hover:underline">{t('auth.termsOfService')}</a>
+                 className="text-gm-600 hover:underline">{t('auth.termsOfService')}</a>
               {' '}{t('auth.and')}{' '}
               <a href="/legal#privacy" target="_blank" rel="noopener noreferrer"
-                 className="text-indigo-600 hover:underline">{t('auth.privacyPolicy')}</a>
+                 className="text-gm-600 hover:underline">{t('auth.privacyPolicy')}</a>
             </span>
           </label>
           <Button type="submit" loading={loading} disabled={!agreedToTerms || loading} className="mt-2 w-full justify-center">
@@ -99,7 +99,7 @@ export function SignUp() {
         </form>
         <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
           {t('auth.hasAccount')}{' '}
-          <Link to="/signin" className="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300">
+          <Link to="/signin" className="font-medium text-gm-600 dark:text-gm-400 hover:text-gm-700 dark:hover:text-gm-300">
             {t('auth.signIn')}
           </Link>
         </p>

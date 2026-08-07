@@ -32,7 +32,7 @@ function GroupCard({ group }: { group: GroupResponse }) {
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">{group.description}</p>
           )}
         </div>
-        <span className="ml-4 shrink-0 rounded-full bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:text-indigo-300">
+        <span className="ml-4 shrink-0 rounded-full bg-gm-50 dark:bg-gm-900/30 px-2 py-0.5 text-xs font-medium text-gm-700 dark:text-gm-300">
           {group.tzId}
         </span>
       </div>
@@ -136,7 +136,7 @@ function CreateGroupModal({
           <select
             value={tzId}
             onChange={(e) => setTzId(e.target.value)}
-            className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gm-500"
           >
             {TIMEZONES.map((tz) => (
               <option key={tz.value} value={tz.value}>{tz.label}</option>
@@ -236,7 +236,7 @@ export function Dashboard() {
           <p className="text-3xl mb-3">📋</p>
           <p className="text-gray-500 dark:text-gray-400">{t('dashboard.emptyState')}</p>
           <button
-            className="mt-2 inline-flex items-center justify-center min-h-[44px] px-4 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
+            className="mt-2 inline-flex items-center justify-center min-h-[44px] px-4 text-sm font-medium text-gm-600 dark:text-gm-400 hover:text-gm-700 dark:hover:text-gm-300"
             onClick={handleCreateGroup}
           >
             {t('dashboard.createFirstGroup')}

@@ -87,7 +87,7 @@ export function EditGroupModal({ group, open, onClose }: Props) {
           <select
             value={tzId}
             onChange={(e) => setTzId(e.target.value)}
-            className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gm-500"
           >
             {TIMEZONES.map((tz) => (
               <option key={tz.value} value={tz.value}>{tz.label}</option>
@@ -99,7 +99,7 @@ export function EditGroupModal({ group, open, onClose }: Props) {
             type="checkbox"
             checked={showParticipants}
             onChange={(e) => setShowParticipants(e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
+            className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-gm-600 focus:ring-gm-500"
           />
           <span className="text-sm text-gray-700 dark:text-gray-300">
             {t('group.editGroupModal.showParticipants')}

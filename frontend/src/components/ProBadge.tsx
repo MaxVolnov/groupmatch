@@ -12,7 +12,7 @@ export function ProBadge() {
   return (
     <span
       title={t('trial.badgeHint')}
-      className="text-xs bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full"
+      className="text-xs bg-gm-50 dark:bg-gm-900/30 text-gm-600 dark:text-gm-400 px-2 py-0.5 rounded-full"
     >
       {t('trial.badge')}
     </span>

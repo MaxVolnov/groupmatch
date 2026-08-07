@@ -86,7 +86,7 @@ export function FeedbackModal({ open, onClose }: Props) {
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value as FeedbackCategory)}
-              className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gm-500"
             >
               {CATEGORIES.map((c) => (
                 <option key={c.value} value={c.value}>{t(c.labelKey)}</option>
@@ -104,7 +104,7 @@ export function FeedbackModal({ open, onClose }: Props) {
               maxLength={2000}
               required
               placeholder={t('feedback.messagePlaceholder')}
-              className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 resize-none"
+              className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gm-500 dark:focus:ring-gm-400 resize-none"
             />
             <p className="text-xs text-gray-400 dark:text-gray-500 text-right">
               {message.length} / 2000
