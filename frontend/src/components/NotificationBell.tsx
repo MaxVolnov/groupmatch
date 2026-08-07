@@ -86,7 +86,7 @@ export function NotificationBell() {
             {unreadCount > 0 && (
               <button
                 onClick={() => markAllRead.mutate()}
-                className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+                className="text-xs text-gm-600 dark:text-gm-400 hover:underline"
               >
                 {t('notifications.markAllRead')}
               </button>
@@ -105,7 +105,7 @@ export function NotificationBell() {
                   onClick={() => !n.read && markRead.mutate(n.id)}
                   className={`px-4 py-3 border-b border-gray-100 dark:border-gray-700 last:border-0 transition-colors ${
                     !n.read
-                      ? 'bg-indigo-50 dark:bg-indigo-900/20 cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/30'
+                      ? 'bg-gm-50 dark:bg-gm-900/20 cursor-pointer hover:bg-gm-100 dark:hover:bg-gm-900/30'
                       : 'cursor-default'
                   }`}
                 >

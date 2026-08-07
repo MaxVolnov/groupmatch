@@ -67,8 +67,8 @@ export function SignIn() {
   }
 
   return (
-    <PublicLayout>
-      <div className="mx-auto w-full max-w-sm rounded-xl bg-white dark:bg-gray-800 p-8 shadow-md">
+    <PublicLayout brandBackground>
+      <div className="mx-auto w-full max-w-sm rounded-xl border border-white/10 bg-gm-900/70 p-8 shadow-xl backdrop-blur-sm">
         <h1 className="mb-6 text-center text-2xl font-bold text-gray-900 dark:text-gray-100">{t('auth.signIn')}</h1>
         <form onSubmit={submit} className="flex flex-col gap-4">
           <Input
@@ -90,7 +90,7 @@ export function SignIn() {
             />
             <Link
               to="/forgot-password"
-              className="self-end text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
+              className="self-end text-sm text-gm-600 dark:text-gm-400 hover:underline"
             >
               {t('auth.forgotPassword')}
             </Link>
@@ -103,7 +103,7 @@ export function SignIn() {
 
         <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
           {t('auth.noAccount')}{' '}
-          <Link to="/signup" className="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300">
+          <Link to="/signup" className="font-medium text-gm-600 dark:text-gm-400 hover:text-gm-700 dark:hover:text-gm-300">
             {t('auth.signUp')}
           </Link>
         </p>

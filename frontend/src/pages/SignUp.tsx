@@ -46,8 +46,8 @@ export function SignUp() {
   }
 
   return (
-    <PublicLayout>
-      <div className="mx-auto w-full max-w-sm rounded-xl bg-white dark:bg-gray-800 p-8 shadow-md">
+    <PublicLayout brandBackground>
+      <div className="mx-auto w-full max-w-sm rounded-xl border border-white/10 bg-gm-900/70 p-8 shadow-xl backdrop-blur-sm">
         <h1 className="mb-6 text-center text-2xl font-bold text-gray-900 dark:text-gray-100">{t('auth.createAccount')}</h1>
         <form onSubmit={submit} className="flex flex-col gap-4">
           <Input
@@ -82,15 +82,15 @@ export function SignUp() {
               type="checkbox"
               checked={agreedToTerms}
               onChange={(e) => setAgreedToTerms(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-gm-600 focus:ring-gm-500 cursor-pointer"
             />
             <span>
               {t('auth.agreeToTerms')}{' '}
               <a href="/legal#terms" target="_blank" rel="noopener noreferrer"
-                 className="text-indigo-600 hover:underline">{t('auth.termsOfService')}</a>
+                 className="text-gm-600 hover:underline">{t('auth.termsOfService')}</a>
               {' '}{t('auth.and')}{' '}
               <a href="/legal#privacy" target="_blank" rel="noopener noreferrer"
-                 className="text-indigo-600 hover:underline">{t('auth.privacyPolicy')}</a>
+                 className="text-gm-600 hover:underline">{t('auth.privacyPolicy')}</a>
             </span>
           </label>
           <Button type="submit" loading={loading} disabled={!agreedToTerms || loading} className="mt-2 w-full justify-center">
@@ -99,7 +99,7 @@ export function SignUp() {
         </form>
         <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
           {t('auth.hasAccount')}{' '}
-          <Link to="/signin" className="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300">
+          <Link to="/signin" className="font-medium text-gm-600 dark:text-gm-400 hover:text-gm-700 dark:hover:text-gm-300">
             {t('auth.signIn')}
           </Link>
         </p>

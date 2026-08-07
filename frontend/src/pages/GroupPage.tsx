@@ -152,7 +152,7 @@ export function GroupPage() {
               onClick={() => setTab(tabDef.id)}
               className={`whitespace-nowrap px-4 py-2.5 text-sm font-medium transition-colors border-b-2 min-h-[44px] ${
                 tab === tabDef.id
-                  ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
+                  ? 'border-gm-600 text-gm-600 dark:border-gm-400 dark:text-gm-400'
                   : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
               }`}
             >

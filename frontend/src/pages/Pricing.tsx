@@ -47,18 +47,18 @@ export function Pricing() {
             </ul>
             <Link
               to="/signup"
-              className="block text-center rounded-lg border border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400 px-4 py-2.5 text-sm font-medium hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+              className="block text-center rounded-lg border border-gm-600 text-gm-600 dark:text-gm-400 dark:border-gm-400 px-4 py-2.5 text-sm font-medium hover:bg-gm-50 dark:hover:bg-gm-900/20 transition-colors"
             >
               {t('pricing.getStarted')}
             </Link>
           </div>
 
           {/* PRO */}
-          <div className="rounded-2xl border-2 border-indigo-500 bg-white dark:bg-gray-800 p-8 flex flex-col relative">
-            <span className="absolute top-4 right-4 bg-indigo-600 text-white text-xs font-semibold px-2.5 py-1 rounded-full">
+          <div className="rounded-2xl border-2 border-gm-500 bg-white dark:bg-gray-800 p-8 flex flex-col relative">
+            <span className="absolute top-4 right-4 bg-gm-600 text-white text-xs font-semibold px-2.5 py-1 rounded-full">
               {t('pricing.mostPopular')}
             </span>
-            <p className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wide mb-1">
+            <p className="text-sm font-semibold text-gm-600 dark:text-gm-400 uppercase tracking-wide mb-1">
               {t('pricing.pro')}
             </p>
             <div className="mb-1">
@@ -80,7 +80,7 @@ export function Pricing() {
             </ul>
             <Link
               to="/profile"
-              className="block text-center rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 text-sm font-medium transition-colors"
+              className="block text-center rounded-lg bg-gm-600 hover:bg-gm-700 text-white px-4 py-2.5 text-sm font-medium transition-colors"
             >
               {t('pricing.upgradeToPro')}
             </Link>
