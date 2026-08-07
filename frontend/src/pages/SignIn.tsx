@@ -67,8 +67,8 @@ export function SignIn() {
   }
 
   return (
-    <PublicLayout>
-      <div className="mx-auto w-full max-w-sm rounded-xl bg-white dark:bg-gray-800 p-8 shadow-md">
+    <PublicLayout brandBackground>
+      <div className="mx-auto w-full max-w-sm rounded-xl border border-white/10 bg-gm-900/70 p-8 shadow-xl backdrop-blur-sm">
         <h1 className="mb-6 text-center text-2xl font-bold text-gray-900 dark:text-gray-100">{t('auth.signIn')}</h1>
         <form onSubmit={submit} className="flex flex-col gap-4">
           <Input
