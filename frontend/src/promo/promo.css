@@ -1,29 +1,7 @@
+/* Палитра и базовая типографика — в общем src/shared/brand.css. @import
+   обязан идти первым, до @tailwind: этого требует спецификация CSS. */
+@import '../shared/brand.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/*
- * Brand palette — Concept 2 (blue). Values are taken from the approved
- * mockup and must not be changed.
- *
- * Accent usage rule (WCAG AA):
- *   --gm-accent (#055EC2) on --gm-bg is 3.15:1 — FILL ONLY (buttons,
- *   badges, plates). Never use it for text.
- *   Accent-coloured text/links/icons  → --gm-accent-light (6.51:1)
- *   Text on an --gm-accent button     → --gm-text        (6.20:1)
- *   Button hover fill                 → --gm-accent-hover
- */
-:root {
-  --gm-bg: #040929;
-  --gm-surface: #0C1540;
-  --gm-border: #1A2757;
-  --gm-accent: #055EC2;
-  --gm-accent-hover: #0867D0;
-  --gm-accent-light: #6499D0;
-  --gm-text: #FFFFFF;
-  --gm-muted: #9AA8C7;
-}
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-}
