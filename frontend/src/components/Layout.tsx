@@ -47,6 +47,38 @@ function ThemeToggle() {
   )
 }
 
+/**
+ * Фирменный знак в шапке.
+ *
+ * Два файла, а не один: прозрачные варианты знака рассчитаны на конкретный
+ * фон — у `-on-dark` буква G белая, и на светлой шапке она бы исчезла.
+ * Переключаем классом, а не JS: тема в SPA задаётся классом `dark` на
+ * <html>, значит обе картинки уже в разметке и подмена происходит без
+ * мерцания при загрузке.
+ *
+ * `alt=""` — знак декоративный, рядом в той же ссылке есть текст «GroupMatch».
+ */
+function LogoMark() {
+  return (
+    <>
+      <img
+        src="/logo-on-light.svg"
+        alt=""
+        width={28}
+        height={28}
+        className="block h-7 w-7 shrink-0 dark:hidden"
+      />
+      <img
+        src="/logo-on-dark.svg"
+        alt=""
+        width={28}
+        height={28}
+        className="hidden h-7 w-7 shrink-0 dark:block"
+      />
+    </>
+  )
+}
+
 function GuestBadge() {
   return (
     <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-full">
@@ -74,11 +106,14 @@ export function Layout({ children }: LayoutProps) {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <Link
             to="/"
-            className="text-lg font-bold text-indigo-600 dark:text-indigo-400"
+            className="flex items-center gap-2 text-lg font-bold text-indigo-600 dark:text-indigo-400"
             onClick={() => setMenuOpen(false)}
           >
-            GroupMatch
-            <span className="ml-1.5 align-top text-[11px] font-normal text-gray-500 dark:text-gray-400">beta</span>
+            <LogoMark />
+            <span>
+              GroupMatch
+              <span className="ml-1.5 align-top text-[11px] font-normal text-gray-500 dark:text-gray-400">beta</span>
+            </span>
           </Link>
 
           <div className="flex items-center gap-2">
