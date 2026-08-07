@@ -13,8 +13,14 @@ const root = resolve(__dirname, '../..')
 const read = (p: string) => readFileSync(resolve(root, p), 'utf-8')
 
 const ENTRY_POINTS = ['index.html', 'promo.html', 'legal.html', 'about.html'] as const
-/** Точки входа с OG-разметкой; у index.html её нет (SPA не расшаривают). */
-const OG_ENTRY_POINTS = ['promo.html', 'legal.html', 'about.html'] as const
+
+/** У каждой точки входа свой канонический адрес — им отличается og:url. */
+const OG_URLS: Record<(typeof ENTRY_POINTS)[number], string> = {
+  'index.html': 'https://groupmatch.app/',
+  'promo.html': 'https://groupmatch.app/promo',
+  'legal.html': 'https://groupmatch.app/legal',
+  'about.html': 'https://groupmatch.app/about',
+}
 
 const ASSETS = [
   'favicon.ico',
@@ -91,17 +97,60 @@ describe('фавиконы и манифест в точках входа', () =
 })
 
 describe('OG-превью', () => {
-  it.each(OG_ENTRY_POINTS)('%s: og:image — абсолютный URL', (page) => {
+  /**
+   * Все четыре входа, включая SPA: groupmatch.app без пути — основная ссылка
+   * для шеринга, и её карточка не должна быть беднее промо-страницы.
+   */
+  it.each(ENTRY_POINTS)('%s: полный набор OG-тегов', (page) => {
+    const html = read(page)
+    for (const property of ['og:type', 'og:locale', 'og:site_name', 'og:url',
+                            'og:title', 'og:description', 'og:image',
+                            'og:image:type', 'og:image:width', 'og:image:height',
+                            'og:image:alt']) {
+      expect(html, `${page}: нет ${property}`)
+        .toMatch(new RegExp(`<meta property="${property}" content="[^"]+"`))
+    }
+    expect(html).toContain('<meta name="twitter:card" content="summary_large_image">')
+  })
+
+  it.each(ENTRY_POINTS)('%s: og:image — абсолютный URL', (page) => {
     const url = read(page).match(/property="og:image" content="([^"]+)"/)?.[1]
     expect(url, `${page}: нет og:image`).toBeDefined()
     // Относительный путь мессенджеры не резолвят — превью просто не подтянется.
     expect(url).toBe(`${CANONICAL}/og-image.jpg`)
   })
 
-  it.each(OG_ENTRY_POINTS)('%s: указаны размеры 1200×630', (page) => {
+  it.each(ENTRY_POINTS)('%s: указаны размеры 1200×630 и тип', (page) => {
     const html = read(page)
     expect(html).toContain('<meta property="og:image:width" content="1200">')
     expect(html).toContain('<meta property="og:image:height" content="630">')
+    expect(html).toContain('<meta property="og:image:type" content="image/jpeg">')
+  })
+
+  it.each(ENTRY_POINTS)('%s: og:url ведёт на собственный адрес страницы', (page) => {
+    const url = read(page).match(/property="og:url" content="([^"]+)"/)?.[1]
+    expect(url).toBe(OG_URLS[page])
+  })
+
+  const ogField = (page: string, prop: string) =>
+    read(page).match(new RegExp(`property="${prop}" content="([^"]+)"`))?.[1]
+
+  /**
+   * Корень и /promo описывают один и тот же продукт целиком, поэтому их
+   * карточки обязаны совпадать. У /legal и /about тексты свои — они
+   * описывают себя, и это правильно, а не расхождение.
+   */
+  it('карточка корня совпадает с промо-страницей', () => {
+    for (const prop of ['og:title', 'og:description']) {
+      expect(ogField('index.html', prop), `${prop} разошёлся`)
+        .toBe(ogField('promo.html', prop))
+    }
+  })
+
+  /** Картинка одна на все страницы — и подпись к ней тоже. */
+  it('og:image:alt одинаков везде', () => {
+    const alts = ENTRY_POINTS.map((p) => ogField(p, 'og:image:alt'))
+    expect(new Set(alts).size).toBe(1)
   })
 })
 

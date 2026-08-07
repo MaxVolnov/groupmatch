@@ -9,6 +9,31 @@
     <meta name="theme-color" content="#040929">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GroupMatch</title>
+    <!--
+      OG-разметка для корня. groupmatch.app без пути — основная ссылка для
+      шеринга, и до этого превью у неё не было вовсе.
+
+      Тексты дословно из promo.html: они отревьюены, и две карточки на один
+      продукт не должны описывать его по-разному. Отличается только og:url —
+      здесь корень, а не /promo.
+
+      Оговорка: этот HTML отдаётся на все SPA-маршруты (catch-all в
+      vercel.json), поэтому og:url у /signin или /pricing тоже будет корнем.
+      Для приватных маршрутов это безразлично — они закрыты в robots.txt.
+    -->
+    <meta name="description" content="Участники отмечают, когда им удобно, — GroupMatch показывает на тепловой карте окна, где свободны максимум людей.">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="ru_RU">
+    <meta property="og:site_name" content="GroupMatch">
+    <meta property="og:url" content="https://groupmatch.app/">
+    <meta property="og:title" content="GroupMatch — общее время для встречи без переписок">
+    <meta property="og:description" content="Тепловая карта доступности группы. Pro на 3 месяца бесплатно с момента регистрации.">
+    <meta property="og:image" content="https://groupmatch.app/og-image.jpg">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="GroupMatch — тепловая карта доступности группы">
+    <meta name="twitter:card" content="summary_large_image">
     <!-- GitHub Pages SPA: restore path from 404.html redirect -->
     <script>
       (function (l) {
