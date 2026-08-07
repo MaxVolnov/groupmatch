@@ -37,7 +37,7 @@ function UserTableSkeleton() {
 
 function RoleBadge({ role }: { role: AdminUser['role'] }) {
   return role === 'ADMIN' ? (
-    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300">
+    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gm-100 text-gm-700 dark:bg-gm-900 dark:text-gm-300">
       ADMIN
     </span>
   ) : (
@@ -97,7 +97,7 @@ function UsersTab({ currentUserId }: { currentUserId: string }) {
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           placeholder={t('admin.searchUsers')}
-          className="w-full sm:w-80 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full sm:w-80 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gm-500"
         />
       </div>
 
@@ -284,7 +284,7 @@ function CategoryBadge({ category }: { category: AdminFeedbackItem['category'] }
   const { t } = useTranslation()
   const styles: Record<AdminFeedbackItem['category'], string> = {
     BUG: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400',
-    FEATURE_REQUEST: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400',
+    FEATURE_REQUEST: 'bg-gm-100 text-gm-700 dark:bg-gm-900/40 dark:text-gm-300',
     OTHER: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400',
   }
   const labelKeys: Record<AdminFeedbackItem['category'], string> = {
@@ -390,7 +390,7 @@ function FeedbackTab() {
               onClick={() => handleCategoryChange(opt.value)}
               className={`px-3 py-1 text-xs rounded-full border transition-colors ${
                 category === opt.value
-                  ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 dark:border-indigo-400'
+                  ? 'border-gm-500 bg-gm-50 text-gm-700 dark:bg-gm-900/40 dark:text-gm-300 dark:border-gm-400'
                   : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500'
               }`}
             >
@@ -405,7 +405,7 @@ function FeedbackTab() {
               onClick={() => handleResolvedChange(opt.value)}
               className={`px-3 py-1 text-xs rounded-full border transition-colors ${
                 resolved === opt.value
-                  ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 dark:border-indigo-400'
+                  ? 'border-gm-500 bg-gm-50 text-gm-700 dark:bg-gm-900/40 dark:text-gm-300 dark:border-gm-400'
                   : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500'
               }`}
             >
@@ -528,7 +528,7 @@ function GroupsTab() {
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           placeholder={t('admin.searchGroups')}
-          className="w-full sm:w-80 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full sm:w-80 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gm-500"
         />
       </div>
 
@@ -652,7 +652,7 @@ export default function AdminPage() {
                 onClick={() => setActiveTab(tab)}
                 className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === tab
-                    ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
+                    ? 'border-gm-600 text-gm-600 dark:border-gm-400 dark:text-gm-400'
                     : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                 }`}
               >

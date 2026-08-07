@@ -56,7 +56,7 @@ export function JoinInvite() {
         <div className="rounded-xl bg-white dark:bg-gray-800 p-8 shadow-md text-center">
           <p className="text-lg font-semibold text-red-600 dark:text-red-400 mb-2">{t('auth.unableToJoin')}</p>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{error}</p>
-          <Link to="/" className="text-indigo-600 dark:text-indigo-400 hover:underline text-sm">
+          <Link to="/" className="text-gm-600 dark:text-gm-400 hover:underline text-sm">
             {t('auth.goToDashboard')}
           </Link>
         </div>
@@ -109,7 +109,7 @@ export function JoinInvite() {
           {t('auth.hasAccount')}{' '}
           <Link
             to={`/signin?next=/join/${token}`}
-            className="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
+            className="font-medium text-gm-600 dark:text-gm-400 hover:text-gm-700 dark:hover:text-gm-300"
           >
             {t('auth.signIn')}
           </Link>

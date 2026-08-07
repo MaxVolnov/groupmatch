@@ -61,7 +61,7 @@ export function ForgotPassword() {
         <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
           <Link
             to="/signin"
-            className="font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
+            className="font-medium text-gm-600 dark:text-gm-400 hover:underline"
           >
             {t('auth.backToSignIn')}
           </Link>

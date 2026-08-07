@@ -8,8 +8,12 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants = {
+  // Один и тот же gm-600 в обеих темах. Раньше в тёмной кнопка светлела до
+  // indigo-500, механически это стало gm-500 (#2D86D8) — а на нём белый текст
+  // даёт всего 3.81:1, ниже порога AA. На gm-600 — 6.20:1, и на тёмном фоне
+  // насыщенный синий и так читается как активный элемент.
   primary:
-    'bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-indigo-300 dark:bg-indigo-500 dark:hover:bg-indigo-600 dark:disabled:bg-indigo-800',
+    'bg-gm-600 text-white hover:bg-gm-700 disabled:bg-gm-300 dark:disabled:bg-gm-800',
   secondary:
     'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700',
   danger:
@@ -36,7 +40,7 @@ export function Button({
     <button
       {...props}
       disabled={disabled || loading}
-      className={`inline-flex items-center gap-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 dark:focus:ring-offset-gray-800 disabled:cursor-not-allowed ${variants[variant]} ${sizes[size]} ${className}`}
+      className={`inline-flex items-center gap-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gm-500 focus:ring-offset-1 dark:focus:ring-offset-gray-800 disabled:cursor-not-allowed ${variants[variant]} ${sizes[size]} ${className}`}
     >
       {loading && <Spinner size="sm" />}
       {children}

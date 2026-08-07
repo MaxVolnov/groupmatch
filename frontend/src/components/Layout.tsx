@@ -106,7 +106,7 @@ export function Layout({ children }: LayoutProps) {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <Link
             to="/"
-            className="flex items-center gap-2 text-lg font-bold text-indigo-600 dark:text-indigo-400"
+            className="flex items-center gap-2 text-lg font-bold text-gm-600 dark:text-gm-400"
             onClick={() => setMenuOpen(false)}
           >
             <LogoMark />
@@ -126,7 +126,7 @@ export function Layout({ children }: LayoutProps) {
                 <div className="hidden sm:flex items-center gap-3">
                   <Link
                     to="/profile"
-                    className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                    className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gm-600 dark:hover:text-gm-400 transition-colors"
                   >
                     {displayName ?? email}
                     {isGuest && <GuestBadge />}
@@ -135,7 +135,7 @@ export function Layout({ children }: LayoutProps) {
                   {role === 'ADMIN' && (
                     <Link
                       to="/admin"
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-violet-600 hover:bg-violet-500 text-white transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gm-700 hover:bg-gm-800 text-white transition-colors"
                     >
                       <span>⚙️</span>
                       <span>{t('nav.admin')}</span>
@@ -143,13 +143,13 @@ export function Layout({ children }: LayoutProps) {
                   )}
                   <Link
                     to="/pricing"
-                    className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                    className="text-sm text-gray-600 dark:text-gray-400 hover:text-gm-600 dark:hover:text-gm-400 transition-colors"
                   >
                     {t('nav.pricing')}
                   </Link>
                   <button
                     onClick={() => setShowFeedback(true)}
-                    className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                    className="text-sm text-gray-600 dark:text-gray-400 hover:text-gm-600 dark:hover:text-gm-400 transition-colors"
                   >
                     {`💬 ${t('nav.feedback')}`}
                   </button>
@@ -183,7 +183,7 @@ export function Layout({ children }: LayoutProps) {
             <Link
               to="/profile"
               onClick={() => setMenuOpen(false)}
-              className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+              className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gm-600 dark:hover:text-gm-400 transition-colors"
             >
               {displayName ?? email}
               {isGuest && <GuestBadge />}
@@ -192,7 +192,7 @@ export function Layout({ children }: LayoutProps) {
             {role === 'ADMIN' && (
               <Link
                 to="/admin"
-                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold bg-violet-600 hover:bg-violet-500 text-white transition-colors"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold bg-gm-700 hover:bg-gm-800 text-white transition-colors"
                 onClick={() => setMenuOpen(false)}
               >
                 <span>⚙️</span>
@@ -202,13 +202,13 @@ export function Layout({ children }: LayoutProps) {
             <Link
               to="/pricing"
               onClick={() => setMenuOpen(false)}
-              className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+              className="text-sm text-gray-600 dark:text-gray-400 hover:text-gm-600 dark:hover:text-gm-400 transition-colors"
             >
               {t('nav.pricing')}
             </Link>
             <button
               onClick={() => { setMenuOpen(false); setShowFeedback(true) }}
-              className="text-left text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+              className="text-left text-sm text-gray-600 dark:text-gray-400 hover:text-gm-600 dark:hover:text-gm-400 transition-colors"
             >
               {`💬 ${t('nav.feedback')}`}
             </button>

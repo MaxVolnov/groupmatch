@@ -59,7 +59,7 @@ export function VerifyEmail() {
               {accessToken && !resendSent && (
                 <button
                   onClick={handleResend}
-                  className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
+                  className="text-sm text-gm-600 dark:text-gm-400 hover:underline"
                 >
                   {t('auth.resendVerification')}
                 </button>

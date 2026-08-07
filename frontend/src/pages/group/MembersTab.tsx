@@ -59,7 +59,7 @@ function InviteSection({ group }: { group: GroupResponse }) {
               {inv.maxUses === 0 ? '∞' : `${inv.currentUses}/${inv.maxUses}`}
             </span>
             <button
-              className="flex items-center justify-center min-h-[44px] min-w-[44px] text-gray-400 dark:text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+              className="flex items-center justify-center min-h-[44px] min-w-[44px] text-gray-400 dark:text-gray-500 hover:text-gm-600 dark:hover:text-gm-400 transition-colors"
               onClick={() => {
                 navigator.clipboard.writeText(`${baseUrl}/join/${inv.token}`)
                 setCopiedId(inv.id)
@@ -146,7 +146,7 @@ export function MembersTab({ group, currentUserId }: Props) {
               <span
                 className={`ml-2 rounded-full px-2 py-0.5 text-xs font-medium ${
                   m.role === 'OWNER'
-                    ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
+                    ? 'bg-gm-100 dark:bg-gm-900/30 text-gm-700 dark:text-gm-300'
                     : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
                 }`}
               >

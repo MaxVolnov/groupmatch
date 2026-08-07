@@ -183,7 +183,7 @@ export function Profile() {
                   onClick={() => setLanguage('ru')}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     language === 'ru'
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-gm-600 text-white'
                       : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
                 >
@@ -193,7 +193,7 @@ export function Profile() {
                   onClick={() => setLanguage('en')}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     language === 'en'
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-gm-600 text-white'
                       : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
                 >
@@ -253,7 +253,7 @@ export function Profile() {
                 {data.plan === 'PRO' && (
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 dark:text-indigo-400">
+                      <span className="inline-flex items-center gap-1.5 text-sm font-medium text-gm-600 dark:text-gm-400">
                         <span>⚡</span> {t('pricing.pro')}
                       </span>
                       {trialUntil && <TrialNote until={trialUntil} />}
@@ -289,7 +289,7 @@ export function Profile() {
               <select
                 value={tzId}
                 onChange={(e) => setTzId(e.target.value)}
-                className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gm-500"
               >
                 {TIMEZONES.map((tz) => (
                   <option key={tz.value} value={tz.value}>{tz.label}</option>
@@ -314,7 +314,7 @@ export function Profile() {
         )}
 
         {isGuest && (
-          <section className="rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50/40 dark:bg-indigo-900/10 p-5 mt-6">
+          <section className="rounded-xl border border-gm-200 dark:border-gm-800 bg-gm-50/40 dark:bg-gm-900/10 p-5 mt-6">
             <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
               {t('profile.setUpAccount')}
             </h2>
@@ -332,21 +332,21 @@ export function Profile() {
                   placeholder={t('profile.namePlaceholder')}
                   value={upgradeDisplayName}
                   onChange={(e) => setUpgradeDisplayName(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gm-500"
                 />
                 <input
                   type="email"
                   placeholder={t('profile.emailPlaceholder')}
                   value={upgradeEmail}
                   onChange={(e) => setUpgradeEmail(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gm-500"
                 />
                 <input
                   type="password"
                   placeholder={t('profile.passwordPlaceholder')}
                   value={upgradePassword}
                   onChange={(e) => setUpgradePassword(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gm-500"
                 />
                 {upgradeError && (
                   <p className="text-sm text-red-600 dark:text-red-400">{upgradeError}</p>
@@ -354,7 +354,7 @@ export function Profile() {
                 <button
                   onClick={handleUpgrade}
                   disabled={upgradeLoading || !upgradeEmail || !upgradePassword || !upgradeDisplayName}
-                  className="w-full rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 px-4 py-2 text-sm font-medium text-white transition-colors"
+                  className="w-full rounded-lg bg-gm-600 hover:bg-gm-700 disabled:opacity-50 px-4 py-2 text-sm font-medium text-white transition-colors"
                 >
                   {upgradeLoading ? t('profile.settingUp') : t('profile.createAccount')}
                 </button>
@@ -385,7 +385,7 @@ export function Profile() {
                       aria-checked={prefs[key]}
                       onClick={() => toggle(key)}
                       className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors ${
-                        prefs[key] ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-600'
+                        prefs[key] ? 'bg-gm-600' : 'bg-gray-300 dark:bg-gray-600'
                       }`}
                     >
                       <span

@@ -142,7 +142,7 @@ export function HeatmapTab({ groupId, isOwner, onCreateMeeting }: Props) {
                     const baseClass = 'min-w-[40px] border-b border-r border-gray-100 dark:border-gray-700/30 transition-colors'
                     const colorClass = slot ? intensityClass(slot.count, maxCount) : 'bg-white dark:bg-gray-800'
                     const interactClass = isClickable
-                      ? 'cursor-pointer hover:ring-2 hover:ring-indigo-400 hover:ring-inset'
+                      ? 'cursor-pointer hover:ring-2 hover:ring-gm-400 hover:ring-inset'
                       : 'cursor-default'
                     const titleText = slot
                       ? `${slot.count} ${t('group.heatmapTab.available')}${slot.displayNames ? ': ' + slot.displayNames.join(', ') : ''}${isClickable ? ` ${t('group.heatmapTab.clickToSchedule')}` : ''}`

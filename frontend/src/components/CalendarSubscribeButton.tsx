@@ -59,7 +59,7 @@ export function CalendarSubscribeButton({ groupId }: { groupId: string }) {
             <>
               <a
                 href={data.webcalUrl}
-                className="inline-flex min-h-[44px] items-center justify-center rounded-lg bg-indigo-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-indigo-500"
+                className="inline-flex min-h-[44px] items-center justify-center rounded-lg bg-gm-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-gm-700"
               >
                 {t('group.calendar.openInApp')}
               </a>
