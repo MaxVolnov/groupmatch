@@ -1,0 +1,33 @@
+/*
+ * Фирменная палитра GroupMatch — единственный источник значений.
+ *
+ * Импортируется и в src/shared/site.css (статические /legal, /about), и в
+ * src/promo/promo.css (лендинг). Раньше значения были продублированы в обоих
+ * файлах и уже успели разъехаться — находка A5 аудита 31.07.
+ *
+ * Разделение SPA и статики это не нарушает: @import разворачивается Vite на
+ * этапе сборки, каждая точка входа по-прежнему получает свой CSS-файл, и
+ * никакого общего рантайма у страниц не появляется.
+ *
+ * Правило контрастности (WCAG AA):
+ *   --gm-accent (#055EC2) на --gm-bg даёт 3.15:1 — ТОЛЬКО заливка
+ *   (кнопки, бейджи, плашки). Текстом его не набирать.
+ *   Акцентный текст, ссылки, иконки → --gm-accent-light
+ *   Текст на кнопке --gm-accent      → --gm-text
+ *   Заливка кнопки при наведении     → --gm-accent-hover
+ */
+:root {
+  --gm-bg: #040929;
+  --gm-surface: #0C1540;
+  --gm-border: #1A2757;
+  --gm-accent: #055EC2;
+  --gm-accent-hover: #0867D0;
+  --gm-accent-light: #5DB7F4;
+  --gm-accent-deep: #143291;
+  --gm-text: #FFFFFF;
+  --gm-muted: #9AA8C7;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
