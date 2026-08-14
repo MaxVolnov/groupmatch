@@ -31,6 +31,23 @@ jobs:
               - 'frontend/**'
               - '.github/workflows/ci.yml'
 
+  # ─── Dockerfile ─────────────────────────────────────────────────────────────
+  # Файл лежит в двух местах: в корне (оттуда его берёт Timeweb App Platform)
+  # и в backend/ (исторический путь, на него смотрит cd.yml). Разъехавшиеся
+  # копии — это деплой, который собирает не то, что проверял CI.
+  dockerfile-sync:
+    name: Dockerfile copies in sync
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare root and backend Dockerfile
+        run: |
+          if ! cmp -s Dockerfile backend/Dockerfile; then
+            echo "::error::Dockerfile и backend/Dockerfile разошлись — они обязаны совпадать."
+            diff -u Dockerfile backend/Dockerfile || true
+            exit 1
+          fi
+
   # ─── Backend ────────────────────────────────────────────────────────────────
   backend:
     name: Backend — build & test
