@@ -115,6 +115,12 @@ public class SecurityConfig {
                     "/actuator/health",
                     "/actuator/info"
                 ).permitAll()
+                // Группы health-эндпоинта: /actuator/health/liveness и
+                // /actuator/health/readiness. Именно liveness должна опрашивать
+                // платформа — см. комментарий в application.yml. Без этой
+                // строки совпадает только точный путь /actuator/health, а
+                // подпути отдают 401, и проверка платформы валится.
+                .requestMatchers("/actuator/health/**").permitAll()
                 // .ics-фид группы: календарные клиенты не шлют Authorization,
                 // доступ авторизует токен в query (см. GroupCalendarService).
                 // Дублируется в JwtAuthenticationFilter.shouldNotFilter —
