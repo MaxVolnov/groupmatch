@@ -1,0 +1,36 @@
+# Контекст сборки — корень репозитория, поэтому без этого файла в демон
+# уезжает всё: frontend/node_modules, .git, собранные артефакты. Это минуты
+# на пустом месте и лишние гигабайты в слоях.
+
+.git
+.github
+.gitignore
+
+# Фронтенд собирается отдельно (frontend/Dockerfile, Vercel) — бэкенду не нужен.
+frontend/
+
+docs/
+scripts/
+*.md
+
+# Артефакты и кэши локальной сборки: в образе всё пересобирается с нуля.
+backend/build/
+backend/bin/
+backend/.gradle/
+**/build/
+**/node_modules/
+**/dist/
+
+# Секреты и дампы — в образ им нельзя ни при каких условиях.
+.env
+.env.*
+!.env.example
+*.dump
+*.pgdump
+*.backup
+*.sql.gz
+dumps/
+secrets/
+*.pem
+*.key
+dump.rdb
