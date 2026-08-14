@@ -58,6 +58,21 @@ management:
   endpoint:
     health:
       show-details: always
+      # Включаем группы liveness/readiness явно. По умолчанию Spring поднимает
+      # их только когда узнаёт Kubernetes или Cloud Foundry; на Timeweb App
+      # Platform он их не узнаёт, и /actuator/health/liveness отдавал бы 404.
+      #
+      # ЗАЧЕМ. /actuator/health — агрегат: любой компонент в DOWN делает весь
+      # ответ 503. Недоступный Redis роняет проверку, хотя приложение живо и
+      # обслуживает запросы, — платформа видит 503 и убивает контейнер. Рестарт
+      # при этом Redis не чинит, получается флап.
+      #
+      # Поэтому health-check платформы должен смотреть на
+      # /actuator/health/liveness: он про «процесс жив», а не «все зависимости
+      # на месте». Полный агрегат остаётся на /actuator/health для мониторинга
+      # и для людей — там правда видна целиком.
+      probes:
+        enabled: true
 
 jwt:
   secret: ${JWT_SECRET:dev-secret-key-change-in-production-min-256-bits-12345678901234567890}
