@@ -37,7 +37,10 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup \
     && chmod 0444 /app/certs/timeweb-ca.crt
 USER appuser
 
-COPY --from=build /app/build/libs/*.jar app.jar
+# Имя задано в build.gradle.kts (bootJar.archiveFileName) — по маске *.jar
+# копировать нельзя: если рядом окажется второй jar, COPY потребует, чтобы
+# назначение было каталогом, и сборка упадёт.
+COPY --from=build /app/build/libs/app.jar app.jar
 
 EXPOSE 8080
 
