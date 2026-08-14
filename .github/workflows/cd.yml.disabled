@@ -57,7 +57,11 @@ jobs:
       - name: Build & push backend
         uses: docker/build-push-action@v5
         with:
-          context: ./backend
+          # Контекст — корень репозитория, а не ./backend: пути в COPY внутри
+          # Dockerfile заданы от корня (backend/src, backend/gradlew …).
+          # С контекстом ./backend сборка упадёт на первом же COPY.
+          context: .
+          file: ./Dockerfile
           push: true
           tags: ${{ steps.meta-backend.outputs.tags }}
           labels: ${{ steps.meta-backend.outputs.labels }}
