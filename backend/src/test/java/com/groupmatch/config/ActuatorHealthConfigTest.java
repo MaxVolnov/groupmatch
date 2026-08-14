@@ -90,6 +90,32 @@ public class ActuatorHealthConfigTest {
     }
 
     /**
+     * SERVER_ADDRESS=0.0.0.0 в Dockerfile стоял «чтобы наверняка», а на деле
+     * сужал привязку до IPv4: 0.0.0.0 — это wildcard IPv4, и только он. Без
+     * переменной Tomcat открывает сокет на wildcard-адресе двойного стека.
+     * Health-check платформы ходит на http://localhost:8080 изнутри контейнера,
+     * и если localhost там резолвится в ::1, IPv4-only сокет для него закрыт.
+     *
+     * Смотрим оба файла: они обязаны совпадать, но проверка дешевле разбора.
+     */
+    @Test
+    void dockerfilesDoNotPinTheBindAddress() {
+        for (String file : new String[]{"../Dockerfile", "Dockerfile"}) {
+            String withoutComments;
+            try {
+                withoutComments = Files.readAllLines(Path.of(file)).stream()
+                        .filter(line -> !line.stripLeading().startsWith("#"))
+                        .collect(java.util.stream.Collectors.joining("\n"));
+            } catch (Exception e) {
+                throw new IllegalStateException("Не удалось прочитать " + file, e);
+            }
+            assertThat(withoutComments)
+                    .as("%s задаёт SERVER_ADDRESS — привязка сузится до одного стека", file)
+                    .doesNotContain("SERVER_ADDRESS");
+        }
+    }
+
+    /**
      * Точный путь /actuator/health открыт давно, а подпути — нет: до правки
      * /actuator/health/liveness отдавал 401, проверено запросом.
      */
