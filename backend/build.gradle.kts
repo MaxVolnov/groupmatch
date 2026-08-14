@@ -70,6 +70,22 @@ dependencies {
     testImplementation("org.testcontainers:testcontainers")
 }
 
+// Имя артефакта фиксировано и не зависит от version: команда запуска на
+// Timeweb App Platform прописана в дашборде строкой (java -jar
+// build/libs/app.jar) и молча ломалась бы при каждом бампе версии.
+// Версия при этом никуда не девается — она остаётся в манифесте
+// (Implementation-Version) и в /actuator/info.
+tasks.bootJar {
+    archiveFileName = "app.jar"
+}
+
+// Обычный jar (…-plain.jar) — библиотечный артефакт без зависимостей и
+// без Main-Class. Его никто не потребляет, а в build/libs он мешает:
+// COPY по маске *.jar в Dockerfile упирается в два файла вместо одного.
+tasks.jar {
+    enabled = false
+}
+
 tasks.withType<Test> {
     useJUnitPlatform()
     include("**/IntegrationTestSuite.class")
