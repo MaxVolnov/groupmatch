@@ -56,10 +56,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtUtils jwtUtils;
     private final StringRedisTemplate redisTemplate;
 
+    /** Группы health-эндпоинта: /actuator/health/liveness, …/readiness. */
+    private static final String HEALTH_GROUP_PREFIX = "/actuator/health/";
+
     @Override
     protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
         String uri = request.getRequestURI();
-        return PUBLIC_PATHS.contains(uri) || isGroupCalendarFeed(uri);
+        return PUBLIC_PATHS.contains(uri)
+                || uri.startsWith(HEALTH_GROUP_PREFIX)
+                || isGroupCalendarFeed(uri);
     }
 
     /**
