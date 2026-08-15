@@ -155,7 +155,7 @@ public class SecurityConfig {
     }
 
     // Spring Security 7 StrictHttpFirewall rejects unknown Host headers by default.
-    // The app runs behind Railway's proxy, so allow any hostname — JWT secures the API.
+    // The app runs behind a platform proxy, so allow any hostname — JWT secures the API.
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
         StrictHttpFirewall firewall = new StrictHttpFirewall();
