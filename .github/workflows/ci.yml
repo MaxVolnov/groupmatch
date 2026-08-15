@@ -30,6 +30,11 @@ jobs:
             frontend:
               - 'frontend/**'
               - '.github/workflows/ci.yml'
+              # legalFacts.test.ts сверяет числа в оферте с этими константами.
+              # Без них правка лимита или срока триала не запускала бы фронтовые
+              # тесты, и расхождение уехало бы в прод незамеченным.
+              - 'backend/src/main/java/com/groupmatch/domain/Plan.java'
+              - 'backend/src/main/java/com/groupmatch/service/TrialService.java'
 
   # ─── Dockerfile ─────────────────────────────────────────────────────────────
   # Файл лежит в двух местах: в корне (оттуда его берёт Timeweb App Platform)

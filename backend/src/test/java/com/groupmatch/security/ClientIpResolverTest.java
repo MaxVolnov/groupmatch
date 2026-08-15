@@ -89,12 +89,12 @@ public class ClientIpResolverTest {
         assertThat(resolver.isTrusted("203.0.113.9")).isFalse();
     }
 
-    // ── Конфигурация прода: Cloudflare перед Railway ─────────────────────────
+    // ── Конфигурация прода: Cloudflare перед приложением ─────────────────────
 
     /**
-     * Значение, которое лежит в TRUSTED_PROXIES на Railway: loopback и
+     * Значение, которое лежит в TRUSTED_PROXIES в проде: loopback и
      * приватные диапазоны (TCP-пиром приложение видит внутренний прокси
-     * Railway) плюс IPv4-диапазоны Cloudflare, который проксирует
+     * площадки) плюс IPv4-диапазоны Cloudflare, который проксирует
      * api.groupmatch.app.
      *
      * Копия, а не источник истины: в yml список намеренно не зашит, чтобы
@@ -133,7 +133,7 @@ public class ClientIpResolverTest {
         for (String ip : CLOUDFLARE_SAMPLES) {
             assertThat(resolver.isTrusted(ip)).as("диапазон Cloudflare с адресом %s", ip).isTrue();
         }
-        // Приватные диапазоны никуда не делись — ими приходит пир Railway.
+        // Приватные диапазоны никуда не делись — ими приходит пир площадки.
         assertThat(resolver.isTrusted("10.0.0.5")).isTrue();
         assertThat(resolver.isTrusted("100.64.1.1")).isTrue();
     }
@@ -174,9 +174,10 @@ public class ClientIpResolverTest {
     }
 
     /**
-     * Целевой сценарий после переключения: клиент → Cloudflare → Railway → мы.
-     * Railway дописывает в цепочку адрес своего пира (Cloudflare), поэтому
-     * самый правый хоп — это Cloudflare, а пользователь левее.
+     * Целевой сценарий после переключения: клиент → Cloudflare → прокси
+     * площадки → мы. Прокси дописывает в цепочку адрес своего пира
+     * (Cloudflare), поэтому самый правый хоп — это Cloudflare, а пользователь
+     * левее.
      */
     @Test
     void resolvesRealClientBehindCloudflare() {
@@ -187,8 +188,8 @@ public class ClientIpResolverTest {
     }
 
     /**
-     * Смешанная цепочка: Cloudflare пошёл к origin по IPv6 (у Railway есть
-     * AAAA), поэтому хоп — IPv6, а пир от Railway и сам клиент — IPv4.
+     * Смешанная цепочка: Cloudflare пошёл к origin по IPv6 (AAAA у origin
+     * есть), поэтому хоп — IPv6, а пир от площадки и сам клиент — IPv4.
      * Ровно тот случай, ради которого IPv6-диапазоны и добавлены: без них
      * вернулся бы адрес эджа.
      */
@@ -248,8 +249,8 @@ public class ClientIpResolverTest {
     // ── Регрессия к P0: подделка XFF по-прежнему не проходит ────────────────
 
     /**
-     * Атакующий стучится прямо в Railway, минуя Cloudflare, и подставляет
-     * чужой XFF. Railway допишет его настоящий адрес справа — по нему и
+     * Атакующий стучится прямо в origin, минуя Cloudflare, и подставляет
+     * чужой XFF. Прокси площадки допишет его настоящий адрес справа — по нему и
      * считаем, лимит не обходится.
      */
     @Test
@@ -264,7 +265,7 @@ public class ClientIpResolverTest {
     /**
      * Самый неприятный вариант подделки: атакующий дописывает справа адрес
      * Cloudflare, изображая проход через прокси. Пока его собственный адрес
-     * (который Railway допишет ещё правее) не из доверенных, подмена не
+     * (который прокси площадки допишет ещё правее) не из доверенных, подмена не
      * работает — берётся именно он.
      */
     @Test

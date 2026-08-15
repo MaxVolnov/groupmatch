@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Usage: smoke-test.sh [API_URL] [FRONTEND_URL]
 #
-# API и фронтенд живут на разных хостах (Railway / Vercel), поэтому базовых
+# API и фронтенд живут на разных хостах (Timeweb / Vercel), поэтому базовых
 # адреса два. Статические проверки (/promo, robots.txt, sitemap.xml) идут на
 # фронтенд, всё остальное — на API.
 #
@@ -11,10 +11,9 @@ set -euo pipefail
 #   SMOKE_MONETIZATION=1  — дополнительно прогнать проверки платных лимитов.
 #                           Требует стенда с MONETIZATION_ENABLED=true и
 #                           создаёт много данных: на проде НЕ включать.
-# Прод-API — api.groupmatch.app (Cloudflare-прокси перед Railway). Прямой
-# адрес groupmatch-production.up.railway.app остаётся рабочим и годится для
-# сравнения «через прокси / напрямую»:
-#   scripts/smoke-test.sh https://groupmatch-production.up.railway.app
+# Прод-API — api.groupmatch.app (за Cloudflare). Прямой адрес приложения на
+# площадке тоже отвечает и годится для сравнения «через прокси / напрямую»:
+#   scripts/smoke-test.sh https://maxvolnov-groupmatch-4a45.twc1.net
 BASE_URL="${1:-https://api.groupmatch.app}"
 FRONTEND_URL="${2:-https://groupmatch.app}"
 TIMESTAMP=$(date +%s)
