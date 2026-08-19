@@ -46,7 +46,7 @@
     "tabs": {
       "members": "Members",
       "availability": "My Availability",
-      "heatmap": "Heatmap",
+      "heatmap": "When everyone is free",
       "meetings": "Meetings"
     },
     "editGroupModal": {
@@ -87,7 +87,7 @@
       "prev": "← Prev",
       "next": "Next →",
       "today": "Today",
-      "noAvailability": "No availability for this week.",
+      "noAvailability": "Nobody has marked their time yet. Start with yours.",
       "members": "members",
       "available": "available",
       "clickToSchedule": "— click to schedule a meeting",
@@ -135,7 +135,9 @@
       "loading": "Preparing the link…",
       "error": "Could not fetch the subscription link.",
       "privacyNote": "The link contains the group's secret key — anyone who gets it can see upcoming meetings. Share it with members only."
-    }
+    },
+    "setMyTime": "Set my time",
+    "changeMyTime": "Change my time"
   },
   "auth": {
     "signIn": "Sign in",
