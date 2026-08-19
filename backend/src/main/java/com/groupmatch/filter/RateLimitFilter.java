@@ -24,17 +24,20 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private final int signupCapacity;
     private final int signinCapacity;
     private final int refreshCapacity;
+    private final int invitePreviewCapacity;
     private final ClientIpResolver clientIpResolver;
 
     private final Map<String, Bucket> signupBuckets = new ConcurrentHashMap<>();
     private final Map<String, Bucket> signinBuckets = new ConcurrentHashMap<>();
     private final Map<String, Bucket> refreshBuckets = new ConcurrentHashMap<>();
+    private final Map<String, Bucket> invitePreviewBuckets = new ConcurrentHashMap<>();
 
     public RateLimitFilter(int signupCapacity, int signinCapacity, int refreshCapacity,
-                           ClientIpResolver clientIpResolver) {
+                           int invitePreviewCapacity, ClientIpResolver clientIpResolver) {
         this.signupCapacity = signupCapacity;
         this.signinCapacity = signinCapacity;
         this.refreshCapacity = refreshCapacity;
+        this.invitePreviewCapacity = invitePreviewCapacity;
         this.clientIpResolver = clientIpResolver;
     }
 
@@ -42,14 +45,28 @@ public class RateLimitFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         String path = request.getRequestURI();
-
-        if (!"POST".equalsIgnoreCase(request.getMethod())) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+        String method = request.getMethod();
 
         Map<String, Bucket> bucketMap;
         int capacity;
+
+        // GET-путь проверяем до общего отсечения по методу. Раньше фильтр
+        // начинался со строки «не POST — пропустить», и любой публичный GET
+        // оставался без лимита вовсе. Для превью приглашения это означало бы
+        // свободный перебор пространства токенов: эндпоинт отвечает 200 и на
+        // несуществующий токен, так что отличить попадание от промаха можно по
+        // одному полю ответа.
+        if (isInvitePreviewRequest(method, path)) {
+            bucketMap = invitePreviewBuckets;
+            capacity = invitePreviewCapacity;
+            enforce(request, response, filterChain, bucketMap, capacity, path);
+            return;
+        }
+
+        if (!"POST".equalsIgnoreCase(method)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         if ("/api/v1/auth/signup".equals(path) || "/api/v1/auth/guest".equals(path)
                 || "/api/v1/auth/forgot-password".equals(path)
@@ -68,6 +85,25 @@ public class RateLimitFilter extends OncePerRequestFilter {
             return;
         }
 
+        enforce(request, response, filterChain, bucketMap, capacity, path);
+    }
+
+    /**
+     * {@code GET /api/v1/invites/{token}} и {@code …/name-taken}.
+     * {@code POST …/join} сюда не попадает — он идёт своим путём и требует
+     * авторизации.
+     */
+    private static boolean isInvitePreviewRequest(String method, String path) {
+        if (!"GET".equalsIgnoreCase(method)) return false;
+        String[] parts = path.split("/");
+        if (parts.length < 5 || parts.length > 6) return false;
+        if (!("api".equals(parts[1]) && "v1".equals(parts[2]) && "invites".equals(parts[3]))) return false;
+        return parts.length == 5 || "name-taken".equals(parts[5]);
+    }
+
+    private void enforce(HttpServletRequest request, HttpServletResponse response,
+                         FilterChain filterChain, Map<String, Bucket> bucketMap,
+                         int capacity, String path) throws ServletException, IOException {
         String ip = clientIpResolver.resolve(request);
         log.debug("RateLimit check: ip={}, path={}", ip, path);
 

@@ -2,6 +2,7 @@ package com.groupmatch.service;
 
 import com.groupmatch.domain.*;
 import com.groupmatch.dto.invite.CreateInviteRequest;
+import com.groupmatch.dto.invite.InvitePreviewResponse;
 import com.groupmatch.dto.invite.InviteResponse;
 import com.groupmatch.exception.*;
 import com.groupmatch.repository.GrpMemberRepository;
@@ -93,6 +94,80 @@ public class InviteService {
                 .orElseThrow(() -> new InviteNotFoundException(inviteId));
         invite.setRevoked(true);
         inviteRepository.save(invite);
+    }
+
+    /**
+     * Данные приглашения для публичного экрана: что за группа и кто зовёт.
+     *
+     * Никогда не бросает исключений на «плохой токен» — возвращает
+     * {@code valid = false} с причиной. Так сделано намеренно: этот же ответ
+     * питает превью ссылки в мессенджерах, а 404 там ломает превью целиком, и
+     * человек видит «ссылка битая» вместо объяснения, что приглашение истекло.
+     *
+     * Причины различаются по порядку убывания определённости: отозванное
+     * приглашение остаётся отозванным, даже если срок ещё не вышел.
+     */
+    @Transactional(readOnly = true)
+    public InvitePreviewResponse previewByToken(String token) {
+        Invite invite = inviteRepository.findByToken(token).orElse(null);
+        if (invite == null) {
+            return InvitePreviewResponse.invalid(InvitePreviewResponse.Reason.NOT_FOUND);
+        }
+        if (invite.isRevoked()) {
+            return InvitePreviewResponse.invalid(InvitePreviewResponse.Reason.REVOKED);
+        }
+        if (!Instant.now().isBefore(invite.getExpiresAt())) {
+            return InvitePreviewResponse.invalid(InvitePreviewResponse.Reason.EXPIRED);
+        }
+        if (invite.getMaxUses() != 0 && invite.getCurrentUses() >= invite.getMaxUses()) {
+            return InvitePreviewResponse.invalid(InvitePreviewResponse.Reason.MAX_USES);
+        }
+
+        String groupName = groupRepository.findById(invite.getGroupId())
+                .map(Group::getTitle)
+                .orElse(null);
+        if (groupName == null) {
+            // Группу удалили, а приглашение осталось. Для человека это ровно то
+            // же самое, что несуществующая ссылка.
+            return InvitePreviewResponse.invalid(InvitePreviewResponse.Reason.NOT_FOUND);
+        }
+
+        String inviterName = userRepository.findById(invite.getCreatedBy())
+                .map(User::getDisplayName)
+                .orElse(null);
+
+        return InvitePreviewResponse.valid(groupName, inviterName);
+    }
+
+    /**
+     * Занято ли уже такое имя в группе, куда ведёт приглашение.
+     *
+     * Нужно ровно для одной подсказки: человек, однажды зашедший гостем из
+     * встроенного браузера мессенджера, приходит второй раз с телефона, вводит
+     * то же имя и заводит второй аккаунт, не понимая, почему в группе он теперь
+     * дважды. Предупредить об этом можно, только сверив имя.
+     *
+     * Наружу уходит один бит — да или нет по конкретной строке, которую человек
+     * и так только что набрал. Список участников при этом не раскрывается:
+     * перебирать имена через этот эндпоинт бессмысленно дороже, чем угадывать
+     * их, а сам он под тем же лимитом, что и остальной публичный путь.
+     */
+    @Transactional(readOnly = true)
+    public boolean isNameTakenInInvitedGroup(String token, String displayName) {
+        if (displayName == null || displayName.isBlank()) return false;
+
+        Invite invite = inviteRepository.findByToken(token).orElse(null);
+        if (invite == null || !invite.isValid()) return false;
+
+        String needle = displayName.trim();
+        return grpMemberRepository.findByGroupAndStatus(invite.getGroupId(), MemberStatus.ACTIVE)
+                .stream()
+                .map(GrpMember::getUser)
+                .map(userRepository::findById)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .map(User::getDisplayName)
+                .anyMatch(name -> name != null && name.equalsIgnoreCase(needle));
     }
 
     @Transactional
