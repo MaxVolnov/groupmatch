@@ -6,9 +6,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.groupmatch.util.PlanPeriod;
+
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 
 /**
  * Псевдо-премиум для первых пользователей: при регистрации аккаунт получает
@@ -63,11 +63,11 @@ public class TrialService {
 
     /**
      * Календарные месяцы, а не 30-дневные периоды: «три месяца» в баннере
-     * должно означать то же, что и в календаре пользователя.
+     * должно означать то же, что и в календаре пользователя. Само вычисление —
+     * в {@link PlanPeriod}: то же определение месяца использует оплаченная
+     * подписка.
      */
     public Instant expiryFrom(Instant from) {
-        return LocalDateTime.ofInstant(from, ZoneOffset.UTC)
-                .plusMonths(trialDurationMonths)
-                .toInstant(ZoneOffset.UTC);
+        return PlanPeriod.advance(from, trialDurationMonths);
     }
 }

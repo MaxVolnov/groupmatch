@@ -8,27 +8,11 @@ import { Skeleton } from '@/components/Skeleton'
 import { ErrorMessage } from '@/components/ErrorMessage'
 import type { Plan } from '@/types'
 import { DateTime } from 'luxon'
+import { defaultDatetime, fmtRange, toIso } from '@/utils/datetime'
 
 interface Props {
   groupId: string
   callerPlan: Plan
-}
-
-function toIso(local: string): string {
-  return DateTime.fromISO(local, { zone: 'local' }).toUTC().toISO()!
-}
-
-function fmtRange(startsAt: string, endsAt: string): string {
-  const s = DateTime.fromISO(startsAt).toLocal()
-  const e = DateTime.fromISO(endsAt).toLocal()
-  if (s.hasSame(e, 'day')) {
-    return `${s.toFormat('dd MMM yyyy, HH:mm')} – ${e.toFormat('HH:mm')}`
-  }
-  return `${s.toFormat('dd MMM HH:mm')} – ${e.toFormat('dd MMM HH:mm')}`
-}
-
-function defaultDatetime(offsetHours: number): string {
-  return DateTime.now().plus({ hours: offsetHours }).toFormat("yyyy-MM-dd'T'HH:mm")
 }
 
 function SlotSkeletonList() {

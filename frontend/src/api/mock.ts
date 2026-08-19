@@ -1,5 +1,5 @@
 /**
- * Static mock API — used when VITE_MOCK_API=true (e.g. GitHub Pages demo).
+ * Static mock API — used when VITE_MOCK_API=true (local work without a backend).
  * All handlers return the exact same shapes as the real backend DTOs.
  */
 import type {

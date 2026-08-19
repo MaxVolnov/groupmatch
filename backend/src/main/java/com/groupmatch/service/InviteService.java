@@ -32,6 +32,7 @@ public class InviteService {
     private static final SecureRandom RANDOM = new SecureRandom();
 
     private final InviteRepository inviteRepository;
+    private final GroupAccessGuard groupAccessGuard;
     private final GrpMemberRepository grpMemberRepository;
     private final UserRepository userRepository;
     private final GroupRepository groupRepository;
@@ -45,7 +46,7 @@ public class InviteService {
     @Transactional
     public InviteResponse createInvite(UUID groupId, UUID callerId, Plan callerPlan,
                                        CreateInviteRequest req) {
-        requireOwner(groupId, callerId);
+        groupAccessGuard.requireOwner(groupId, callerId);
 
         // Rate-limit: invitesPerHour per plan.
         // Тарифное ограничение, а не защита от абьюза, поэтому — под тем же
@@ -79,14 +80,14 @@ public class InviteService {
 
     @Transactional(readOnly = true)
     public List<InviteResponse> listInvites(UUID groupId, UUID callerId) {
-        requireOwner(groupId, callerId);
+        groupAccessGuard.requireOwner(groupId, callerId);
         return inviteRepository.findByGroupIdAndRevokedFalse(groupId)
                 .stream().map(this::toResponse).toList();
     }
 
     @Transactional
     public void revokeInvite(UUID inviteId, UUID groupId, UUID callerId) {
-        requireOwner(groupId, callerId);
+        groupAccessGuard.requireOwner(groupId, callerId);
         Invite invite = inviteRepository.findById(inviteId)
                 .filter(i -> i.getGroupId().equals(groupId))
                 .orElseThrow(() -> new InviteNotFoundException(inviteId));
@@ -177,12 +178,6 @@ public class InviteService {
     }
 
     // --- helpers ---
-
-    private void requireOwner(UUID groupId, UUID callerId) {
-        grpMemberRepository.findByGroupAndUser(groupId, callerId)
-                .filter(m -> m.isOwner() && m.isActive())
-                .orElseThrow(NotGroupOwnerException::new);
-    }
 
     private String generateToken() {
         byte[] bytes = new byte[TOKEN_BYTES];
