@@ -30,6 +30,14 @@ import java.util.UUID;
 public class InviteService {
 
     private static final int TOKEN_BYTES = 24; // 48 hex chars
+
+    /**
+     * Предел длины имени: {@code @Size(max = 50)} в GuestRequest и
+     * SignupRequest, {@code CHECK (char_length(display_name) BETWEEN 2 AND 50)}
+     * в миграции V1, {@code maxLength={50}} в форме. Более длинного имени в
+     * базе быть не может.
+     */
+    private static final int MAX_DISPLAY_NAME_LENGTH = 50;
     private static final SecureRandom RANDOM = new SecureRandom();
 
     private final InviteRepository inviteRepository;
@@ -147,25 +155,46 @@ public class InviteService {
      * то же имя и заводит второй аккаунт, не понимая, почему в группе он теперь
      * дважды. Предупредить об этом можно, только сверив имя.
      *
-     * Наружу уходит один бит — да или нет по конкретной строке, которую человек
-     * и так только что набрал. Список участников при этом не раскрывается:
-     * перебирать имена через этот эндпоинт бессмысленно дороже, чем угадывать
-     * их, а сам он под тем же лимитом, что и остальной публичный путь.
+     * <h4>Почему публичный эндпоинт здесь приемлем</h4>
+     *
+     * Обратиться сюда можно только с валидным токеном приглашения. А обладатель
+     * такого токена и без нас может вступить в группу и запросить
+     * {@code GET /api/v1/groups/{id}/members} — полный список участников с
+     * именами; {@code showParticipants} на этот эндпоинт не распространяется,
+     * он управляет только отображением во фронтенде. То есть здесь не
+     * раскрывается ничего, чего не даёт сама ссылка: разница ровно в одном —
+     * владелец группы не получает уведомления о вступлении.
+     *
+     * ⚠️ Отсюда следует ограничение на будущее. Рассуждение держится на том,
+     * что ответ не превышает того, что и так доступно по ссылке. Любое
+     * расширение — вернуть список имён, счётчик участников, что угодно сверх
+     * одного бита — обнуляет этот аргумент, и вопрос придётся решать заново.
+     *
+     * Длина входа ограничена {@link #MAX_DISPLAY_NAME_LENGTH}: имя длиннее
+     * всё равно не могло быть сохранено, значит совпасть ни с кем не может, и
+     * ходить за этим в базу незачем.
      */
     @Transactional(readOnly = true)
     public boolean isNameTakenInInvitedGroup(String token, String displayName) {
         if (displayName == null || displayName.isBlank()) return false;
 
+        String needle = displayName.trim();
+        if (needle.length() > MAX_DISPLAY_NAME_LENGTH) return false;
+
         Invite invite = inviteRepository.findByToken(token).orElse(null);
         if (invite == null || !invite.isValid()) return false;
 
-        String needle = displayName.trim();
-        return grpMemberRepository.findByGroupAndStatus(invite.getGroupId(), MemberStatus.ACTIVE)
+        List<UUID> userIds = grpMemberRepository
+                .findByGroupAndStatus(invite.getGroupId(), MemberStatus.ACTIVE)
                 .stream()
                 .map(GrpMember::getUser)
-                .map(userRepository::findById)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+                .toList();
+        if (userIds.isEmpty()) return false;
+
+        // Один запрос на всех, как в GroupService.getMembers. Обращение к
+        // репозиторию в цикле здесь особенно неуместно: эндпоинт публичный, и
+        // число запросов к базе на один HTTP-вызов росло бы с размером группы.
+        return userRepository.findAllById(userIds).stream()
                 .map(User::getDisplayName)
                 .anyMatch(name -> name != null && name.equalsIgnoreCase(needle));
     }
