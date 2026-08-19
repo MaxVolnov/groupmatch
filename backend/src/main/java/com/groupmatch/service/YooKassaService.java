@@ -23,8 +23,10 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import com.groupmatch.util.PlanPeriod;
+
+import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
@@ -38,6 +40,13 @@ public class YooKassaService {
     private final SubscriptionRepository subscriptionRepository;
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
+    private final HttpClient httpClient;
+
+    @Value("${app.pricing.pro-monthly-kopecks:19900}")
+    private long proMonthlyKopecks;
+
+    @Value("${app.pricing.pro-yearly-kopecks:149000}")
+    private long proYearlyKopecks;
 
     @Value("${yookassa.shop-id:stub}")
     private String shopId;
@@ -49,6 +58,16 @@ public class YooKassaService {
     private String appBaseUrl;
 
     private static final String YOOKASSA_API = "https://api.yookassa.ru/v3/payments";
+
+    /** Годовой тариф начинается с 12 месяцев. */
+    private static final int MONTHS_IN_YEAR = 12;
+
+    /**
+     * Таймаут на ответ. Без него запрос к платёжному шлюзу висит бесконечно и
+     * держит поток обработки: connect-таймаут задаётся на клиенте
+     * (HttpClientConfig), request-таймаут — здесь, на самом запросе.
+     */
+    private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(15);
 
     @Transactional
     public CreatePaymentResponse createPayment(UUID userId, CreatePaymentRequest req) {
@@ -110,7 +129,11 @@ public class YooKassaService {
             switch (event) {
                 case "payment.succeeded" -> {
                     sub.setStatus(SubscriptionStatus.ACTIVE);
-                    sub.setExpiresAt(Instant.now().plus(sub.getPeriodMonths() * 30L, ChronoUnit.DAYS));
+                    // Якорь — момент покупки (создание записи подписки), а не
+                    // Instant.now() в обработчике вебхука и не текущий
+                    // expiresAt. Иначе при будущем автопродлении день покупки
+                    // уползал бы: 31 августа → 30 сентября → 30 октября.
+                    sub.setExpiresAt(PlanPeriod.advance(sub.getCreatedAt(), sub.getPeriodMonths()));
                     subscriptionRepository.save(sub);
                     User user = sub.getUser();
                     user.setPlan(sub.getPlan());
@@ -141,10 +164,16 @@ public class YooKassaService {
         return shopId == null || shopId.isBlank() || "stub".equalsIgnoreCase(shopId);
     }
 
+    /**
+     * Цены живут в конфиге, а не в коде: менять их приходится по причинам,
+     * не связанным с релизом, и пересобирать ради этого приложение незачем.
+     *
+     * Фронтенд по-прежнему знает суммы отдельно (локали и Pricing.tsx) —
+     * отдача цен с бэкенда вынесена в docs/backlog.md, пункт 8.
+     */
     private long computeAmountKopecks(Plan plan, int periodMonths) {
         if (plan == Plan.PRO) {
-            // 1490 RUB/year, 199 RUB/month
-            return periodMonths >= 12 ? 149000L : 19900L * periodMonths;
+            return periodMonths >= MONTHS_IN_YEAR ? proYearlyKopecks : proMonthlyKopecks * periodMonths;
         }
         return 0L;
     }
@@ -167,16 +196,16 @@ public class YooKassaService {
                 "capture", true
         ));
 
-        HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(YOOKASSA_API))
+                .timeout(REQUEST_TIMEOUT)
                 .header("Authorization", "Basic " + credentials)
                 .header("Content-Type", "application/json")
                 .header("Idempotence-Key", sub.getId().toString())
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
 
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() != 200 && response.statusCode() != 201) {
             throw new RuntimeException("YooKassa API returned " + response.statusCode() + ": " + response.body());
         }

@@ -6,6 +6,7 @@ import { Input } from '@/components/Input'
 import { Modal } from '@/components/Modal'
 import { ErrorMessage } from '@/components/ErrorMessage'
 import { DateTime } from 'luxon'
+import { defaultDatetime, toIso } from '@/utils/datetime'
 
 interface Props {
   groupId: string
@@ -13,14 +14,6 @@ interface Props {
   onClose: () => void
   initialStartsAt?: string
   initialEndsAt?: string
-}
-
-function toIso(local: string): string {
-  return DateTime.fromISO(local, { zone: 'local' }).toUTC().toISO()!
-}
-
-function defaultDatetime(offsetHours: number): string {
-  return DateTime.now().plus({ hours: offsetHours }).toFormat("yyyy-MM-dd'T'HH:mm")
 }
 
 export function CreateMeetingModal({ groupId, open, onClose, initialStartsAt, initialEndsAt }: Props) {

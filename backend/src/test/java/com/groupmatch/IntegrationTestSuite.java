@@ -28,6 +28,7 @@ import com.groupmatch.security.ClientIpResolverTest;
 import com.groupmatch.security.RateLimitBypassTest;
 import com.groupmatch.security.YooKassaWebhookVerifierTest;
 import com.groupmatch.util.CidrMatcherTest;
+import com.groupmatch.util.PlanPeriodTest;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
@@ -57,6 +58,7 @@ import org.junit.platform.suite.api.Suite;
     AvailabilityTest.class,
     PaymentTest.class,
     CidrMatcherTest.class,
+    PlanPeriodTest.class,
     ClientIpResolverTest.class,
     RateLimitBypassTest.class,
     YooKassaWebhookVerifierTest.class,

@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 public class GroupService {
 
     private final GroupRepository groupRepository;
+    private final GroupAccessGuard groupAccessGuard;
     private final GrpMemberRepository grpMemberRepository;
     private final UserRepository userRepository;
     private final AvailabilityRepository availabilityRepository;
@@ -78,7 +79,7 @@ public class GroupService {
 
     @Transactional(readOnly = true)
     public GroupResponse getGroup(UUID groupId, UUID callerId) {
-        requireActiveMember(groupId, callerId);
+        groupAccessGuard.requireActiveMember(groupId, callerId);
         Group group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new GroupNotFoundException(groupId));
         return toResponse(group);
@@ -86,7 +87,7 @@ public class GroupService {
 
     @Transactional
     public GroupResponse updateGroup(UUID groupId, UUID callerId, GroupRequest req) {
-        requireOwner(groupId, callerId);
+        groupAccessGuard.requireOwner(groupId, callerId);
         Group group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new GroupNotFoundException(groupId));
 
@@ -101,7 +102,7 @@ public class GroupService {
 
     @Transactional
     public void deleteGroup(UUID groupId, UUID callerId) {
-        requireOwner(groupId, callerId);
+        groupAccessGuard.requireOwner(groupId, callerId);
         groupRepository.findById(groupId)
                 .orElseThrow(() -> new GroupNotFoundException(groupId));
         groupRepository.deleteById(groupId);
@@ -109,7 +110,7 @@ public class GroupService {
 
     @Transactional(readOnly = true)
     public List<MemberResponse> getMembers(UUID groupId, UUID callerId) {
-        requireActiveMember(groupId, callerId);
+        groupAccessGuard.requireActiveMember(groupId, callerId);
 
         List<GrpMember> members = grpMemberRepository
                 .findByGroupAndStatus(groupId, MemberStatus.ACTIVE);
@@ -130,7 +131,7 @@ public class GroupService {
 
     @Transactional
     public MemberResponse addMember(UUID groupId, UUID callerId, Plan callerPlan, AddMemberRequest req) {
-        requireOwner(groupId, callerId);
+        groupAccessGuard.requireOwner(groupId, callerId);
 
         UUID targetId = req.userId();
         User target = userRepository.findById(targetId)
@@ -175,7 +176,7 @@ public class GroupService {
             // voluntary leave — slots are kept for heatmap history
             target.setStatus(MemberStatus.LEFT);
         } else {
-            requireOwner(groupId, callerId);
+            groupAccessGuard.requireOwner(groupId, callerId);
             // ban by owner — delete the member's slots per spec
             target.setStatus(MemberStatus.BANNED);
             availabilityRepository.deleteByGroupIdAndUserId(groupId, targetId);
@@ -191,18 +192,6 @@ public class GroupService {
     }
 
     // --- helpers ---
-
-    private void requireActiveMember(UUID groupId, UUID callerId) {
-        grpMemberRepository.findByGroupAndUser(groupId, callerId)
-                .filter(GrpMember::isActive)
-                .orElseThrow(NotGroupMemberException::new);
-    }
-
-    private void requireOwner(UUID groupId, UUID callerId) {
-        grpMemberRepository.findByGroupAndUser(groupId, callerId)
-                .filter(m -> m.isOwner() && m.isActive())
-                .orElseThrow(NotGroupOwnerException::new);
-    }
 
     private GroupResponse toResponse(Group g) {
         return new GroupResponse(

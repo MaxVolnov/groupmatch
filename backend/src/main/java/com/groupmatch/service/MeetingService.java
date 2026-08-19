@@ -23,6 +23,7 @@ import java.util.UUID;
 public class MeetingService {
 
     private final MeetingRepository meetingRepository;
+    private final GroupAccessGuard groupAccessGuard;
     private final GrpMemberRepository grpMemberRepository;
     private final NotificationService notificationService;
     private final NotificationPreferencesService notificationPreferencesService;
@@ -30,7 +31,7 @@ public class MeetingService {
 
     @Transactional
     public MeetingResponse createMeeting(UUID groupId, UUID callerId, MeetingRequest req) {
-        requireOwner(groupId, callerId);
+        groupAccessGuard.requireOwner(groupId, callerId);
         validateTimes(req);
 
         Meeting meeting = new Meeting();
@@ -50,14 +51,14 @@ public class MeetingService {
 
     @Transactional(readOnly = true)
     public List<MeetingResponse> listMeetings(UUID groupId, UUID callerId) {
-        requireActiveMember(groupId, callerId);
+        groupAccessGuard.requireActiveMember(groupId, callerId);
         return meetingRepository.findByGroupIdOrderByStartsAtDesc(groupId)
                 .stream().map(this::toResponse).toList();
     }
 
     @Transactional(readOnly = true)
     public MeetingResponse getMeeting(UUID meetingId, UUID groupId, UUID callerId) {
-        requireActiveMember(groupId, callerId);
+        groupAccessGuard.requireActiveMember(groupId, callerId);
         return meetingRepository.findById(meetingId)
                 .filter(m -> m.getGroupId().equals(groupId))
                 .map(this::toResponse)
@@ -67,7 +68,7 @@ public class MeetingService {
     @Transactional
     public MeetingResponse updateMeeting(UUID meetingId, UUID groupId, UUID callerId,
                                          MeetingRequest req) {
-        requireOwner(groupId, callerId);
+        groupAccessGuard.requireOwner(groupId, callerId);
         validateTimes(req);
 
         Meeting meeting = meetingRepository.findById(meetingId)
@@ -84,7 +85,7 @@ public class MeetingService {
 
     @Transactional
     public void deleteMeeting(UUID meetingId, UUID groupId, UUID callerId) {
-        requireOwner(groupId, callerId);
+        groupAccessGuard.requireOwner(groupId, callerId);
         meetingRepository.findById(meetingId)
                 .filter(m -> m.getGroupId().equals(groupId))
                 .orElseThrow(() -> new MeetingNotFoundException(meetingId));
@@ -93,7 +94,7 @@ public class MeetingService {
 
     @Transactional(readOnly = true)
     public String exportIcs(UUID meetingId, UUID groupId, UUID callerId) {
-        requireActiveMember(groupId, callerId);
+        groupAccessGuard.requireActiveMember(groupId, callerId);
         Meeting meeting = meetingRepository.findById(meetingId)
                 .filter(m -> m.getGroupId().equals(groupId))
                 .orElseThrow(() -> new MeetingNotFoundException(meetingId));
@@ -135,18 +136,6 @@ public class MeetingService {
                     "meetingTitle", title
             ));
         }
-    }
-
-    private void requireActiveMember(UUID groupId, UUID callerId) {
-        grpMemberRepository.findByGroupAndUser(groupId, callerId)
-                .filter(GrpMember::isActive)
-                .orElseThrow(NotGroupMemberException::new);
-    }
-
-    private void requireOwner(UUID groupId, UUID callerId) {
-        grpMemberRepository.findByGroupAndUser(groupId, callerId)
-                .filter(m -> m.isOwner() && m.isActive())
-                .orElseThrow(NotGroupOwnerException::new);
     }
 
     private void validateTimes(MeetingRequest req) {
