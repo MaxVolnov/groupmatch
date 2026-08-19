@@ -27,11 +27,19 @@ import static org.assertj.core.api.Assertions.fail;
  * авторизации — и именно поэтому здесь важны две вещи: он не отдаёт лишнего и
  * его нельзя перебирать.
  *
- * Лимит занижен до 5 через {@code @TestPropertySource}, чтобы у теста были свои
+ * Лимит занижен через {@code @TestPropertySource}, чтобы у теста были свои
  * бакеты и он не задевал остальной сьют.
+ *
+ * ⚠️ Значение 10, а не 5, — намеренный запас. Тесты 1–4 расходуют пять
+ * запросов, и при лимите в пять отказ приходился ровно на границу: любая
+ * добавленная проверка сдвигала бы 429 внутрь {@link #nameTaken(String)},
+ * который {@code HttpClientErrorException} не перехватывает. Падение выглядело
+ * бы как поломка name-taken, а не как исчерпанный бюджет, и следующий человек
+ * потратил бы час не там. Смысл проверки от запаса не меняется — она про то,
+ * что отказ вообще наступает и считается на клиента, а не на токен.
  */
 @TestPropertySource(properties = {
-        "app.rate-limit.invite-preview=5",
+        "app.rate-limit.invite-preview=10",
         "app.trusted-proxies="
 })
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -121,10 +129,12 @@ public class InvitePreviewTest extends BaseIntegrationTest {
      */
     @Test @Order(5)
     void previewIsRateLimited() {
-        // К этому моменту лимит в 5 уже частично израсходован предыдущими
-        // тестами — добираем до отказа и проверяем, что отказ наступает.
+        // К этому моменту часть бюджета уже израсходована предыдущими тестами —
+        // добираем до отказа и проверяем, что отказ наступает. Итераций с
+        // запасом: их число не должно зависеть от того, сколько запросов сделали
+        // тесты выше.
         int lastStatus = 200;
-        for (int i = 1; i <= 10 && lastStatus != 429; i++) {
+        for (int i = 1; i <= 15 && lastStatus != 429; i++) {
             lastStatus = get("/api/v1/invites/" + inviteToken);
         }
         assertThat(lastStatus).as("перебор с одного IP должен упереться в 429").isEqualTo(429);
@@ -161,7 +171,10 @@ public class InvitePreviewTest extends BaseIntegrationTest {
                         "email", OWNER_EMAIL,
                         "password", PASSWORD,
                         "displayName", OWNER_NAME,
-                        "tzId", "Europe/Moscow"), jsonHeaders()),
+                        // Поле в SignupRequest называется именно tzid, без
+                        // заглавной: с "tzId" значение молча не биндится и
+                        // зона берётся по умолчанию (см. docs/backlog.md, п. 10).
+                        "tzid", "Europe/Moscow"), jsonHeaders()),
                 Map.class);
         assertThat(auth).isNotNull();
         return (String) auth.get("accessToken");
