@@ -57,7 +57,16 @@ management:
         include: health,info,metrics
   endpoint:
     health:
-      show-details: always
+      # never, а не always: /actuator/health открыт без авторизации, и с
+      # деталями он отдавал любому желающему версию Valkey, пути на диске,
+      # свободное место и состояние SSL-цепочек. Ни один из этих фактов не
+      # нужен снаружи, а вместе они — готовая справка для того, кто выбирает,
+      # что пробовать дальше.
+      #
+      # На код ответа это не влияет: /actuator/health/liveness как отдавал 200,
+      # так и отдаёт, — платформа смотрит именно на него.
+      # Разбор «какой компонент лёг» теперь делается по логам приложения.
+      show-details: never
       # Включаем группы liveness/readiness явно. По умолчанию Spring поднимает
       # их только когда узнаёт Kubernetes или Cloud Foundry; на Timeweb App
       # Platform он их не узнаёт, и /actuator/health/liveness отдавал бы 404.
