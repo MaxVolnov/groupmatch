@@ -1,5 +1,5 @@
 import { FormEvent, useState } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { authApi } from '@/api/auth'
 import { useAuthStore } from '@/store/auth'
@@ -9,9 +9,13 @@ import { Input } from '@/components/Input'
 import { PublicLayout } from '@/components/PublicLayout'
 import { AxiosError } from 'axios'
 import type { ApiError } from '@/types'
+import { safeNextPath, withNext } from '@/utils/nextPath'
 
 export function SignUp() {
   const navigate = useNavigate()
+  /** Тот же ?next=, что и на входе: /signup?next=/join/{token}. */
+  const [searchParams] = useSearchParams()
+  const next = safeNextPath(searchParams.get('next'))
   const login = useAuthStore((s) => s.login)
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const language = useLanguageStore((s) => s.language)
@@ -24,7 +28,7 @@ export function SignUp() {
   const [agreedToTerms, setAgreedToTerms] = useState(false)
 
   if (isAuthenticated) {
-    return <Navigate to="/" replace />
+    return <Navigate to={next} replace />
   }
 
   const submit = async (e: FormEvent) => {
@@ -35,7 +39,7 @@ export function SignUp() {
       await authApi.signup({ email, password, displayName, locale: language })
       const data = await authApi.signin({ email, password })
       login(data.accessToken, data.refreshToken)
-      navigate('/')
+      navigate(next)
     } catch (err) {
       const axErr = err instanceof AxiosError ? err : null
       const apiErr = axErr?.response?.data as ApiError | undefined
@@ -99,7 +103,7 @@ export function SignUp() {
         </form>
         <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
           {t('auth.hasAccount')}{' '}
-          <Link to="/signin" className="font-medium text-gm-600 dark:text-gm-400 hover:text-gm-700 dark:hover:text-gm-300">
+          <Link to={withNext('/signin', next)} className="font-medium text-gm-600 dark:text-gm-400 hover:text-gm-700 dark:hover:text-gm-300">
             {t('auth.signIn')}
           </Link>
         </p>
