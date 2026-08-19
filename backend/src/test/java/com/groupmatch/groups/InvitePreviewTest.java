@@ -177,7 +177,15 @@ public class InvitePreviewTest extends BaseIntegrationTest {
                         "tzid", "Europe/Moscow"), jsonHeaders()),
                 Map.class);
         assertThat(auth).isNotNull();
-        return (String) auth.get("accessToken");
+
+        // POST /auth/signup отдаёт UserResponse, без токенов: за ними идём в
+        // /auth/signin. Так же поступает InviteTest.
+        @SuppressWarnings("unchecked")
+        Map<String, Object> session = rest.postForObject(url("/api/v1/auth/signin"),
+                new HttpEntity<>(Map.of("email", OWNER_EMAIL, "password", PASSWORD), jsonHeaders()),
+                Map.class);
+        assertThat(session).isNotNull();
+        return (String) session.get("accessToken");
     }
 
     private String createGroup(String accessToken) {
