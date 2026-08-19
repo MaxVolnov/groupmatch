@@ -129,11 +129,18 @@ public class YooKassaService {
             switch (event) {
                 case "payment.succeeded" -> {
                     sub.setStatus(SubscriptionStatus.ACTIVE);
-                    // Якорь — момент покупки (создание записи подписки), а не
-                    // Instant.now() в обработчике вебхука и не текущий
-                    // expiresAt. Иначе при будущем автопродлении день покупки
-                    // уползал бы: 31 августа → 30 сентября → 30 октября.
-                    sub.setExpiresAt(PlanPeriod.advance(sub.getCreatedAt(), sub.getPeriodMonths()));
+                    // Отсчёт от момента успешной оплаты, а не от создания
+                    // записи подписки: запись появляется, когда человек нажал
+                    // «оплатить», а вебхук приходит после самого платежа.
+                    // Между этими двумя моментами могут пройти часы — СБП,
+                    // повторная попытка, вернулся к форме позже, — и все они
+                    // вычитались бы из оплаченного срока.
+                    //
+                    // Якорение на дату покупки понадобится вместе с
+                    // автопродлением, которого в продукте пока нет: тогда базой
+                    // станет max(now, expiresAt), чтобы продление добавляло срок
+                    // к остатку, а не обнуляло его. Сейчас это преждевременно.
+                    sub.setExpiresAt(PlanPeriod.advance(Instant.now(), sub.getPeriodMonths()));
                     subscriptionRepository.save(sub);
                     User user = sub.getUser();
                     user.setPlan(sub.getPlan());

@@ -26,6 +26,8 @@ _Nothing yet._
 - `Retry-After` now reaches the browser — the header was set by the backend but stripped by CORS, so the rate-limit countdown in `ErrorMessage` never ran
 - Debug logging no longer runs in production — `DEBUG` levels moved out of the defaults into `application-dev.yml`
 - Creating a meeting no longer issues one query per member for notification preferences
+- **Paid subscriptions were short-changing everyone** — the term was counted as 30 days per month, so a yearly subscription gave 360 days instead of 365. It is now counted in calendar months from the moment the payment goes through, which is also how the free Pro period has always been counted
+- Production builds no longer default to a base path left over from GitHub Pages — a build made outside the main Vercel project loaded no assets at all and showed a blank page, without any error to explain it
 
 ### Technical
 - Deployment is built from a `Dockerfile` at the repository root: multi-stage, JDK 25 → JRE 25, non-root user, fixed artifact name `app.jar` so the platform run command survives version bumps

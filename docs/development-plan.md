@@ -259,7 +259,7 @@
 - ✅ **`Retry-After` не доезжает до браузера** — закрыто в v0.9.0: `setExposedHeaders(List.of("Retry-After"))` в CORS, обратный отсчёт в `ErrorMessage.tsx` ожил
 - **Rate limit не покрывает reset-password/verify-email** — оба `permitAll`, оба без лимита (перебор токенов)
 - ✅ **Активный GitHub Pages workflow** — закрыто в v0.9.0: workflow удалён, ссылки в README переведены на `groupmatch.app`. В v0.10.0 удалены и остатки: `deploy-pages.yml.disabled`, `frontend/public/404.html`, SPA-shim в `index.html`. Площадка GH Pages в настройках репозитория — выключить вручную, если ещё включена
-- **`vite.config.ts` base зависит от недокументированной env переменной** — `VITE_DEPLOY_TARGET=vercel` задана только в дашборде Vercel, не зафиксирована в репо. Preview-деплой без этой переменной ломает все пути к ассетам
+- ✅ **`vite.config.ts` base зависит от недокументированной env переменной** — закрыто в v0.10.0: развилка убрана, `base: '/'` всегда. Исходная формулировка: `VITE_DEPLOY_TARGET=vercel` задана только в дашборде Vercel, не зафиксирована в репо. Preview-деплой без этой переменной ломает все пути к ассетам
 - **`GlobalExceptionHandler.handleGenericException()` не логирует** — 500-ки в проде невидимы. Добавить `log.error` со стектрейсом
 - ✅ **DEBUG-логи в проде** — закрыто в v0.9.0: DEBUG убран из дефолтов и переехал в `application-dev.yml`, заведён `application-prod.yml`. Требует `SPRING_PROFILES_ACTIVE=prod` в переменных окружения площадки
 - **`<html lang="en">` не синхронизирован с i18n** — жёстко задан на английском при русском дефолте. Обновлять `document.documentElement.lang` в `setLanguage`
