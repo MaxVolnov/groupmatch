@@ -181,7 +181,21 @@
     "joiningGroup": "Joining group…",
     "invalidCredentials": "Invalid credentials",
     "registrationFailed": "Registration failed",
-    "invalidInviteMessage": "This invite is invalid or has expired"
+    "invalidInviteMessage": "This invite is invalid or has expired",
+    "invitedBy": "{{name}} invites you to the group “{{group}}”",
+    "invitedToGroup": "You are invited to the group “{{group}}”",
+    "inviteLoading": "Checking the invitation…",
+    "inviteInvalidTitle": "This invitation does not work",
+    "inviteReason": {
+      "expired": "The link has expired. Ask whoever invited you for a new one.",
+      "revoked": "The invitation was revoked by the group owner.",
+      "max_uses": "This link has already been used by as many people as it allowed.",
+      "not_found": "No such link. It may have been copied incompletely."
+    },
+    "inAppBrowserWarning": "You opened this link inside a messenger. A guest account will stay here only — you will not be able to sign in from a computer or a regular browser. Better open the link in a browser.",
+    "copyLink": "Copy link",
+    "linkCopied": "Link copied",
+    "nameTakenWarning": "You may have joined already. If so, open the link in the browser where you first signed in."
   },
   "profile": {
     "title": "Profile",

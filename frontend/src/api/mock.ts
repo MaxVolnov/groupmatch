@@ -3,6 +3,7 @@
  * All handlers return the exact same shapes as the real backend DTOs.
  */
 import type {
+  InvitePreview,
   AuthResponse,
   AvailabilityResponse,
   FeedbackCategory,
@@ -342,6 +343,12 @@ export const mockApi = {
   },
 
   invites: {
+    preview: async (token: string): Promise<InvitePreview> => {
+      await delay(200)
+      const known = Object.values(invitesByGroup).flat().find((i) => i.token === token)
+      if (!known || known.revoked) return { valid: false, reason: 'not_found' }
+      return { valid: true, groupName: 'Demo group', inviterName: 'Demo user' }
+    },
     list: async (groupId: string): Promise<InviteResponse[]> => {
       await delay()
       return invitesByGroup[groupId] ?? []
