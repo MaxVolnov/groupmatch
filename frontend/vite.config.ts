@@ -10,8 +10,12 @@ export default defineConfig(({ mode }) => ({
       '@': path.resolve(__dirname, './src'),
     },
   },
-  // GitHub Pages serves from /<repo-name>/ in production; Vercel serves from root
-  base: process.env.VITE_DEPLOY_TARGET === 'vercel' ? '/' : (mode === 'production' ? '/groupmatch/' : '/'),
+  // Всегда от корня. Раньше здесь была развилка под GitHub Pages, где сайт
+  // жил в /<repo-name>/, и прод-сборка по умолчанию уходила на /groupmatch/.
+  // Площадки больше нет, а дефолт оставался миной: любая сборка вне основного
+  // проекта Vercel — preview, локальная, форк — давала белый экран, причём
+  // молча: сборка успешна, ломаются только пути к ассетам.
+  base: '/',
   server: {
     port: 3000,
     proxy: mode === 'development'

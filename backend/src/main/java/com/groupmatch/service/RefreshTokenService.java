@@ -10,6 +10,7 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.HexFormat;
 import java.util.UUID;
+import com.groupmatch.util.TokenMasker;
 
 /**
  * Управление refresh-токенами через Redis.
@@ -47,21 +48,22 @@ public class RefreshTokenService {
 
     /** Генерирует и сохраняет новый refresh-токен для пользователя. */
     public String issue(UUID userId) {
-        String token = generateToken();
-        Duration ttl = Duration.ofMillis(refreshExpirationMs);
-
-        redis.opsForValue().set(REFRESH_PREFIX + token, userId.toString(), ttl);
-        redis.opsForSet().add(REFRESH_USER_PREFIX + userId, token);
-        redis.expire(REFRESH_USER_PREFIX + userId, ttl);
-
-        log.debug("Issued refresh token. userId={}, ttl={}ms", userId, ttl.toMillis());
-        return token;
+        return issueWithTtl(userId, Duration.ofMillis(refreshExpirationMs));
     }
 
     /** Генерирует refresh-токен с увеличенным TTL для гостевых аккаунтов (90 дней). */
     public String issueForGuest(UUID userId) {
+        return issueWithTtl(userId, Duration.ofMillis(refreshGuestExpirationMs));
+    }
+
+    /**
+     * Общее тело обеих выдач: до этого два метода отличались ровно одной
+     * строкой — источником TTL, — а остальные пять совпадали дословно.
+     *
+     * Схема ключей при этом не меняется: те же три операции в том же порядке.
+     */
+    private String issueWithTtl(UUID userId, Duration ttl) {
         String token = generateToken();
-        Duration ttl = Duration.ofMillis(refreshGuestExpirationMs);
 
         redis.opsForValue().set(REFRESH_PREFIX + token, userId.toString(), ttl);
         redis.opsForSet().add(REFRESH_USER_PREFIX + userId, token);
@@ -78,11 +80,11 @@ public class RefreshTokenService {
      * Если не найден — возвращает null (вызывающий должен вернуть 401).
      */
     public UUID validateAndRotate(String token) {
-        log.debug("Refresh attempt. token={}", maskToken(token));
+        log.debug("Refresh attempt. token={}", TokenMasker.mask(token));
         String userIdStr = redis.opsForValue().getAndDelete(REFRESH_PREFIX + token);
 
         if (userIdStr == null) {
-            log.warn("Refresh token not found in Redis (expired or already rotated). token={}", maskToken(token));
+            log.warn("Refresh token not found in Redis (expired or already rotated). token={}", TokenMasker.mask(token));
             return null;
         }
 
@@ -137,8 +139,4 @@ public class RefreshTokenService {
         return HexFormat.of().formatHex(bytes);
     }
 
-    private static String maskToken(String token) {
-        if (token == null || token.length() < 8) return "***";
-        return token.substring(0, 8) + "***";
-    }
 }

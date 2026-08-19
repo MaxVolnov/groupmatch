@@ -11,7 +11,13 @@
 - **Dark mode** — light / dark / system-preference toggle, persisted in `localStorage`
 - **User profile** — change display name and home timezone
 - **Feedback** — in-app feedback form (bug reports, feature requests, other)
-- **Admin panel** (Phase 5, planned) — moderate users and groups
+- **Admin panel** — user list with search, ban/unban, role and plan management, group list, feedback resolution
+- **Guest accounts** — start without signing up and convert to a full account later, keeping every group and slot
+- **Interface in Russian and English** — switchable on the profile page; emails follow the same choice
+- **Notifications** — in-app bell and email: someone joined your group, a meeting was scheduled, a meeting starts in an hour. Each channel is toggled separately
+- **Plans and subscriptions** — Free and Pro, YooKassa payments (behind a feature flag), free Pro for the first users
+- **Calendar subscription** — a per-group `.ics` feed that calendar clients refresh on their own
+- **Promo page** at `/promo` — standalone landing with its own `robots.txt` and `sitemap.xml`
 
 ## Tech stack
 
@@ -22,16 +28,22 @@
 | Data fetching | TanStack Query v5 |
 | Dates | Luxon |
 | Backend | Java 25, Spring Boot 4 |
-| Database | PostgreSQL 16 |
+| Database | PostgreSQL 18 |
+| Cache & sessions | Valkey (Redis-compatible) |
 | Migrations | Flyway |
 | Auth | JWT (access + refresh tokens) |
 | Tests | JUnit 5, Testcontainers |
+| Deployment | Vercel (frontend), Timeweb App Platform via `Dockerfile` (backend) |
 
 ## Production URLs
 
 | Service | URL |
 |---|---|
 | Frontend | https://groupmatch.app |
+| API | https://api.groupmatch.app |
+
+How production is wired up, which environment variables it needs and what to do
+when it breaks — `docs/prod-runbook.md`.
 
 ## Local development
 

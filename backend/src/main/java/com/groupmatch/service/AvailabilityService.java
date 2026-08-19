@@ -27,6 +27,7 @@ public class AvailabilityService {
     private static final int DEFAULT_GRANULARITY_MINUTES = 30;
 
     private final AvailabilityRepository availabilityRepository;
+    private final GroupAccessGuard groupAccessGuard;
     private final GrpMemberRepository grpMemberRepository;
     private final GroupRepository groupRepository;
     private final UserRepository userRepository;
@@ -39,7 +40,7 @@ public class AvailabilityService {
     public AvailabilityResponse addSlot(UUID groupId, UUID callerId, Plan callerPlan,
                                         AvailabilityRequest req) {
         validateSlotTimes(req.startsAt(), req.endsAt());
-        GrpMember membership = requireActiveMember(groupId, callerId);
+        GrpMember membership = groupAccessGuard.requireActiveMember(groupId, callerId);
         Group group = loadGroup(groupId);
 
         if (group.isLocked() && !membership.isOwner()) {
@@ -65,7 +66,7 @@ public class AvailabilityService {
 
     @Transactional(readOnly = true)
     public List<AvailabilityResponse> getMySlots(UUID groupId, UUID callerId) {
-        requireActiveMember(groupId, callerId);
+        groupAccessGuard.requireActiveMember(groupId, callerId);
         return availabilityRepository.findByGroupIdAndUserId(groupId, callerId)
                 .stream().map(this::toResponse).toList();
     }
@@ -74,7 +75,7 @@ public class AvailabilityService {
     public AvailabilityResponse updateSlot(UUID slotId, UUID groupId, UUID callerId,
                                            AvailabilityRequest req) {
         validateSlotTimes(req.startsAt(), req.endsAt());
-        GrpMember membership = requireActiveMember(groupId, callerId);
+        GrpMember membership = groupAccessGuard.requireActiveMember(groupId, callerId);
         Group group = loadGroup(groupId);
 
         Availability slot = availabilityRepository.findById(slotId)
@@ -100,7 +101,7 @@ public class AvailabilityService {
 
     @Transactional
     public void deleteSlot(UUID slotId, UUID groupId, UUID callerId) {
-        GrpMember membership = requireActiveMember(groupId, callerId);
+        GrpMember membership = groupAccessGuard.requireActiveMember(groupId, callerId);
         Group group = loadGroup(groupId);
 
         Availability slot = availabilityRepository.findById(slotId)
@@ -121,7 +122,7 @@ public class AvailabilityService {
     @Transactional(readOnly = true)
     public HeatmapResponse getHeatmap(UUID groupId, UUID callerId,
                                       Instant from, Instant to, Integer granularityMinutes) {
-        requireActiveMember(groupId, callerId);
+        groupAccessGuard.requireActiveMember(groupId, callerId);
         Group group = loadGroup(groupId);
 
         int granularity = (granularityMinutes != null && granularityMinutes > 0)
@@ -189,12 +190,6 @@ public class AvailabilityService {
         }
 
         return result;
-    }
-
-    private GrpMember requireActiveMember(UUID groupId, UUID callerId) {
-        return grpMemberRepository.findByGroupAndUser(groupId, callerId)
-                .filter(GrpMember::isActive)
-                .orElseThrow(NotGroupMemberException::new);
     }
 
     private Group loadGroup(UUID groupId) {

@@ -115,7 +115,6 @@ export const useAuthStore = create<AuthState>()(
               isGuest: claims.isGuest === true,
             })
 
-            console.warn('[Auth] Token refreshed successfully')
             return data.accessToken
           } finally {
             refreshPromise = null

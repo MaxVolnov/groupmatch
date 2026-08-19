@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.UUID;
+import com.groupmatch.util.TokenMasker;
 
 @Service
 @RequiredArgsConstructor
@@ -120,11 +121,11 @@ public class AuthService {
      */
     @Transactional
     public AuthResponse refresh(RefreshRequest request) {
-        log.debug("Token refresh requested. refreshToken={}", maskToken(request.refreshToken()));
+        log.debug("Token refresh requested. refreshToken={}", TokenMasker.mask(request.refreshToken()));
         UUID userId = refreshTokenService.validateAndRotate(request.refreshToken());
 
         if (userId == null) {
-            log.warn("Refresh rejected: token not found or already used. token={}", maskToken(request.refreshToken()));
+            log.warn("Refresh rejected: token not found or already used. token={}", TokenMasker.mask(request.refreshToken()));
             throw new InvalidCredentialsException("Invalid or expired refresh token");
         }
 
@@ -208,11 +209,6 @@ public class AuthService {
      */
     private void touchActivity(UUID userId) {
         userRepository.touchLastActivity(userId, Instant.now());
-    }
-
-    private static String maskToken(String token) {
-        if (token == null || token.length() < 8) return "***";
-        return token.substring(0, 8) + "***";
     }
 
     private AuthResponse issueTokenPair(UUID userId, String email, Role role, Plan plan, boolean isGuest) {

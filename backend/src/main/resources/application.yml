@@ -96,6 +96,12 @@ app:
     retention-days: ${GUEST_RETENTION_DAYS:90}
   # Псевдо-премиум первым пользователям: PRO на N календарных месяцев с момента
   # регистрации. Срок в конфиге, чтобы поменять 3 → 6 переменной окружения.
+  # Цены тарифов в копейках. В конфиге, а не в коде: меняются по причинам,
+  # не связанным с релизом. Фронтенд знает их отдельно (локали и Pricing.tsx) —
+  # отдача цен с бэкенда описана в docs/backlog.md, пункт 8.
+  pricing:
+    pro-monthly-kopecks: ${PRO_MONTHLY_KOPECKS:19900}
+    pro-yearly-kopecks: ${PRO_YEARLY_KOPECKS:149000}
   trial:
     enabled: ${TRIAL_ENABLED:true}
     duration-months: ${TRIAL_DURATION_MONTHS:3}

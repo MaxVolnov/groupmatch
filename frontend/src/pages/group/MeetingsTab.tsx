@@ -7,7 +7,7 @@ import { CalendarSubscribeButton } from '@/components/CalendarSubscribeButton'
 import { Skeleton } from '@/components/Skeleton'
 import { ErrorMessage } from '@/components/ErrorMessage'
 import type { GroupResponse } from '@/types'
-import { DateTime } from 'luxon'
+import { fmtRange } from '@/utils/datetime'
 
 interface Props {
   group: GroupResponse
@@ -24,15 +24,6 @@ async function downloadIcs(groupId: string, meetingId: string) {
   a.download = 'meeting.ics'
   a.click()
   URL.revokeObjectURL(url)
-}
-
-function fmtRange(startsAt: string, endsAt: string): string {
-  const s = DateTime.fromISO(startsAt).toLocal()
-  const e = DateTime.fromISO(endsAt).toLocal()
-  if (s.hasSame(e, 'day')) {
-    return `${s.toFormat('dd MMM yyyy, HH:mm')} – ${e.toFormat('HH:mm')}`
-  }
-  return `${s.toFormat('dd MMM HH:mm')} – ${e.toFormat('dd MMM HH:mm')}`
 }
 
 function MeetingSkeletonList() {
