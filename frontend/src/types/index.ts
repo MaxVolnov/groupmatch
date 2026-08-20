@@ -125,6 +125,17 @@ export interface InviteResponse {
   revoked: boolean
 }
 
+/**
+ * Публичное превью приглашения. Полей ровно столько, сколько отдаёт бэкенд:
+ * эндпоинт открыт без авторизации, и всё лишнее там было бы утечкой.
+ */
+export interface InvitePreview {
+  valid: boolean
+  groupName?: string
+  inviterName?: string
+  reason?: 'not_found' | 'expired' | 'revoked' | 'max_uses'
+}
+
 export interface CreateInviteRequest {
   expiresAt?: string
   maxUses: number

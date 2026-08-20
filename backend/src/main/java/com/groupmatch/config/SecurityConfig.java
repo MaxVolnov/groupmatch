@@ -73,9 +73,13 @@ public class SecurityConfig {
     @Value("${app.rate-limit.refresh:20}")
     private int rateLimitRefresh;
 
+    @Value("${app.rate-limit.invite-preview:30}")
+    private int rateLimitInvitePreview;
+
     @Bean
     public RateLimitFilter rateLimitFilter(ClientIpResolver clientIpResolver) {
-        return new RateLimitFilter(rateLimitSignup, rateLimitSignin, rateLimitRefresh, clientIpResolver);
+        return new RateLimitFilter(rateLimitSignup, rateLimitSignin, rateLimitRefresh,
+                rateLimitInvitePreview, clientIpResolver);
     }
 
     @Bean
@@ -126,6 +130,13 @@ public class SecurityConfig {
                 // Дублируется в JwtAuthenticationFilter.shouldNotFilter —
                 // списки обязаны совпадать.
                 .requestMatchers(HttpMethod.GET, "/api/v1/groups/*/calendar.ics").permitAll()
+                // Превью приглашения: экран /join/{token} открывается до входа,
+                // и человек должен увидеть, кто и куда его зовёт, прежде чем
+                // заводить аккаунт. Отдаёт только название группы и имя
+                // пригласившего; перебор токенов ограничен RateLimitFilter —
+                // публичный путь без лимита превратился бы в перебор.
+                // Дублируется в JwtAuthenticationFilter.shouldNotFilter.
+                .requestMatchers(HttpMethod.GET, "/api/v1/invites/*", "/api/v1/invites/*/name-taken").permitAll()
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )

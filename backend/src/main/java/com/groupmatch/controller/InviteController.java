@@ -1,6 +1,7 @@
 package com.groupmatch.controller;
 
 import com.groupmatch.dto.invite.CreateInviteRequest;
+import com.groupmatch.dto.invite.InvitePreviewResponse;
 import com.groupmatch.dto.invite.InviteResponse;
 import com.groupmatch.security.UserPrincipal;
 import com.groupmatch.service.InviteService;
@@ -11,6 +12,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -39,6 +41,32 @@ public class InviteController {
                        @PathVariable UUID groupId,
                        @PathVariable UUID inviteId) {
         inviteService.revokeInvite(inviteId, groupId, principal.getId());
+    }
+
+    /**
+     * Публичное превью приглашения: что за группа и кто зовёт.
+     *
+     * Без авторизации — экран приглашения открывается до входа, и именно
+     * поэтому здесь нельзя отдавать ничего, кроме двух подписей.
+     *
+     * Всегда 200, даже на несуществующий токен: ответ идёт в том числе в
+     * превью ссылки у мессенджеров, где 404 ломает карточку целиком.
+     * Различать случаи — по полю reason.
+     */
+    @GetMapping("/api/v1/invites/{token}")
+    public InvitePreviewResponse preview(@PathVariable String token) {
+        return inviteService.previewByToken(token);
+    }
+
+    /**
+     * Занято ли имя в группе, куда ведёт приглашение. Один бит по строке,
+     * которую человек только что набрал, — чтобы предупредить о втором
+     * гостевом аккаунте вместо молчаливого дубля в списке участников.
+     */
+    @GetMapping("/api/v1/invites/{token}/name-taken")
+    public Map<String, Boolean> nameTaken(@PathVariable String token,
+                                          @RequestParam(name = "name", required = false) String name) {
+        return Map.of("taken", inviteService.isNameTakenInInvitedGroup(token, name));
     }
 
     /** Public token join — authenticated user joins a group via invite link. */

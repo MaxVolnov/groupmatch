@@ -1,8 +1,11 @@
 name: CI
 
 on:
+  # Все ветки без исключений. Раньше стояло [main, develop, 'feature/**'], и
+  # ветки с любым другим префиксом ехали без единой проверки: PR из пяти
+  # коммитов на chore/-ветке не проверялся ни разу за всё время жизни.
   push:
-    branches: [main, develop, 'feature/**']
+    branches: ['**']
   pull_request:
     branches: [main, develop]
 

@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { groupsApi } from '@/api/groups'
+import { availabilityApi } from '@/api/availability'
 import { useAuthStore } from '@/store/auth'
 import { Layout } from '@/components/Layout'
 import { Button } from '@/components/Button'
@@ -19,11 +20,17 @@ import { DateTime } from 'luxon'
 
 type Tab = 'members' | 'availability' | 'heatmap' | 'meetings'
 
+/**
+ * Порядок под сценарий, а не под структуру данных: человек, попавший в группу,
+ * сначала вводит своё время, потом смотрит на пересечения, потом уже на встречи
+ * и состав. Раньше первым шёл список участников, который не требует от
+ * пришедшего ничего и ничего ему не сообщает.
+ */
 const TABS: { id: Tab; labelKey: string }[] = [
-  { id: 'members', labelKey: 'group.tabs.members' },
   { id: 'availability', labelKey: 'group.tabs.availability' },
   { id: 'heatmap', labelKey: 'group.tabs.heatmap' },
   { id: 'meetings', labelKey: 'group.tabs.meetings' },
+  { id: 'members', labelKey: 'group.tabs.members' },
 ]
 
 export function GroupPage() {
@@ -32,7 +39,17 @@ export function GroupPage() {
   const qc = useQueryClient()
   const { t } = useTranslation()
   const { userId, plan } = useAuthStore()
-  const [tab, setTab] = useState<Tab>('heatmap')
+  /**
+   * Дефолт зависит от роли. Владелец открыл группу, чтобы найти окно, — ему
+   * нужна сводная картина. Пришедший по приглашению не знает ни что такое
+   * теплокарта, ни что от него хотят; ему нужен экран, где он вводит своё
+   * время. Раньше теплокарта открывалась всем, и первое, что видел новый
+   * человек, была таблица без единой подсказки, на которую он безуспешно жал.
+   *
+   * Значение считается один раз при монтировании: перещёлкивать вкладку под
+   * пользователем, когда догрузились данные группы, — худшее из решений.
+   */
+  const [tab, setTab] = useState<Tab | null>(null)
   const [showEdit, setShowEdit] = useState(false)
   const [showCreateMeeting, setShowCreateMeeting] = useState(false)
   const [meetingPrefill, setMeetingPrefill] = useState<{ startsAt: string; endsAt: string } | undefined>(undefined)
@@ -42,6 +59,18 @@ export function GroupPage() {
     queryFn: () => groupsApi.get(id!),
     enabled: !!id,
   })
+
+  /**
+   * Есть ли у меня уже слоты — от этого зависит только акцент на кнопке.
+   * Тот же queryKey, что в AvailabilityTab: запрос переиспользуется из кэша,
+   * лишнего обращения к сети не возникает.
+   */
+  const { data: mySlots } = useQuery({
+    queryKey: ['availability', id],
+    queryFn: () => availabilityApi.mySlots(id!),
+    enabled: !!id,
+  })
+  const hasOwnSlots = (mySlots?.length ?? 0) > 0
 
   const deleteGroup = useMutation({
     mutationFn: () => groupsApi.delete(id!),
@@ -93,6 +122,7 @@ export function GroupPage() {
   }
 
   const isOwner = group.ownerId === userId
+  const activeTab: Tab = tab ?? (isOwner ? 'heatmap' : 'availability')
 
   return (
     <Layout>
@@ -105,7 +135,7 @@ export function GroupPage() {
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 truncate">{group.title}</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 truncate">{group.title}</h1>
             {group.description && (
               <p className="mt-1 text-gray-500 dark:text-gray-400">{group.description}</p>
             )}
@@ -143,6 +173,23 @@ export function GroupPage() {
         </div>
       </div>
 
+      {/*
+        Единственное действие, которое требуется от пришедшего, — вынесено из
+        вкладок и видно на любой из них. Пока своих слотов нет, кнопка
+        акцентная: человеку нечего смотреть в теплокарте, пока он ничего не
+        отметил. Появились — становится вторичной, чтобы не спорить за внимание
+        с содержимым страницы.
+      */}
+      <div className="mb-4">
+        <Button
+          variant={hasOwnSlots ? 'secondary' : 'primary'}
+          onClick={() => setTab('availability')}
+          className="w-full justify-center sm:w-auto"
+        >
+          {hasOwnSlots ? t('group.changeMyTime') : t('group.setMyTime')}
+        </Button>
+      </div>
+
       {/* Tabs — scrollable on mobile */}
       <div className="mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
         <nav className="flex gap-1 min-w-max sm:min-w-0">
@@ -151,7 +198,7 @@ export function GroupPage() {
               key={tabDef.id}
               onClick={() => setTab(tabDef.id)}
               className={`whitespace-nowrap px-4 py-2.5 text-sm font-medium transition-colors border-b-2 min-h-[44px] ${
-                tab === tabDef.id
+                activeTab === tabDef.id
                   ? 'border-gm-600 text-gm-600 dark:border-gm-400 dark:text-gm-400'
                   : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
               }`}
@@ -163,16 +210,21 @@ export function GroupPage() {
       </div>
 
       {/* Tab content */}
-      {tab === 'members' && userId && (
+      {activeTab === 'members' && userId && (
         <MembersTab group={group} currentUserId={userId} />
       )}
-      {tab === 'availability' && plan && (
+      {activeTab === 'availability' && plan && (
         <AvailabilityTab groupId={group.id} callerPlan={plan} />
       )}
-      {tab === 'heatmap' && (
-        <HeatmapTab groupId={group.id} isOwner={isOwner} onCreateMeeting={handleHeatmapSlotClick} />
+      {activeTab === 'heatmap' && (
+        <HeatmapTab
+          groupId={group.id}
+          isOwner={isOwner}
+          onCreateMeeting={handleHeatmapSlotClick}
+          onSetMyTime={() => setTab('availability')}
+        />
       )}
-      {tab === 'meetings' && userId && (
+      {activeTab === 'meetings' && userId && (
         <MeetingsTab group={group} currentUserId={userId} onScheduleClick={() => openCreateMeeting()} />
       )}
 

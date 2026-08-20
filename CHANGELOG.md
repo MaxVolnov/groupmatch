@@ -8,7 +8,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+- **The invitation page now says who invites you and where** — the group name and the name of whoever sent the link are shown before you do anything at all
+- **A dead invitation is recognised straight away** — an expired, revoked or already used up link shows what happened instead of a form, so nobody creates an account for a group they cannot join any more
+- **A warning when the link is opened inside a messenger** — a guest account lives in that one app only, and there is no way back into it from a computer or a normal browser. The page says so and offers to copy the link
+- **A warning when the name you type is already in the group** — you may have joined before from another device; a second guest account would be a second person in the list
+
+### Changed
+- **The group page now opens on the screen that matches what you came for** — if you joined by invitation, it opens on your own availability instead of a table of everyone else's; the owner still lands on the overview
+- **"Heatmap" is now called "When everyone is free"** — the old name described how the picture is drawn, not what it is for
+- **"Set my time" is always within reach** — the button sits above the tabs and stays visible on every one of them
+- Tabs reordered to follow the actual sequence: availability, then the overview, then meetings, then members
+- An empty overview says "Nobody has marked their time yet. Start with yours" instead of merely stating that there is no availability
+
+### Fixed
+- **Signing in from an invitation no longer loses the invitation** — you used to end up on your dashboard with no sign of the group you were invited to
+- Health details are no longer exposed publicly — the endpoint used to hand out the cache version, disk paths and free space to anyone who asked
 
 ---
 

@@ -64,7 +64,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String uri = request.getRequestURI();
         return PUBLIC_PATHS.contains(uri)
                 || uri.startsWith(HEALTH_GROUP_PREFIX)
-                || isGroupCalendarFeed(uri);
+                || isGroupCalendarFeed(uri)
+                || isInvitePreview(request.getMethod(), uri);
+    }
+
+    /**
+     * {@code GET /api/v1/invites/{token}} и {@code …/name-taken} — публичное
+     * превью приглашения. Открывается до входа, Authorization не приходит.
+     *
+     * Метод проверяем явно: по тому же префиксу лежит
+     * {@code POST /api/v1/invites/{token}/join}, и он авторизации требует.
+     */
+    private static boolean isInvitePreview(String method, String uri) {
+        if (!"GET".equalsIgnoreCase(method)) return false;
+        String[] parts = uri.split("/");
+        // ["", "api", "v1", "invites", token] или [..., token, "name-taken"]
+        if (parts.length < 5 || parts.length > 6) return false;
+        if (!("api".equals(parts[1]) && "v1".equals(parts[2]) && "invites".equals(parts[3]))) return false;
+        return parts.length == 5 || "name-taken".equals(parts[5]);
     }
 
     /**
