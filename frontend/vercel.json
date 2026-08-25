@@ -9,6 +9,28 @@
     { "source": "/legal/", "destination": "/legal.html" },
     { "source": "/about", "destination": "/about.html" },
     { "source": "/about/", "destination": "/about.html" },
+    {
+      "source": "/join/:token",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(bot[/;)-]|crawler|spider|telegrambot|facebookexternalhit|whatsapp/|vkshare|slack|skypeuripreview|embedly|iframely|outbrain|flipboard|nuzzel|quora link preview|mastodon|curl/|wget/|python-requests|go-http-client|node-fetch|okhttp).*"
+        }
+      ],
+      "destination": "/api/og/join?token=:token"
+    },
+    {
+      "source": "/join/:token/",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(bot[/;)-]|crawler|spider|telegrambot|facebookexternalhit|whatsapp/|vkshare|slack|skypeuripreview|embedly|iframely|outbrain|flipboard|nuzzel|quora link preview|mastodon|curl/|wget/|python-requests|go-http-client|node-fetch|okhttp).*"
+        }
+      ],
+      "destination": "/api/og/join?token=:token"
+    },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
