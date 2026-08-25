@@ -73,7 +73,7 @@ public class SecurityConfig {
     @Value("${app.rate-limit.refresh:20}")
     private int rateLimitRefresh;
 
-    @Value("${app.rate-limit.invite-preview:30}")
+    @Value("${app.rate-limit.invite-preview:2000}")
     private int rateLimitInvitePreview;
 
     @Bean
