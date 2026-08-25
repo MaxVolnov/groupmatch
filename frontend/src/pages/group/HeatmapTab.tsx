@@ -176,18 +176,26 @@ export function HeatmapTab({ groupId, isOwner, onCreateMeeting, onSetMyTime}: Pr
             </div>
           )}
           {/*
-            Пустая теплокарта раньше сообщала «Нет доступности на эту неделю» —
+            Пустая сетка раньше сообщала «Нет доступности на эту неделю» —
             констатация, из которой не следует ни одного действия. Человек,
             впервые открывший группу, видит её чаще всех остальных: до него в
             группе обычно вообще никто ничего не отмечал.
+
+            Подсказка разная по роли, потому что и следующий шаг разный:
+            участнику нужно отметить своё время, владельцу — позвать людей,
+            которым будет что отмечать. Кнопка при этом одна и та же: своё
+            время указывает и владелец тоже.
           */}
           {maxCount === 0 && (
-            <div className="flex flex-col items-start gap-3 px-4 py-6">
+            <div className="flex flex-col items-start gap-2 px-4 py-6">
+              <p className="text-base font-medium text-gray-900 dark:text-gray-100">
+                {t('group.heatmapTab.emptyTitle')}
+              </p>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                {t('group.heatmapTab.noAvailability')}
+                {t(isOwner ? 'group.heatmapTab.emptyHintOwner' : 'group.heatmapTab.emptyHintMember')}
               </p>
               {onSetMyTime && (
-                <Button onClick={onSetMyTime} size="sm">
+                <Button onClick={onSetMyTime} size="sm" className="mt-1">
                   {t('group.setMyTime')}
                 </Button>
               )}

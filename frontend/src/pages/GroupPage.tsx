@@ -50,6 +50,12 @@ export function GroupPage() {
    * пользователем, когда догрузились данные группы, — худшее из решений.
    */
   const [tab, setTab] = useState<Tab | null>(null)
+  /**
+   * Счётчик обращений «хочу указать своё время». Инкремент доводит фокус до
+   * формы в AvailabilityTab — счётчик, а не флаг, чтобы повторное нажатие уже
+   * на этой вкладке тоже срабатывало.
+   */
+  const [addSlotRequest, setAddSlotRequest] = useState(0)
   const [showEdit, setShowEdit] = useState(false)
   const [showCreateMeeting, setShowCreateMeeting] = useState(false)
   const [meetingPrefill, setMeetingPrefill] = useState<{ startsAt: string; endsAt: string } | undefined>(undefined)
@@ -79,6 +85,16 @@ export function GroupPage() {
       navigate('/')
     },
   })
+
+  /**
+   * Единственная точка входа для «указать своё время»: и постоянная кнопка в
+   * шапке, и кнопка из пустого состояния сетки ведут сюда. Переключить вкладку
+   * мало — без этого человек попадает на форму, но курсор остаётся нигде.
+   */
+  const goToAddAvailability = () => {
+    setTab('availability')
+    setAddSlotRequest((n) => n + 1)
+  }
 
   const openCreateMeeting = (prefill?: { startsAt: string; endsAt: string }) => {
     setMeetingPrefill(prefill)
@@ -135,7 +151,7 @@ export function GroupPage() {
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 truncate">{group.title}</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 truncate sm:text-4xl">{group.title}</h1>
             {group.description && (
               <p className="mt-1 text-gray-500 dark:text-gray-400">{group.description}</p>
             )}
@@ -145,49 +161,47 @@ export function GroupPage() {
               {group.showParticipants && <span>{t('group.namesVisible')}</span>}
             </div>
           </div>
-          {isOwner && (
-            <div className="flex flex-wrap gap-2 sm:shrink-0">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setShowEdit(true)}
-                className="flex-1 sm:flex-none justify-center"
-              >
-                {t('group.editGroup')}
-              </Button>
-              <Button
-                variant="danger"
-                size="sm"
-                loading={deleteGroup.isPending}
-                onClick={() => {
-                  if (confirm(t('group.deleteConfirm'))) {
-                    deleteGroup.mutate()
-                  }
-                }}
-                className="flex-1 sm:flex-none justify-center"
-              >
-                {t('group.deleteGroup')}
-              </Button>
-            </div>
-          )}
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:shrink-0 sm:items-end">
+            {/*
+              Единственное действие, которое требуется от пришедшего: рядом с
+              названием группы и на любой вкладке. Пока своих слотов нет —
+              акцентная: смотреть на сетку, ничего не отметив, нечего.
+              Появились — вторичная, чтобы не спорить за внимание с содержимым.
+            */}
+            <Button
+              variant={hasOwnSlots ? 'secondary' : 'primary'}
+              onClick={goToAddAvailability}
+              className="min-h-[44px] w-full justify-center sm:w-auto"
+            >
+              {hasOwnSlots ? t('group.changeMyTime') : t('group.setMyTime')}
+            </Button>
+            {isOwner && (
+              <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setShowEdit(true)}
+                  className="flex-1 sm:flex-none justify-center"
+                >
+                  {t('group.editGroup')}
+                </Button>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  loading={deleteGroup.isPending}
+                  onClick={() => {
+                    if (confirm(t('group.deleteConfirm'))) {
+                      deleteGroup.mutate()
+                    }
+                  }}
+                  className="flex-1 sm:flex-none justify-center"
+                >
+                  {t('group.deleteGroup')}
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-
-      {/*
-        Единственное действие, которое требуется от пришедшего, — вынесено из
-        вкладок и видно на любой из них. Пока своих слотов нет, кнопка
-        акцентная: человеку нечего смотреть в теплокарте, пока он ничего не
-        отметил. Появились — становится вторичной, чтобы не спорить за внимание
-        с содержимым страницы.
-      */}
-      <div className="mb-4">
-        <Button
-          variant={hasOwnSlots ? 'secondary' : 'primary'}
-          onClick={() => setTab('availability')}
-          className="w-full justify-center sm:w-auto"
-        >
-          {hasOwnSlots ? t('group.changeMyTime') : t('group.setMyTime')}
-        </Button>
       </div>
 
       {/* Tabs — scrollable on mobile */}
@@ -214,14 +228,14 @@ export function GroupPage() {
         <MembersTab group={group} currentUserId={userId} />
       )}
       {activeTab === 'availability' && plan && (
-        <AvailabilityTab groupId={group.id} callerPlan={plan} />
+        <AvailabilityTab groupId={group.id} callerPlan={plan} focusRequest={addSlotRequest} />
       )}
       {activeTab === 'heatmap' && (
         <HeatmapTab
           groupId={group.id}
           isOwner={isOwner}
           onCreateMeeting={handleHeatmapSlotClick}
-          onSetMyTime={() => setTab('availability')}
+          onSetMyTime={goToAddAvailability}
         />
       )}
       {activeTab === 'meetings' && userId && (

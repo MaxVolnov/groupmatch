@@ -87,7 +87,6 @@
       "prev": "← Prev",
       "next": "Next →",
       "today": "Today",
-      "noAvailability": "Nobody has marked their time yet. Start with yours.",
       "members": "members",
       "available": "available",
       "clickToSchedule": "— click to schedule a meeting",
@@ -99,7 +98,10 @@
         "fri": "Fri",
         "sat": "Sat",
         "sun": "Sun"
-      }
+      },
+      "emptyTitle": "Nobody has marked their time yet",
+      "emptyHintMember": "Start with yours — that gives everyone else something to work from",
+      "emptyHintOwner": "Send the group an invite link"
     },
     "meetingsTab": {
       "schedule": "+ Schedule meeting",
@@ -316,7 +318,7 @@
     "freeFeatures": {
       "groups": "Up to 3 groups as owner",
       "membership": "Unlimited group membership",
-      "heatmap": "Availability heatmap",
+      "heatmap": "See at a glance when everyone is free",
       "scheduling": "Meeting scheduling",
       "notifications": "Email notifications"
     },
@@ -329,7 +331,7 @@
   },
   "about": {
     "title": "About GroupMatch",
-    "description": "GroupMatch is a group scheduling tool that helps teams find the best time to meet. Mark your availability, see the overlap on a heatmap, and schedule meetings — no back-and-forth emails needed.",
+    "description": "GroupMatch is a group scheduling tool that helps teams find the best time to meet. Mark your availability, see when everyone is free, and schedule meetings — no back-and-forth emails needed.",
     "builtBy": "Built by Max Wave Studio.",
     "contact": "Contact",
     "emailLabel": "Email",
