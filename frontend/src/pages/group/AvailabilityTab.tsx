@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { availabilityApi } from '@/api/availability'
@@ -13,6 +13,18 @@ import { defaultDatetime, fmtRange, toIso } from '@/utils/datetime'
 interface Props {
   groupId: string
   callerPlan: Plan
+  /**
+   * Счётчик-триггер: при каждом изменении форма добавления слота получает
+   * фокус и подскроллена в вид.
+   *
+   * Именно счётчик, а не boolean: кнопка «Указать своё время» может быть нажата
+   * повторно, уже находясь на этой вкладке, и флаг во второй раз не изменился
+   * бы — эффект не сработал, и нажатие осталось бы без ответа.
+   *
+   * Сама форма всегда отрисована и никогда не скрыта, поэтому «открыть» её —
+   * это довести до неё каретку, а не показать.
+   */
+  focusRequest?: number
 }
 
 function SlotSkeletonList() {
@@ -31,7 +43,20 @@ function SlotSkeletonList() {
   )
 }
 
-export function AvailabilityTab({ groupId, callerPlan }: Props) {
+export function AvailabilityTab({ groupId, callerPlan, focusRequest }: Props) {
+  const addFormRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!focusRequest) return
+    const form = addFormRef.current
+    if (!form) return
+    form.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    // Первое поле формы — «с какого времени». Ref прокидывать некуда: Input
+    // не форвардит его наружу, а трогать общий компонент ради одной вкладки
+    // дороже, чем спросить у собственного контейнера.
+    form.querySelector('input')?.focus()
+  }, [focusRequest])
+
   const { t } = useTranslation()
   const qc = useQueryClient()
   const [startsAt, setStartsAt] = useState(defaultDatetime(1))
@@ -89,7 +114,7 @@ export function AvailabilityTab({ groupId, callerPlan }: Props) {
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       {/* Add slot form */}
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5">
+      <div ref={addFormRef} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5">
         <h3 className="mb-4 font-medium text-gray-900 dark:text-gray-100">{t('group.availabilityTab.addAvailability')}</h3>
         <div className="flex flex-col gap-3">
           <Input
