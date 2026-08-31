@@ -306,6 +306,8 @@ export const mockApi = {
         startsAt: data.startsAt,
         endsAt: data.endsAt,
         note: data.note ?? null,
+        // Одиночный слот. Серии заводятся отдельной ручкой, в моке её нет.
+        seriesId: null,
         createdAt: new Date().toISOString(),
       }
       const key = `${groupId}:${MOCK_USER_ID}`

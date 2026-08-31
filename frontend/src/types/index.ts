@@ -87,6 +87,11 @@ export interface AvailabilityResponse {
   startsAt: string
   endsAt: string
   note: string | null
+  /**
+   * Общий идентификатор слотов одной повторяющейся серии; `null` у одиночного
+   * слота. Бэкенд отдаёт это поле с версии V23, тип отставал.
+   */
+  seriesId: string | null
   createdAt: string
 }
 
