@@ -12,6 +12,7 @@ import com.groupmatch.auth.TrialServiceTest;
 import com.groupmatch.availability.AvailabilityTest;
 import com.groupmatch.groups.GroupErrorPathTest;
 import com.groupmatch.groups.GroupTest;
+import com.groupmatch.groups.InvitePreviewTest;
 import com.groupmatch.groups.InviteTest;
 import com.groupmatch.groups.MemberLimitEnforcedTest;
 import com.groupmatch.groups.MemberLimitFlagTest;
@@ -46,6 +47,7 @@ import org.junit.platform.suite.api.Suite;
     GroupTest.class,
     GroupErrorPathTest.class,
     InviteTest.class,
+    InvitePreviewTest.class,
     MemberLimitFlagTest.class,
     MemberLimitEnforcedTest.class,
     SlotAndInviteLimitFlagTest.class,

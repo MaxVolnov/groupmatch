@@ -2,6 +2,7 @@ package com.groupmatch.service;
 
 import com.groupmatch.domain.*;
 import com.groupmatch.dto.invite.CreateInviteRequest;
+import com.groupmatch.dto.invite.InvitePreviewResponse;
 import com.groupmatch.dto.invite.InviteResponse;
 import com.groupmatch.exception.*;
 import com.groupmatch.repository.GrpMemberRepository;
@@ -29,6 +30,14 @@ import java.util.UUID;
 public class InviteService {
 
     private static final int TOKEN_BYTES = 24; // 48 hex chars
+
+    /**
+     * Предел длины имени: {@code @Size(max = 50)} в GuestRequest и
+     * SignupRequest, {@code CHECK (char_length(display_name) BETWEEN 2 AND 50)}
+     * в миграции V1, {@code maxLength={50}} в форме. Более длинного имени в
+     * базе быть не может.
+     */
+    private static final int MAX_DISPLAY_NAME_LENGTH = 50;
     private static final SecureRandom RANDOM = new SecureRandom();
 
     private final InviteRepository inviteRepository;
@@ -93,6 +102,106 @@ public class InviteService {
                 .orElseThrow(() -> new InviteNotFoundException(inviteId));
         invite.setRevoked(true);
         inviteRepository.save(invite);
+    }
+
+    /**
+     * Данные приглашения для публичного экрана: что за группа и кто зовёт.
+     *
+     * Никогда не бросает исключений на «плохой токен» — возвращает
+     * {@code valid = false} с причиной. Так сделано намеренно: этот же ответ
+     * питает превью ссылки в мессенджерах, а 404 там ломает превью целиком, и
+     * человек видит «ссылка битая» вместо объяснения, что приглашение истекло.
+     *
+     * Причины различаются по порядку убывания определённости: отозванное
+     * приглашение остаётся отозванным, даже если срок ещё не вышел.
+     */
+    @Transactional(readOnly = true)
+    public InvitePreviewResponse previewByToken(String token) {
+        Invite invite = inviteRepository.findByToken(token).orElse(null);
+        if (invite == null) {
+            return InvitePreviewResponse.invalid(InvitePreviewResponse.Reason.NOT_FOUND);
+        }
+        if (invite.isRevoked()) {
+            return InvitePreviewResponse.invalid(InvitePreviewResponse.Reason.REVOKED);
+        }
+        if (!Instant.now().isBefore(invite.getExpiresAt())) {
+            return InvitePreviewResponse.invalid(InvitePreviewResponse.Reason.EXPIRED);
+        }
+        if (invite.getMaxUses() != 0 && invite.getCurrentUses() >= invite.getMaxUses()) {
+            return InvitePreviewResponse.invalid(InvitePreviewResponse.Reason.MAX_USES);
+        }
+
+        String groupName = groupRepository.findById(invite.getGroupId())
+                .map(Group::getTitle)
+                .orElse(null);
+        if (groupName == null) {
+            // Группу удалили, а приглашение осталось. Для человека это ровно то
+            // же самое, что несуществующая ссылка.
+            return InvitePreviewResponse.invalid(InvitePreviewResponse.Reason.NOT_FOUND);
+        }
+
+        String inviterName = userRepository.findById(invite.getCreatedBy())
+                .map(User::getDisplayName)
+                .orElse(null);
+
+        return InvitePreviewResponse.valid(groupName, inviterName);
+    }
+
+    /**
+     * Занято ли уже такое имя в группе, куда ведёт приглашение.
+     *
+     * Нужно ровно для одной подсказки: человек, однажды зашедший гостем из
+     * встроенного браузера мессенджера, приходит второй раз с телефона, вводит
+     * то же имя и заводит второй аккаунт, не понимая, почему в группе он теперь
+     * дважды. Предупредить об этом можно, только сверив имя.
+     *
+     * <h4>Почему публичный эндпоинт здесь приемлем</h4>
+     *
+     * Обратиться сюда можно только с валидным токеном приглашения. А обладатель
+     * такого токена и без нас может вступить в группу и запросить
+     * {@code GET /api/v1/groups/{id}/members} — полный список участников с
+     * именами.
+     *
+     * {@code showParticipants} этому не мешает: флаг ограничивает выдачу
+     * теплокарты — в {@code AvailabilityService} при выключенном флаге имена и
+     * идентификаторы в слотах зануляются на сервере, а не прячутся во
+     * фронтенде, — но на список участников группы он не распространяется вовсе.
+     *
+     * То есть здесь не раскрывается ничего, чего не даёт сама ссылка: разница
+     * ровно в одном — владелец группы не получает уведомления о вступлении.
+     *
+     * ⚠️ Отсюда следует ограничение на будущее. Рассуждение держится на том,
+     * что ответ не превышает того, что и так доступно по ссылке. Любое
+     * расширение — вернуть список имён, счётчик участников, что угодно сверх
+     * одного бита — обнуляет этот аргумент, и вопрос придётся решать заново.
+     *
+     * Длина входа ограничена {@link #MAX_DISPLAY_NAME_LENGTH}: имя длиннее
+     * всё равно не могло быть сохранено, значит совпасть ни с кем не может, и
+     * ходить за этим в базу незачем.
+     */
+    @Transactional(readOnly = true)
+    public boolean isNameTakenInInvitedGroup(String token, String displayName) {
+        if (displayName == null || displayName.isBlank()) return false;
+
+        String needle = displayName.trim();
+        if (needle.length() > MAX_DISPLAY_NAME_LENGTH) return false;
+
+        Invite invite = inviteRepository.findByToken(token).orElse(null);
+        if (invite == null || !invite.isValid()) return false;
+
+        List<UUID> userIds = grpMemberRepository
+                .findByGroupAndStatus(invite.getGroupId(), MemberStatus.ACTIVE)
+                .stream()
+                .map(GrpMember::getUser)
+                .toList();
+        if (userIds.isEmpty()) return false;
+
+        // Один запрос на всех, как в GroupService.getMembers. Обращение к
+        // репозиторию в цикле здесь особенно неуместно: эндпоинт публичный, и
+        // число запросов к базе на один HTTP-вызов росло бы с размером группы.
+        return userRepository.findAllById(userIds).stream()
+                .map(User::getDisplayName)
+                .anyMatch(name -> name != null && name.equalsIgnoreCase(needle));
     }
 
     @Transactional
