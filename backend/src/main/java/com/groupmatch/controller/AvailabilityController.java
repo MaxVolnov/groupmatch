@@ -1,5 +1,7 @@
 package com.groupmatch.controller;
 
+import com.groupmatch.dto.availability.AvailabilityBulkClearRequest;
+import com.groupmatch.dto.availability.AvailabilityBulkClearResponse;
 import com.groupmatch.dto.availability.AvailabilityRequest;
 import com.groupmatch.dto.availability.AvailabilityResponse;
 import com.groupmatch.dto.availability.AvailabilitySeriesRequest;
@@ -65,6 +67,18 @@ public class AvailabilityController {
                        @PathVariable UUID groupId,
                        @PathVariable UUID slotId) {
         availabilityService.deleteSlot(slotId, groupId, principal.getId());
+    }
+
+    /**
+     * Массовая очистка собственных слотов по окну «дни недели × время».
+     * Тело у DELETE намеренное: параметров шесть, и в query-строке они
+     * читались бы хуже, чем в JSON.
+     */
+    @DeleteMapping("/bulk")
+    public AvailabilityBulkClearResponse bulkClear(@AuthenticationPrincipal UserPrincipal principal,
+                                                   @PathVariable UUID groupId,
+                                                   @Valid @RequestBody AvailabilityBulkClearRequest req) {
+        return availabilityService.bulkClear(groupId, principal.getId(), req);
     }
 
     @GetMapping("/heatmap")

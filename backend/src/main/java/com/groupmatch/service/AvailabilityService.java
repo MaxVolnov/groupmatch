@@ -1,6 +1,8 @@
 package com.groupmatch.service;
 
 import com.groupmatch.domain.*;
+import com.groupmatch.dto.availability.AvailabilityBulkClearRequest;
+import com.groupmatch.dto.availability.AvailabilityBulkClearResponse;
 import com.groupmatch.dto.availability.AvailabilityRequest;
 import com.groupmatch.dto.availability.AvailabilityResponse;
 import com.groupmatch.dto.availability.AvailabilitySeriesRequest;
@@ -254,6 +256,77 @@ public class AvailabilityService {
 
         bumpVersion(group);
         return deleted;
+    }
+
+    /**
+     * Массовая очистка собственных слотов по временно́му окну.
+     *
+     * Удаляется только то, что попадает в окно **целиком**. Слот, задевающий
+     * окно краем, остаётся нетронутым — молча откусить у человека половину
+     * его 9:00–15:00, потому что он чистил 10:00–14:00, хуже, чем не удалить
+     * ничего: непонятое действие он повторит, потерянные данные не вернёт.
+     *
+     * День недели и время считаются в переданной зоне, а не в UTC: «утро
+     * вторника» в Москве — это ночь понедельника по Гринвичу, и фильтрация по
+     * UTC вычистила бы не те дни.
+     *
+     * Принадлежность к серии не учитывается вовсе: очистка работает по
+     * времени и одинаково убирает и слоты серии, и наставленные вручную.
+     */
+    @Transactional
+    public AvailabilityBulkClearResponse bulkClear(UUID groupId, UUID callerId,
+                                                   AvailabilityBulkClearRequest req) {
+        ZoneId zone = parseZone(req.timeZone());
+
+        if (req.toDate().isBefore(req.fromDate())) {
+            throw new BadRequestException("toDate must not be before fromDate");
+        }
+        if (!req.endTime().isAfter(req.startTime())) {
+            throw new BadRequestException("endTime must be after startTime");
+        }
+
+        GrpMember membership = groupAccessGuard.requireActiveMember(groupId, callerId);
+        Group group = loadGroup(groupId);
+        if (group.isLocked() && !membership.isOwner()) {
+            throw new NotGroupOwnerException();
+        }
+
+        // Только свои: чистка чужого расписания — не то действие, которое
+        // стоит прятать за фильтром по времени, даже для владельца группы.
+        List<Availability> victims = availabilityRepository
+                .findByGroupIdAndUserId(groupId, callerId).stream()
+                .filter(slot -> fitsEntirelyInWindow(slot, req, zone))
+                .toList();
+
+        if (req.dryRun() || victims.isEmpty()) {
+            return new AvailabilityBulkClearResponse(victims.size());
+        }
+
+        availabilityRepository.deleteAll(victims);
+        bumpVersion(group);
+        return new AvailabilityBulkClearResponse(victims.size());
+    }
+
+    /**
+     * Слот целиком внутри окна своего дня: начало не раньше начала окна,
+     * конец не позже конца окна.
+     *
+     * День берётся по началу слота. Ночной слот, переваливший за полночь,
+     * закончится уже на следующей дате и по этой же проверке не пройдёт —
+     * что и требуется: в окно одного дня он не помещается.
+     */
+    private boolean fitsEntirelyInWindow(Availability slot, AvailabilityBulkClearRequest req,
+                                         ZoneId zone) {
+        ZonedDateTime start = slot.getStartsAt().atZone(zone);
+        ZonedDateTime end = slot.getEndsAt().atZone(zone);
+        LocalDate date = start.toLocalDate();
+
+        if (date.isBefore(req.fromDate()) || date.isAfter(req.toDate())) return false;
+        if (!req.daysOfWeek().contains(date.getDayOfWeek())) return false;
+
+        ZonedDateTime windowStart = ZonedDateTime.of(date, req.startTime(), zone);
+        ZonedDateTime windowEnd = ZonedDateTime.of(date, req.endTime(), zone);
+        return !start.isBefore(windowStart) && !end.isAfter(windowEnd);
     }
 
     @Transactional(readOnly = true)
