@@ -20,4 +20,12 @@ public interface AvailabilityRepository extends JpaRepository<Availability, UUID
             UUID groupId, Instant before, Instant after);
 
     void deleteByGroupIdAndUserId(UUID groupId, UUID userId);
+
+    /**
+     * Удаление серии целиком. По {@code userId} тоже, а не только по
+     * {@code seriesId}: идентификатор серии генерируется на каждое создание и
+     * пересечься не должен, но запрос, удаляющий строки без привязки к
+     * владельцу, — не то, что стоит оставлять в репозитории на будущее.
+     */
+    int deleteBySeriesIdAndUserId(UUID seriesId, UUID userId);
 }
