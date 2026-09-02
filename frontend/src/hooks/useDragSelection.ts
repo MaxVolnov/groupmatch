@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { AvailabilityResponse } from '@/types'
 import {
+  cellOwnership,
   clampSelection,
   resolveSelection,
+  selectionToErase,
   selectionToSlots,
   type BlockedSlot,
   type Cell,
@@ -40,7 +42,16 @@ import {
  */
 
 /** Подсветка ячейки во время жеста. Живёт только пока тянут. */
-export type DragHighlight = 'create' | 'unchanged' | 'blocked'
+export type DragHighlight = 'create' | 'unchanged' | 'blocked' | 'erase'
+
+/**
+ * Что жест делает. Определяется первой ячейкой и до конца жеста не меняется.
+ *
+ * Начали на свободной — рисуем. Начали на своём отмеченном — стираем. Раньше
+ * второго не было вовсе: протяжка внутри своего слота подсвечивалась и не
+ * делала ничего, то есть интерфейс обещал действие и не выполнял его.
+ */
+export type DragMode = 'create' | 'erase'
 
 export interface DragSelectionConfig {
   /** Сетка на момент жеста. Функция, а не значение: неделю могут переключить. */
@@ -83,6 +94,8 @@ export interface DragSelection {
   hasSelection(): boolean
   /** Выделение ждёт подтверждения — значит, надо показать ручки и кнопки. */
   isPending(): boolean
+  /** Что сделает текущий жест. `null`, если жеста нет. */
+  mode(): DragMode | null
 }
 
 /**
@@ -107,6 +120,8 @@ export function createDragSelection(config: DragSelectionConfig): DragSelection 
    * применение отдельным нажатием.
    */
   let commitOnRelease = true
+  /** Режим текущего жеста. Ставится по первой ячейке и дальше не меняется. */
+  let mode: DragMode | null = null
 
   const range = (): SelectionRange | null => {
     if (!anchor || !focus) return null
@@ -118,16 +133,40 @@ export function createDragSelection(config: DragSelectionConfig): DragSelection 
     anchor = null
     focus = null
     dragging = false
+    mode = null
     config.onChange(null)
+  }
+
+  /**
+   * Что жест сделает, начавшись на этой ячейке. `null` — не начнётся вовсе.
+   *
+   * Заблокированная ячейка не молчит: тап без единой реакции читается как
+   * неработающий интерфейс, поэтому отказ обязан быть громким.
+   */
+  const modeFor = (cell: Cell): DragMode | null => {
+    const grid = config.getGrid()
+    const slots = config.getSlots()
+    const owner = cellOwnership(cell, slots, grid)
+    if (owner === 'blocked') {
+      const probe = clampSelection(resolveSelection(cell, cell, grid), grid)
+      config.onBlocked(selectionToSlots(probe, slots, grid).blocked)
+      return null
+    }
+    return owner === 'mine' ? 'erase' : 'create'
   }
 
   /** Применить текущее выделение и сбросить его. */
   const applyCurrent = () => {
     const finished = range()
+    const erasing = mode === 'erase'
     reset()
     if (!finished) return
 
-    const plan = selectionToSlots(finished, config.getSlots(), config.getGrid())
+    const plan = (erasing ? selectionToErase : selectionToSlots)(
+      finished,
+      config.getSlots(),
+      config.getGrid(),
+    )
     if (plan.blocked.length > 0) config.onBlocked(plan.blocked)
     if (plan.toCreate.length > 0 || plan.toDelete.length > 0) config.onApply(plan)
   }
@@ -151,6 +190,11 @@ export function createDragSelection(config: DragSelectionConfig): DragSelection 
       // выделения выглядит как зависшая подсветка.
       if (button !== 0) return false
       if (config.isBusy()) return false
+
+      const next = modeFor(cell)
+      if (!next) return false
+
+      mode = next
       anchor = cell
       focus = cell
       dragging = true
@@ -196,16 +240,10 @@ export function createDragSelection(config: DragSelectionConfig): DragSelection 
         return false
       }
 
-      const grid = config.getGrid()
-      const probe = clampSelection(resolveSelection(cell, cell, grid), grid)
-      const plan = selectionToSlots(probe, config.getSlots(), grid)
-      if (plan.blocked.length > 0) {
-        // Тап без единой реакции читается как неработающий интерфейс, поэтому
-        // отказ обязан быть громким.
-        config.onBlocked(plan.blocked)
-        return false
-      }
+      const next = modeFor(cell)
+      if (!next) return false
 
+      mode = next
       anchor = cell
       focus = cell
       dragging = false
@@ -237,6 +275,7 @@ export function createDragSelection(config: DragSelectionConfig): DragSelection 
     isActive: () => dragging,
     hasSelection: () => anchor !== null,
     isPending: () => anchor !== null && !commitOnRelease,
+    mode: () => mode,
     range,
   }
 }
@@ -442,6 +481,8 @@ export function useDragSelection(options: UseDragSelectionOptions) {
 
   return {
     range,
+    /** Что сделает текущий жест: нарисует или сотрёт. */
+    mode: controller.mode(),
     isDragging: range !== null,
     /** Выделение ждёт подтверждения: показываем ручки и кнопки. */
     pending,

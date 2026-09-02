@@ -88,13 +88,14 @@
         "legendSeries": "From a series",
         "legendPartial": "List only",
         "partialHint": "Taken. This slot can only be changed in the list below",
-        "dragHint": "Drag across the grid, or tap a cell, to mark your time",
+        "dragHint": "Drag across free cells to mark time, across your own to erase",
         "blockedNotice": "Series, slots crossing midnight and slots off the half-hour are changed in the list below only",
         "seriesHint": "Part of a repeating series. Change it in the list below",
         "busyHint": "Marked. You can change it right in the grid",
         "confirm": "Mark",
         "cancel": "Cancel",
-        "selectedCells": "Cells selected: {{count}}"
+        "selectedCells": "Cells selected: {{count}}",
+        "confirmErase": "Erase"
       }
     },
     "heatmapTab": {
@@ -115,7 +116,11 @@
       },
       "emptyTitle": "Nobody has marked their time yet",
       "emptyHintMember": "Start with yours — that gives everyone else something to work from",
-      "emptyHintOwner": "Send the group an invite link"
+      "emptyHintOwner": "Send the group an invite link",
+      "othersFree": "Others free",
+      "modeAvailability": "My time",
+      "modeMeeting": "Schedule a meeting",
+      "meetingHint": "Tap a cell where people are free to schedule a meeting"
     },
     "meetingsTab": {
       "schedule": "+ Schedule meeting",

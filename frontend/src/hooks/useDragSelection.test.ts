@@ -128,14 +128,27 @@ describe('отмена', () => {
 })
 
 describe('когда в сеть не ходим', () => {
-  it('протяжка целиком внутри своего слота не даёт ни одного вызова', () => {
-    const h = harness([slot('2026-10-19T09:00:00Z', '2026-10-19T13:00:00Z')])
+  /**
+   * Раньше здесь стояло «протяжка внутри своего слота не даёт ни одного
+   * вызова»: жест подсвечивался и не делал ничего. Это и была та самая
+   * претензия — интерфейс обещал действие и не выполнял его. Теперь такая
+   * протяжка стирает, и проверка перевёрнута сознательно, а не подогнана.
+   */
+  it('протяжка внутри своего слота теперь стирает, а не молчит', () => {
+    const mine = slot('2026-10-19T09:00:00Z', '2026-10-19T13:00:00Z')
+    const h = harness([mine])
 
     h.drag.down({ row: 20, col: 0 }, 0)
     h.drag.move({ row: 21, col: 0 })
     h.drag.up()
 
-    expect(h.onApply).not.toHaveBeenCalled()
+    expect(h.drag.mode()).toBeNull()   // жест завершён
+    const plan = h.onApply.mock.calls[0][0]
+    expect(plan.toDelete.map((s) => s.id)).toEqual([mine.id])
+    expect(plan.toCreate).toEqual([
+      { startsAt: '2026-10-19T09:00:00.000Z', endsAt: '2026-10-19T10:00:00.000Z' },
+      { startsAt: '2026-10-19T11:00:00.000Z', endsAt: '2026-10-19T13:00:00.000Z' },
+    ])
     expect(h.onBlocked).not.toHaveBeenCalled()
   })
 
@@ -397,5 +410,105 @@ describe('слияние со старым слотом', () => {
     await expect(applyPlan(plan, addSlot, deleteSlot)).rejects.toThrow('503')
     expect(addSlot).toHaveBeenCalledTimes(1)
     expect(deleteSlot, 'старые слоты обязаны остаться на месте').not.toHaveBeenCalled()
+  })
+})
+
+/**
+ * Режим жеста определяется первой ячейкой.
+ *
+ * До этого протяжка внутри своего слота подсвечивалась и не делала ничего:
+ * интерфейс обещал действие и не выполнял, что хуже обоих чистых вариантов.
+ */
+describe('режим определяется первой ячейкой', () => {
+  const mine = () => slot('2026-10-19T10:00:00Z', '2026-10-19T14:00:00Z')
+
+  it('старт на свободной ячейке — рисуем', () => {
+    const h = harness()
+    h.drag.down({ row: 30, col: 0 }, 0)
+    expect(h.drag.mode()).toBe('create')
+  })
+
+  it('старт на своей занятой — стираем', () => {
+    const h = harness([mine()])
+    h.drag.down({ row: 20, col: 0 }, 0)
+    expect(h.drag.mode()).toBe('erase')
+  })
+
+  it('старт на заблокированной — жест не начинается, показано объяснение', () => {
+    const series = slot('2026-10-19T10:00:00Z', '2026-10-19T12:00:00Z', 'series-1')
+    const h = harness([series])
+
+    expect(h.drag.down({ row: 20, col: 0 }, 0)).toBe(false)
+    expect(h.drag.mode()).toBeNull()
+    expect(h.drag.isActive()).toBe(false)
+    expect(h.onBlocked.mock.calls[0][0]).toEqual([{ slot: series, reason: 'series' }])
+  })
+
+  /** Тач-путь принимает то же решение — режим один на оба жеста. */
+  it('тап по своей занятой тоже даёт режим стирания', () => {
+    const h = harness([mine()])
+    expect(h.drag.tap({ row: 20, col: 0 })).toBe(true)
+    expect(h.drag.mode()).toBe('erase')
+  })
+
+  /**
+   * Режим ставится один раз. Протяжка, начатая на своём и уехавшая на
+   * свободное, остаётся стиранием — иначе один жест делал бы два разных дела.
+   */
+  it('режим не меняется, когда выделение выходит на свободные ячейки', () => {
+    const h = harness([mine()])
+    h.drag.down({ row: 20, col: 0 }, 0)
+    h.drag.move({ row: 40, col: 0 })
+    expect(h.drag.mode()).toBe('erase')
+  })
+})
+
+describe('стирание протяжкой', () => {
+  it('стирание середины слота присылает удаление и два остатка', () => {
+    const mine = slot('2026-10-19T10:00:00Z', '2026-10-19T14:00:00Z')
+    const h = harness([mine])
+
+    h.drag.down({ row: 22, col: 0 }, 0)   // 11:00
+    h.drag.move({ row: 23, col: 0 })      // 12:00
+    h.drag.up()
+
+    const plan = h.onApply.mock.calls[0][0]
+    expect(plan.toDelete.map((s) => s.id)).toEqual([mine.id])
+    expect(plan.toCreate).toEqual([
+      { startsAt: '2026-10-19T10:00:00.000Z', endsAt: '2026-10-19T11:00:00.000Z' },
+      { startsAt: '2026-10-19T12:00:00.000Z', endsAt: '2026-10-19T14:00:00.000Z' },
+    ])
+  })
+
+  it('старт на свободной ячейке по-прежнему создаёт, а не стирает', () => {
+    const mine = slot('2026-10-19T10:00:00Z', '2026-10-19T11:00:00Z')
+    const h = harness([mine])
+
+    h.drag.down({ row: 24, col: 0 }, 0)   // 12:00, свободно
+    h.drag.move({ row: 25, col: 0 })
+    h.drag.up()
+
+    const plan = h.onApply.mock.calls[0][0]
+    expect(plan.toCreate).toHaveLength(1)
+    expect(plan.toCreate[0].endsAt).toBe('2026-10-19T13:00:00.000Z')
+  })
+
+  /**
+   * Стирание, начатое на своём и протянутое через серию: своё исчезает, серия
+   * остаётся и объясняется. То же правило, что при создании.
+   */
+  it('серия под стиранием остаётся, своё стирается', () => {
+    const mine = slot('2026-10-19T10:00:00Z', '2026-10-19T11:00:00Z')
+    const series = slot('2026-10-19T11:00:00Z', '2026-10-19T12:00:00Z', 'series-1')
+    const h = harness([mine, series])
+
+    h.drag.down({ row: 20, col: 0 }, 0)
+    h.drag.move({ row: 23, col: 0 })
+    h.drag.up()
+
+    expect(h.onBlocked.mock.calls[0][0]).toEqual([{ slot: series, reason: 'series' }])
+    const plan = h.onApply.mock.calls[0][0]
+    expect(plan.toDelete.map((s) => s.id)).toEqual([mine.id])
+    expect(plan.toCreate).toHaveLength(0)
   })
 })

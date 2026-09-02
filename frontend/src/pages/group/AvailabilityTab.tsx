@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { availabilityApi } from '@/api/availability'
@@ -9,10 +9,6 @@ import { ErrorMessage } from '@/components/ErrorMessage'
 import type { Plan } from '@/types'
 import { DateTime } from 'luxon'
 import { defaultDatetime, fmtRange, toIso } from '@/utils/datetime'
-import { buildOwnGrid, isBlockedState } from '@/utils/ownGrid'
-import type { SelectionPlan } from '@/utils/selection'
-import { applyPlan, useDragSelection, type DragHighlight } from '@/hooks/useDragSelection'
-import { MyAvailabilityGrid } from './MyAvailabilityGrid'
 
 interface Props {
   groupId: string
@@ -29,12 +25,6 @@ interface Props {
    * это довести до неё каретку, а не показать.
    */
   focusRequest?: number
-  /**
-   * Смещение недели в неделях от текущей. Общее с теплокартой, поднято в
-   * GroupPage — см. комментарий там.
-   */
-  weekOffset: number
-  onWeekOffsetChange: (next: number) => void
 }
 
 function SlotSkeletonList() {
@@ -53,7 +43,7 @@ function SlotSkeletonList() {
   )
 }
 
-export function AvailabilityTab({ groupId, callerPlan, focusRequest, weekOffset, onWeekOffsetChange }: Props) {
+export function AvailabilityTab({ groupId, callerPlan, focusRequest }: Props) {
   const addFormRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -73,8 +63,6 @@ export function AvailabilityTab({ groupId, callerPlan, focusRequest, weekOffset,
   const [endsAt, setEndsAt] = useState(defaultDatetime(2))
   const [note, setNote] = useState('')
   const [formError, setFormError] = useState('')
-  /** Последний жест задел серию или слот через полночь — надо объяснить. */
-  const [blockedNotice, setBlockedNotice] = useState(false)
 
   const onStartsAtChange = (value: string) => {
     setStartsAt(value)
@@ -121,152 +109,9 @@ export function AvailabilityTab({ groupId, callerPlan, focusRequest, weekOffset,
   const limit = planLimits[callerPlan]
   const count = slots?.length ?? 0
 
-  /**
-   * Понедельник показываемой недели и раскладка слотов по ячейкам. Тот же
-   * queryKey, что у списка ниже, — сетка данных не запрашивает, она их
-   * переиспользует.
-   */
-  const weekStart = DateTime.now().startOf('week').plus({ weeks: weekOffset })
-  const ownGrid = useMemo(() => buildOwnGrid(slots ?? [], weekStart), [slots, weekStart])
-
-  const applySelection = useMutation({
-    mutationFn: (plan: SelectionPlan) =>
-      applyPlan(
-        plan,
-        (draft) => availabilityApi.addSlot(groupId, draft),
-        (slotId) => availabilityApi.deleteSlot(groupId, slotId),
-      ),
-    // Обновляем список и в случае ошибки: при падении на удалении часть
-    // операций уже прошла, и показывать человеку устаревшую картину — значит
-    // заставить его гадать, что именно применилось.
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: ['availability', groupId] })
-      qc.invalidateQueries({ queryKey: ['heatmap', groupId] })
-    },
-  })
-
-  const drag = useDragSelection({
-    grid: ownGrid.spec,
-    slots: slots ?? [],
-    busy: applySelection.isPending,
-    // Сообщение о заблокированном ставится по самому плану, а не сбрасывается
-    // в onApply: жест, который и создал слот, и задел серию, зовёт оба
-    // колбэка, и безусловный сброс стирал бы объяснение ровно в том случае,
-    // ради которого оно написано. Чистый жест по-прежнему гасит сообщение от
-    // предыдущего.
-    onApply: (plan) => {
-      setBlockedNotice(plan.blocked.length > 0)
-      applySelection.mutate(plan)
-    },
-    onBlocked: () => setBlockedNotice(true),
-  })
-
-  /**
-   * Подсветка на время жеста. Считается по двум готовым сеткам, а не вызовом
-   * `selectionToSlots` на каждое движение: тот разбирает даты всех слотов и на
-   * протяжке в шестьдесят кадров в секунду обошёлся бы тысячами разборов.
-   */
-  const highlightAt = (row: number, col: number): DragHighlight | null => {
-    if (!drag.range) return null
-    const inSelection = drag.range.days.some(
-      (d) => d.col === col && row >= d.startRow && row <= d.endRow,
-    )
-    if (!inSelection) return null
-    // Постоянное состояние ячейки уже отвечает на вопрос «можно ли её
-    // трогать»: `series` и `partial` — те же самые слоты, что протяжка
-    // возвращает в `blocked`. Второй сетки для этого больше не нужно.
-    const state = ownGrid.cells[row][col]
-    if (isBlockedState(state)) return 'blocked'
-    if (state !== 'free') return 'unchanged'
-    return 'create'
-  }
-
-  /**
-   * Углы тач-выделения, куда садятся ручки. У мышиного жеста ручек нет:
-   * выделение там живёт только пока зажата кнопка, и вешать на него маркеры
-   * значит рисовать то, за что нельзя взяться.
-   */
-  const handles =
-    drag.pending && drag.range && drag.range.days.length > 0
-      ? {
-          start: { row: drag.range.days[0].startRow, col: drag.range.days[0].col },
-          end: {
-            row: drag.range.days[drag.range.days.length - 1].endRow,
-            col: drag.range.days[drag.range.days.length - 1].col,
-          },
-        }
-      : null
-
   if (error) return <ErrorMessage error={error} />
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Сетка своего времени. Только показывает: протяжка — следующий заход. */}
-      <div>
-        <h3 className="mb-2 font-medium text-gray-900 dark:text-gray-100">
-          {t('group.availabilityTab.grid.title')}
-        </h3>
-        {/* Навигация своей строкой: на 375px заголовок рядом с тремя кнопками
-            переносился так, что «След. →» оставалась одна на строке и читалась
-            как сбой вёрстки. */}
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <Button variant="secondary" size="sm" onClick={() => onWeekOffsetChange(weekOffset - 1)}>
-            {t('group.heatmapTab.prev')}
-          </Button>
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            {weekStart.toFormat('dd MMM')} – {weekStart.plus({ days: 6 }).toFormat('dd MMM yyyy')}
-          </span>
-          <Button variant="secondary" size="sm" onClick={() => onWeekOffsetChange(weekOffset + 1)}>
-            {t('group.heatmapTab.next')}
-          </Button>
-          {weekOffset !== 0 && (
-            <Button variant="ghost" size="sm" onClick={() => onWeekOffsetChange(0)}>
-              {t('group.heatmapTab.today')}
-            </Button>
-          )}
-        </div>
-        {isLoading ? (
-          <Skeleton className="h-96 w-full" />
-        ) : (
-          <MyAvailabilityGrid
-            grid={ownGrid}
-            highlightAt={highlightAt}
-            gridProps={drag.gridProps}
-            handles={handles}
-            handleProps={drag.handleProps}
-          />
-        )}
-        {/*
-          Панель подтверждения. Прилипает к низу экрана — на телефоне это
-          единственное место, куда дотягивается большой палец, — и появляется
-          только когда есть что подтверждать. Отступ снизу у обёртки добавлен
-          на то же время: без него панель ложилась бы поверх нижних строк
-          сетки, то есть поверх того самого выделения.
-        */}
-        {drag.pending && (
-          <div className="sticky bottom-0 z-30 -mx-4 mt-2 flex items-center gap-2 border-t border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800 sm:mx-0 sm:rounded-xl sm:border">
-            <span className="mr-auto text-sm text-gray-700 dark:text-gray-300">
-              {t('group.availabilityTab.grid.selectedCells', { count: drag.range?.cellCount ?? 0 })}
-            </span>
-            <Button variant="secondary" size="sm" onClick={drag.cancel} className="min-h-[44px]">
-              {t('group.availabilityTab.grid.cancel')}
-            </Button>
-            <Button size="sm" onClick={drag.commit} className="min-h-[44px]">
-              {t('group.availabilityTab.grid.confirm')}
-            </Button>
-          </div>
-        )}
-        <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-          {t('group.availabilityTab.grid.dragHint')}
-        </p>
-        {blockedNotice && (
-          <p className="mt-1 text-xs text-gm-600 dark:text-gm-400">
-            {t('group.availabilityTab.grid.blockedNotice')}
-          </p>
-        )}
-        {applySelection.error && <ErrorMessage error={applySelection.error} />}
-      </div>
-
     <div className="grid gap-6 lg:grid-cols-2">
       {/* Add slot form */}
       <div ref={addFormRef} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5">
@@ -341,7 +186,6 @@ export function AvailabilityTab({ groupId, callerPlan, focusRequest, weekOffset,
           </>
         )}
       </div>
-    </div>
     </div>
   )
 }
