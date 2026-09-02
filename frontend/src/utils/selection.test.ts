@@ -4,6 +4,7 @@ import type { AvailabilityResponse } from '@/types'
 import {
   cellStart,
   clampSelection,
+  isOvernightSlot,
   resolveSelection,
   selectionToSlots,
   type GridSpec,
@@ -141,7 +142,7 @@ describe('selectionToSlots', () => {
 
     expect(plan.toCreate).toHaveLength(0)
     expect(plan.toDelete).toHaveLength(0)
-    expect(plan.blockedBySeries.map((s) => s.id)).toEqual([series.id])
+    expect(plan.blocked).toEqual([{ slot: series, reason: 'series' }])
     expect(plan.unchanged.map((s) => s.id)).toEqual([series.id])
   })
 
@@ -158,8 +159,77 @@ describe('selectionToSlots', () => {
     expect(plan.toCreate).toEqual([
       { startsAt: '2026-10-19T11:00:00.000Z', endsAt: '2026-10-19T12:00:00.000Z' },
     ])
-    expect(plan.blockedBySeries.map((s) => s.id)).toEqual([series.id])
+    expect(plan.blocked).toEqual([{ slot: series, reason: 'series' }])
     expect(plan.toDelete).toHaveLength(0)
+  })
+
+  /**
+   * Слот 23:00 понедельника — 01:00 вторника. Протяжка по вторнику с 00:00 до
+   * 01:00 примыкает к нему вплотную и по общему правилу слияния поглотила бы
+   * его целиком — вместе с двумя часами понедельника, которых в жесте не было.
+   * Молча уносить время за пределами выделения нельзя, поэтому такой слот
+   * протяжкой не редактируется вовсе.
+   */
+  it('слот через полночь протяжкой не трогается', () => {
+    const overnight = slot('2026-10-19T23:00:00Z', '2026-10-20T01:00:00Z')
+    const range = resolveSelection({ row: 0, col: 1 }, { row: 1, col: 1 }, grid())
+    const plan = selectionToSlots(range, [overnight], grid())
+
+    expect(plan.blocked).toEqual([{ slot: overnight, reason: 'overnight' }])
+    expect(plan.toDelete).toHaveLength(0)
+    expect(plan.toCreate).toHaveLength(0)
+  })
+
+  it('свободная часть выделения рядом с ночным слотом всё равно создаётся', () => {
+    const overnight = slot('2026-10-19T23:00:00Z', '2026-10-20T01:00:00Z')
+    // Вторник 00:00–02:00: первые два получаса заняты ночным слотом, вторые два свободны.
+    const range = resolveSelection({ row: 0, col: 1 }, { row: 3, col: 1 }, grid())
+    const plan = selectionToSlots(range, [overnight], grid())
+
+    expect(plan.blocked.map((b) => b.reason)).toEqual(['overnight'])
+    expect(plan.toCreate).toEqual([
+      { startsAt: '2026-10-20T01:00:00.000Z', endsAt: '2026-10-20T02:00:00.000Z' },
+    ])
+  })
+
+  /** Ровно до полуночи — это ещё свой день, и редактируется как обычный слот. */
+  it('слот, заканчивающийся ровно в полночь, ночным не считается', () => {
+    const untilMidnight = slot('2026-10-19T23:00:00Z', '2026-10-20T00:00:00Z')
+    expect(isOvernightSlot(untilMidnight, 'UTC')).toBe(false)
+    expect(isOvernightSlot(slot('2026-10-19T23:00:00Z', '2026-10-20T00:30:00Z'), 'UTC')).toBe(true)
+
+    // Протяжка по понедельнику 22:00–23:00 сливается с ним, как с любым другим.
+    const range = resolveSelection({ row: 44, col: 0 }, { row: 45, col: 0 }, grid())
+    const plan = selectionToSlots(range, [untilMidnight], grid())
+    expect(plan.blocked).toHaveLength(0)
+    expect(plan.toDelete.map((s) => s.id)).toEqual([untilMidnight.id])
+    expect(plan.toCreate).toEqual([
+      { startsAt: '2026-10-19T22:00:00.000Z', endsAt: '2026-10-20T00:00:00.000Z' },
+    ])
+  })
+
+  /** У ночного слота серии причина — серия: у неё есть свой способ удаления. */
+  it('ночной слот серии блокируется как серия', () => {
+    const nightSeries = slot('2026-10-19T23:00:00Z', '2026-10-20T01:00:00Z', 'series-1')
+    const range = resolveSelection({ row: 0, col: 1 }, { row: 1, col: 1 }, grid())
+    expect(selectionToSlots(range, [nightSeries], grid()).blocked).toEqual([
+      { slot: nightSeries, reason: 'series' },
+    ])
+  })
+
+  /** «Через полночь» — про календарные дни зоны сетки, а не про UTC. */
+  it('ночным слот считается по зоне сетки, а не по UTC', () => {
+    const moscow = grid({ zone: 'Europe/Moscow', days: ['2026-11-02', '2026-11-03'] })
+    // 21:00–23:00 UTC — это 00:00–02:00 вторника по Москве: в UTC переход
+    // через полночь есть, по московскому календарю его нет.
+    const s = slot('2026-11-02T21:00:00Z', '2026-11-02T23:00:00Z')
+    expect(isOvernightSlot(s, 'UTC')).toBe(false)
+    expect(isOvernightSlot(s, moscow.zone)).toBe(false)
+
+    // А 22:00–01:00 по Москве — ночной именно в московском календаре.
+    const night = slot('2026-11-02T19:00:00Z', '2026-11-02T22:00:00Z')
+    expect(isOvernightSlot(night, 'Europe/Moscow')).toBe(true)
+    expect(isOvernightSlot(night, 'UTC')).toBe(false)
   })
 
   it('пустая сетка и ноль слотов не роняют расчёт', () => {
@@ -170,7 +240,7 @@ describe('selectionToSlots', () => {
     expect(range.cellCount).toBe(0)
 
     const plan = selectionToSlots(range, [], emptyGrid)
-    expect(plan).toEqual({ toCreate: [], toDelete: [], unchanged: [], blockedBySeries: [] })
+    expect(plan).toEqual({ toCreate: [], toDelete: [], unchanged: [], blocked: [] })
     expect(clampSelection(range, emptyGrid).days).toHaveLength(0)
   })
 })

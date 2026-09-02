@@ -87,7 +87,9 @@
         "legendBusy": "Marked",
         "legendSeries": "From a repeating series",
         "legendPartial": "Off the half-hour",
-        "partialHint": "This slot doesn't fit the half-hour grid — exact time is in the list below"
+        "partialHint": "This slot doesn't fit the half-hour grid — exact time is in the list below",
+        "dragHint": "Drag across the grid to mark your time",
+        "blockedNotice": "Repeating series and slots crossing midnight are not changed by dragging — edit them in the list below"
       }
     },
     "heatmapTab": {

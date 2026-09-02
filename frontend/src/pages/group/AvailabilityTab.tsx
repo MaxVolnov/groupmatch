@@ -10,6 +10,8 @@ import type { Plan } from '@/types'
 import { DateTime } from 'luxon'
 import { defaultDatetime, fmtRange, toIso } from '@/utils/datetime'
 import { buildOwnGrid } from '@/utils/ownGrid'
+import { isOvernightSlot, type SelectionPlan } from '@/utils/selection'
+import { applyPlan, useDragSelection, type DragHighlight } from '@/hooks/useDragSelection'
 import { MyAvailabilityGrid } from './MyAvailabilityGrid'
 
 interface Props {
@@ -71,6 +73,8 @@ export function AvailabilityTab({ groupId, callerPlan, focusRequest, weekOffset,
   const [endsAt, setEndsAt] = useState(defaultDatetime(2))
   const [note, setNote] = useState('')
   const [formError, setFormError] = useState('')
+  /** Последний жест задел серию или слот через полночь — надо объяснить. */
+  const [blockedNotice, setBlockedNotice] = useState(false)
 
   const onStartsAtChange = (value: string) => {
     setStartsAt(value)
@@ -125,6 +129,72 @@ export function AvailabilityTab({ groupId, callerPlan, focusRequest, weekOffset,
   const weekStart = DateTime.now().startOf('week').plus({ weeks: weekOffset })
   const ownGrid = useMemo(() => buildOwnGrid(slots ?? [], weekStart), [slots, weekStart])
 
+  /**
+   * Вторая сетка — по одним лишь неприкосновенным слотам. Ячейка, не
+   * свободная в ней, протяжкой не редактируется.
+   *
+   * Считается тем же `buildOwnGrid`, а не отдельным обходом: покрытие ячеек
+   * уже описано и проверено там, а второй реализации того же расчёта
+   * достаточно разъехаться на полчаса, чтобы подсветка начала врать о том,
+   * что произойдёт.
+   */
+  const blockedGrid = useMemo(
+    () =>
+      buildOwnGrid(
+        (slots ?? []).filter((s) => !!s.seriesId || isOvernightSlot(s, ownGrid.spec.zone)),
+        weekStart,
+      ),
+    [slots, weekStart, ownGrid.spec.zone],
+  )
+
+  const applySelection = useMutation({
+    mutationFn: (plan: SelectionPlan) =>
+      applyPlan(
+        plan,
+        (draft) => availabilityApi.addSlot(groupId, draft),
+        (slotId) => availabilityApi.deleteSlot(groupId, slotId),
+      ),
+    // Обновляем список и в случае ошибки: при падении на удалении часть
+    // операций уже прошла, и показывать человеку устаревшую картину — значит
+    // заставить его гадать, что именно применилось.
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ['availability', groupId] })
+      qc.invalidateQueries({ queryKey: ['heatmap', groupId] })
+    },
+  })
+
+  const drag = useDragSelection({
+    grid: ownGrid.spec,
+    slots: slots ?? [],
+    busy: applySelection.isPending,
+    // Сообщение о заблокированном ставится по самому плану, а не сбрасывается
+    // в onApply: жест, который и создал слот, и задел серию, зовёт оба
+    // колбэка, и безусловный сброс стирал бы объяснение ровно в том случае,
+    // ради которого оно написано. Чистый жест по-прежнему гасит сообщение от
+    // предыдущего.
+    onApply: (plan) => {
+      setBlockedNotice(plan.blocked.length > 0)
+      applySelection.mutate(plan)
+    },
+    onBlocked: () => setBlockedNotice(true),
+  })
+
+  /**
+   * Подсветка на время жеста. Считается по двум готовым сеткам, а не вызовом
+   * `selectionToSlots` на каждое движение: тот разбирает даты всех слотов и на
+   * протяжке в шестьдесят кадров в секунду обошёлся бы тысячами разборов.
+   */
+  const highlightAt = (row: number, col: number): DragHighlight | null => {
+    if (!drag.range) return null
+    const inSelection = drag.range.days.some(
+      (d) => d.col === col && row >= d.startRow && row <= d.endRow,
+    )
+    if (!inSelection) return null
+    if (blockedGrid.cells[row][col] !== 'free') return 'blocked'
+    if (ownGrid.cells[row][col] !== 'free') return 'unchanged'
+    return 'create'
+  }
+
   if (error) return <ErrorMessage error={error} />
 
   return (
@@ -153,7 +223,20 @@ export function AvailabilityTab({ groupId, callerPlan, focusRequest, weekOffset,
             </Button>
           )}
         </div>
-        {isLoading ? <Skeleton className="h-96 w-full" /> : <MyAvailabilityGrid grid={ownGrid} />}
+        {isLoading ? (
+          <Skeleton className="h-96 w-full" />
+        ) : (
+          <MyAvailabilityGrid grid={ownGrid} highlightAt={highlightAt} gridProps={drag.gridProps} />
+        )}
+        <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+          {t('group.availabilityTab.grid.dragHint')}
+        </p>
+        {blockedNotice && (
+          <p className="mt-1 text-xs text-gm-600 dark:text-gm-400">
+            {t('group.availabilityTab.grid.blockedNotice')}
+          </p>
+        )}
+        {applySelection.error && <ErrorMessage error={applySelection.error} />}
       </div>
 
     <div className="grid gap-6 lg:grid-cols-2">

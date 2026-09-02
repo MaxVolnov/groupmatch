@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import type { DragHighlight } from '@/hooks/useDragSelection'
 import type { CellState, OwnGrid } from '@/utils/ownGrid'
 
 /**
@@ -16,6 +17,29 @@ import type { CellState, OwnGrid } from '@/utils/ownGrid'
 
 interface Props {
   grid: OwnGrid
+  /**
+   * Подсветка на время жеста. Возвращает состояние для ячейки или `null`,
+   * если она в выделение не входит.
+   */
+  highlightAt?: (row: number, col: number) => DragHighlight | null
+  /** Обработчики протяжки, навешиваются на контейнер таблицы. */
+  gridProps?: React.HTMLAttributes<HTMLDivElement>
+}
+
+/**
+ * Подсветка перекрывает постоянную заливку ячейки, а не смешивается с ней:
+ * пока идёт жест, человеку важно, что произойдёт по отпусканию, а не что там
+ * было. Кольцо снаружи — чтобы граница выделения читалась как рамка вокруг
+ * прямоугольника, а не как каждая ячейка по отдельности.
+ */
+const HIGHLIGHT_CLASS: Record<DragHighlight, string> = {
+  create: 'bg-gm-400 dark:bg-gm-400',
+  unchanged: 'bg-gm-200 dark:bg-gm-700',
+  // Тёмная заливка плюс светлая рамка: «занято, руки прочь» должно читаться и
+  // как другой цвет, и как обведённая область. Первая версия давала
+  // заблокированным почти ту же бледную заливку, что и `unchanged`, и на
+  // снимке стенда они различались только рамкой — то есть почти никак.
+  blocked: 'bg-gm-700 dark:bg-gm-900 ring-1 ring-inset ring-gm-400',
 }
 
 const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
@@ -47,7 +71,7 @@ const LEGEND = [
   { state: 'partial', labelKey: 'group.availabilityTab.grid.legendPartial' },
 ] as const satisfies readonly { state: CellState; labelKey: string }[]
 
-export function MyAvailabilityGrid({ grid }: Props) {
+export function MyAvailabilityGrid({ grid, highlightAt, gridProps }: Props) {
   const { t } = useTranslation()
   const { cells, timeLabels, weekStart } = grid
 
@@ -60,7 +84,12 @@ export function MyAvailabilityGrid({ grid }: Props) {
 
   return (
     <div>
-      <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+      {/* select-none: без него протяжка красит подписи времени синим
+          выделением текста поверх собственной подсветки. */}
+      <div
+        {...gridProps}
+        className="select-none overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+      >
         <table className="w-full border-collapse text-xs">
           <thead>
             <tr>
@@ -84,13 +113,23 @@ export function MyAvailabilityGrid({ grid }: Props) {
                 <td className="border-b border-r border-gray-100 dark:border-gray-700/50 px-1 text-right text-[10px] text-gray-400 dark:text-gray-500 align-top leading-4">
                   {timeLabels[rowIdx]}
                 </td>
-                {row.map((state, colIdx) => (
-                  <td
-                    key={colIdx}
-                    title={cellTitle(state)}
-                    className={`border-b border-r border-gray-100 dark:border-gray-700/30 ${CELL_CLASS[state]}`}
-                  />
-                ))}
+                {row.map((state, colIdx) => {
+                  const highlight = highlightAt?.(rowIdx, colIdx) ?? null
+                  return (
+                    <td
+                      key={colIdx}
+                      // Координаты на самой ячейке: во время протяжки события
+                      // перенаправлены на контейнер захватом указателя, и
+                      // ячейка ищется по координатам курсора, а не по target.
+                      data-row={rowIdx}
+                      data-col={colIdx}
+                      title={cellTitle(state)}
+                      className={`border-b border-r border-gray-100 dark:border-gray-700/30 ${
+                        highlight ? HIGHLIGHT_CLASS[highlight] : CELL_CLASS[state]
+                      }`}
+                    />
+                  )
+                })}
               </tr>
             ))}
           </tbody>
