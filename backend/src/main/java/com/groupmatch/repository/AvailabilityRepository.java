@@ -28,4 +28,7 @@ public interface AvailabilityRepository extends JpaRepository<Availability, UUID
      * владельцу, — не то, что стоит оставлять в репозитории на будущее.
      */
     int deleteBySeriesIdAndUserId(UUID seriesId, UUID userId);
+
+    /** Слоты одной серии. По владельцу — по той же причине, что и удаление. */
+    List<Availability> findBySeriesIdAndUserId(UUID seriesId, UUID userId);
 }

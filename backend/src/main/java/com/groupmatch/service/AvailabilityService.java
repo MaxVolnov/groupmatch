@@ -5,6 +5,8 @@ import com.groupmatch.dto.availability.AvailabilityBulkClearRequest;
 import com.groupmatch.dto.availability.AvailabilityBulkClearResponse;
 import com.groupmatch.dto.availability.AvailabilityRequest;
 import com.groupmatch.dto.availability.AvailabilityResponse;
+import com.groupmatch.dto.availability.AvailabilityRetimeResponse;
+import com.groupmatch.dto.availability.AvailabilityTimeRequest;
 import com.groupmatch.dto.availability.AvailabilitySeriesRequest;
 import com.groupmatch.dto.availability.AvailabilitySeriesResponse;
 import com.groupmatch.dto.availability.DeleteScope;
@@ -22,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
@@ -209,6 +212,114 @@ public class AvailabilityService {
 
         availabilityRepository.delete(slot);
         bumpVersion(group);
+    }
+
+    /**
+     * Правка времени одного слота.
+     *
+     * Дата остаётся своя, меняется только настенное время — и именно
+     * настенное: слот 10:00 во вторник, переставленный на 11:00, обязан стать
+     * 11:00 по местному, а не «плюс час к абсолютному моменту». Разница видна
+     * в неделю перевода часов, и она же — причина, по которой сюда приходит
+     * {@code LocalTime}, а не {@code Instant}.
+     *
+     * Слот, у которого была серия, из неё **выпадает**: он перестал
+     * соответствовать правилу, по которому серия заводилась, и держать его
+     * внутри значило бы врать про то, что серия однородна. Клиент видит это в
+     * ответе — {@code seriesId} приходит пустым.
+     */
+    @Transactional
+    public AvailabilityResponse retimeSlot(UUID slotId, UUID callerId, AvailabilityTimeRequest req) {
+        ZoneId zone = parseZone(req.timeZone());
+        requireEndAfterStart(req);
+
+        Availability slot = availabilityRepository.findById(slotId)
+                .orElseThrow(() -> new SlotNotFoundException(slotId));
+        Group group = requireCanEdit(slot, callerId);
+
+        applyTime(slot, req, zone);
+        slot.setSeriesId(null);
+
+        Availability saved = availabilityRepository.save(slot);
+        bumpVersion(group);
+        return toResponse(saved);
+    }
+
+    /**
+     * Правка времени всей серии, к которой принадлежит слот.
+     *
+     * Меняется только время: даты остаются свои, дни недели и диапазон — тоже.
+     * Правка правила повторения — это другая операция, и делать её незаметным
+     * побочным эффектом «поменял время» нельзя.
+     *
+     * У слота без серии ведёт себя как правка одного слота: клиент не обязан
+     * знать заранее, серийный слот он правит или нет.
+     */
+    @Transactional
+    public AvailabilityRetimeResponse retimeSeries(UUID slotId, UUID callerId,
+                                                   AvailabilityTimeRequest req) {
+        ZoneId zone = parseZone(req.timeZone());
+        requireEndAfterStart(req);
+
+        Availability slot = availabilityRepository.findById(slotId)
+                .orElseThrow(() -> new SlotNotFoundException(slotId));
+        Group group = requireCanEdit(slot, callerId);
+
+        if (slot.getSeriesId() == null) {
+            applyTime(slot, req, zone);
+            availabilityRepository.save(slot);
+            bumpVersion(group);
+            return new AvailabilityRetimeResponse(null, 1);
+        }
+
+        // Владелец слота, а не вызывающий: владелец группы правит именно ту
+        // серию, за которую взялся, а не пересечение с собственными слотами.
+        List<Availability> series =
+                availabilityRepository.findBySeriesIdAndUserId(slot.getSeriesId(), slot.getUserId());
+        for (Availability s : series) applyTime(s, req, zone);
+
+        availabilityRepository.saveAll(series);
+        bumpVersion(group);
+        return new AvailabilityRetimeResponse(slot.getSeriesId(), series.size());
+    }
+
+    /**
+     * Переставляет слот на новое настенное время его собственного дня.
+     *
+     * Дата берётся у самого слота в целевой зоне: «вторник» определяется тем,
+     * какой это вторник по местному календарю, а не смещением от полуночи UTC.
+     */
+    private void applyTime(Availability slot, AvailabilityTimeRequest req, ZoneId zone) {
+        LocalDate date = slot.getStartsAt().atZone(zone).toLocalDate();
+        ZonedDateTime start = ZonedDateTime.of(date, req.startTime(), zone);
+        ZonedDateTime end = ZonedDateTime.of(date, req.endTime(), zone);
+        validateSlotTimes(start.toInstant(), end.toInstant());
+        slot.setStartsAt(start.toInstant());
+        slot.setEndsAt(end.toInstant());
+    }
+
+    private void requireEndAfterStart(AvailabilityTimeRequest req) {
+        if (!req.endTime().isAfter(req.startTime())) {
+            throw new BadRequestException("endTime must be after startTime");
+        }
+    }
+
+    /**
+     * Права на правку слота — те же, что на его удаление: свой можно всегда,
+     * чужой только владельцу группы, в запертой группе только владельцу.
+     */
+    private Group requireCanEdit(Availability slot, UUID callerId) {
+        UUID groupId = slot.getGroupId();
+        GrpMember membership = groupAccessGuard.requireActiveMember(groupId, callerId);
+        Group group = loadGroup(groupId);
+
+        if (!slot.getUserId().equals(callerId) && !membership.isOwner()) {
+            throw new NotGroupOwnerException();
+        }
+        if (group.isLocked() && !membership.isOwner()) {
+            throw new NotGroupOwnerException();
+        }
+        return group;
     }
 
     /**

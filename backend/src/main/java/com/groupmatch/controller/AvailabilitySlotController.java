@@ -1,6 +1,10 @@
 package com.groupmatch.controller;
 
+import com.groupmatch.dto.availability.AvailabilityResponse;
+import com.groupmatch.dto.availability.AvailabilityRetimeResponse;
+import com.groupmatch.dto.availability.AvailabilityTimeRequest;
 import com.groupmatch.dto.availability.DeleteScope;
+import jakarta.validation.Valid;
 import com.groupmatch.security.UserPrincipal;
 import com.groupmatch.service.AvailabilityService;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +29,28 @@ import java.util.UUID;
 public class AvailabilitySlotController {
 
     private final AvailabilityService availabilityService;
+
+    /**
+     * Правка времени одного слота. Слот при этом выпадает из своей серии —
+     * это видно по пустому {@code seriesId} в ответе.
+     */
+    @PatchMapping("/{slotId}")
+    public AvailabilityResponse retime(@AuthenticationPrincipal UserPrincipal principal,
+                                       @PathVariable UUID slotId,
+                                       @Valid @RequestBody AvailabilityTimeRequest req) {
+        return availabilityService.retimeSlot(slotId, principal.getId(), req);
+    }
+
+    /**
+     * Правка времени всей серии слота. Даты остаются свои: вторники остаются
+     * вторниками. У слота без серии равносильно правке одного слота.
+     */
+    @PatchMapping("/{slotId}/series")
+    public AvailabilityRetimeResponse retimeSeries(@AuthenticationPrincipal UserPrincipal principal,
+                                                   @PathVariable UUID slotId,
+                                                   @Valid @RequestBody AvailabilityTimeRequest req) {
+        return availabilityService.retimeSeries(slotId, principal.getId(), req);
+    }
 
     /**
      * @param scope {@code single} (по умолчанию) — только этот слот;
