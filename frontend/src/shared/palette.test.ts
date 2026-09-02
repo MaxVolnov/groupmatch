@@ -147,10 +147,19 @@ describe('семантические цвета не тронуты', () => {
     expect(all).toMatch(/\b(text|bg)-(yellow|amber)-\d+/)
   })
 
-  /** Тепловая карта — отдельная цветовая схема, её эта задача не касается. */
-  it('шкала тепловой карты не переведена на бренд', () => {
-    const heatmap = read(resolve(root, 'src/pages/group/HeatmapTab.tsx'))
-    expect(heatmap).not.toMatch(/\bbg-gm-\d+\b/)
+  /**
+   * Плотность группы — отдельная цветовая схема, зелёная, и бренду она не
+   * подчиняется: синим по синему два слоя одной ячейки не разделить.
+   *
+   * Проверяется WeekGrid, а не HeatmapTab: сама таблица переехала туда, когда
+   * две сетки схлопнули в одну. В HeatmapTab остались только кнопки, и
+   * фирменный цвет на них законен.
+   */
+  it('шкала плотности не переведена на бренд', () => {
+    const grid = read(resolve(root, 'src/pages/group/WeekGrid.tsx'))
+    const intensity = grid.slice(grid.indexOf('function intensityClass'), grid.indexOf('const MINE_CLASS'))
+    expect(intensity).not.toMatch(/\bbg-gm-\d+\b/)
+    expect(intensity).toMatch(/bg-green-\d+/)
   })
 })
 

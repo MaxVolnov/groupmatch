@@ -115,7 +115,11 @@
       },
       "emptyTitle": "Nobody has marked their time yet",
       "emptyHintMember": "Start with yours — that gives everyone else something to work from",
-      "emptyHintOwner": "Send the group an invite link"
+      "emptyHintOwner": "Send the group an invite link",
+      "othersFree": "Others free",
+      "modeAvailability": "My time",
+      "modeMeeting": "Schedule a meeting",
+      "meetingHint": "Tap a cell where people are free to schedule a meeting"
     },
     "meetingsTab": {
       "schedule": "+ Schedule meeting",

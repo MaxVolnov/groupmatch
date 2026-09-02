@@ -235,13 +235,7 @@ export function GroupPage() {
         <MembersTab group={group} currentUserId={userId} />
       )}
       {activeTab === 'availability' && plan && (
-        <AvailabilityTab
-          groupId={group.id}
-          callerPlan={plan}
-          focusRequest={addSlotRequest}
-          weekOffset={weekOffset}
-          onWeekOffsetChange={setWeekOffset}
-        />
+        <AvailabilityTab groupId={group.id} callerPlan={plan} focusRequest={addSlotRequest} />
       )}
       {activeTab === 'heatmap' && (
         <HeatmapTab

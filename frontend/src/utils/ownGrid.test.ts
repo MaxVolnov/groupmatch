@@ -245,26 +245,29 @@ describe('зона и календарный шаг', () => {
 })
 
 /**
- * Параметры сетки продублированы с `buildGrid` в HeatmapTab: рефакторить его
- * этот заход не разрешал. Дублирование само по себе не страшно — страшно,
- * когда копии расходятся молча. Здесь они разойтись не смогут.
+ * Дублирования параметров с теплокартой больше нет: когда две сетки схлопнули
+ * в одну, HeatmapTab стал импортировать эти же константы отсюда. Сторож
+ * остаётся, но проверяет теперь не совпадение чисел, а отсутствие второй
+ * копии — вернуть её в разметку было бы тем же самым багом с другой стороны.
  */
-describe('параметры совпадают с теплокартой', () => {
-  const heatmap = readFileSync(
-    resolve(__dirname, '../pages/group/HeatmapTab.tsx'),
-    'utf-8',
-  )
+describe('параметры сетки живут в одном месте', () => {
+  const heatmap = readFileSync(resolve(__dirname, '../pages/group/HeatmapTab.tsx'), 'utf-8')
+  const weekGrid = readFileSync(resolve(__dirname, '../pages/group/WeekGrid.tsx'), 'utf-8')
 
-  it('шаг, число строк и число дней те же', () => {
+  it('значения те же, что были у теплокарты', () => {
     expect(STEP_MINUTES).toBe(30)
     expect(ROWS_PER_DAY).toBe(48)
     expect(DAYS_PER_WEEK).toBe(7)
+  })
 
-    expect(heatmap, 'HeatmapTab считает бакеты не по 30 минут')
-      .toContain('/ 30)')
-    expect(heatmap, 'у HeatmapTab другое число строк')
-      .toContain('{ length: 48 }')
-    expect(heatmap.match(/'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'/), 'дни недели разошлись')
-      .not.toBeNull()
+  it('HeatmapTab берёт их отсюда, а не заводит свои', () => {
+    expect(heatmap).toMatch(/from '@\/utils\/ownGrid'/)
+    expect(heatmap, 'в HeatmapTab снова появилось своё число строк')
+      .not.toContain('{ length: 48 }')
+  })
+
+  it('в разметке сетки нет захардкоженных 48 и 7', () => {
+    expect(weekGrid).not.toContain('{ length: 48 }')
+    expect(weekGrid).not.toContain('{ length: 7 }')
   })
 })
