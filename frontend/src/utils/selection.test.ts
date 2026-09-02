@@ -5,6 +5,7 @@ import {
   cellStart,
   clampSelection,
   isOvernightSlot,
+  isUnalignedSlot,
   resolveSelection,
   selectionToSlots,
   type GridSpec,
@@ -230,6 +231,56 @@ describe('selectionToSlots', () => {
     const night = slot('2026-11-02T19:00:00Z', '2026-11-02T22:00:00Z')
     expect(isOvernightSlot(night, 'Europe/Moscow')).toBe(true)
     expect(isOvernightSlot(night, 'UTC')).toBe(false)
+  })
+
+  /**
+   * Слот 14:15–15:47 в сетке по получасам не выражается. До этой правки
+   * протяжка рядом с ним сливалась в слот, начинающийся в 14:15: время
+   * появлялось из ниоткуда — в жесте его не было, в сетке оно не видно.
+   */
+  it('слот не по границам ячеек протяжкой не трогается', () => {
+    const unaligned = slot('2026-10-19T14:15:00Z', '2026-10-19T16:00:00Z')
+    // Протяжка 15:00–16:00 — целиком внутри неровного слота.
+    const range = resolveSelection({ row: 30, col: 0 }, { row: 31, col: 0 }, grid())
+    const plan = selectionToSlots(range, [unaligned], grid())
+
+    expect(plan.blocked).toEqual([{ slot: unaligned, reason: 'unaligned' }])
+    expect(plan.toDelete).toHaveLength(0)
+    expect(plan.toCreate).toHaveLength(0)
+  })
+
+  /**
+   * Тот же слот, но выделение примыкает к нему снизу. До правки они сливались
+   * в 14:15–17:00: начало бралось у слота, а в сетке его не видно — человек
+   * тянул с 16:00 и получал слот с 14:15.
+   */
+  it('выделение рядом с неровным слотом не поглощает его', () => {
+    const unaligned = slot('2026-10-19T14:15:00Z', '2026-10-19T16:00:00Z')
+    const range = resolveSelection({ row: 32, col: 0 }, { row: 33, col: 0 }, grid())
+    const plan = selectionToSlots(range, [unaligned], grid())
+
+    expect(plan.toDelete).toHaveLength(0)
+    expect(plan.toCreate).toEqual([
+      { startsAt: '2026-10-19T16:00:00.000Z', endsAt: '2026-10-19T17:00:00.000Z' },
+    ])
+  })
+
+  it('ровные границы неровными не считаются', () => {
+    expect(isUnalignedSlot(slot('2026-10-19T10:00:00Z', '2026-10-19T12:00:00Z'), grid())).toBe(false)
+    expect(isUnalignedSlot(slot('2026-10-19T10:30:00Z', '2026-10-19T11:00:00Z'), grid())).toBe(false)
+    expect(isUnalignedSlot(slot('2026-10-19T10:00:00Z', '2026-10-19T11:15:00Z'), grid())).toBe(true)
+    expect(isUnalignedSlot(slot('2026-10-19T10:15:00Z', '2026-10-19T11:00:00Z'), grid())).toBe(true)
+  })
+
+  /**
+   * Зона со сдвигом в полчаса. Проверка «минуты часа кратны 30» объявила бы
+   * неровным каждый индийский слот подряд; считать надо от начала суток.
+   */
+  it('в зоне со сдвигом в полчаса ровные слоты остаются ровными', () => {
+    const india = grid({ zone: 'Asia/Kolkata', days: ['2026-11-02', '2026-11-03'] })
+    // 10:00–11:00 по Дели — это 04:30–05:30 UTC.
+    expect(isUnalignedSlot(slot('2026-11-02T04:30:00Z', '2026-11-02T05:30:00Z'), india)).toBe(false)
+    expect(isUnalignedSlot(slot('2026-11-02T04:45:00Z', '2026-11-02T05:30:00Z'), india)).toBe(true)
   })
 
   it('пустая сетка и ноль слотов не роняют расчёт', () => {

@@ -85,11 +85,16 @@
       "grid": {
         "title": "My week",
         "legendBusy": "Marked",
-        "legendSeries": "From a repeating series",
-        "legendPartial": "Off the half-hour",
-        "partialHint": "This slot doesn't fit the half-hour grid — exact time is in the list below",
-        "dragHint": "Drag across the grid to mark your time",
-        "blockedNotice": "Repeating series and slots crossing midnight are not changed by dragging — edit them in the list below"
+        "legendSeries": "From a series",
+        "legendPartial": "List only",
+        "partialHint": "Taken. This slot can only be changed in the list below",
+        "dragHint": "Drag across the grid, or tap a cell, to mark your time",
+        "blockedNotice": "Series, slots crossing midnight and slots off the half-hour are changed in the list below only",
+        "seriesHint": "Part of a repeating series. Change it in the list below",
+        "busyHint": "Marked. You can change it right in the grid",
+        "confirm": "Mark",
+        "cancel": "Cancel",
+        "selectedCells": "Cells selected: {{count}}"
       }
     },
     "heatmapTab": {

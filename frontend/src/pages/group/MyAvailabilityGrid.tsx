@@ -1,18 +1,14 @@
 import { useTranslation } from 'react-i18next'
-import type { DragHighlight } from '@/hooks/useDragSelection'
+import type { DragHighlight, SelectionHandle } from '@/hooks/useDragSelection'
 import type { CellState, OwnGrid } from '@/utils/ownGrid'
 
 /**
- * Сетка своего времени — только отображение.
+ * Сетка своего времени.
  *
- * Ни одного обработчика событий здесь нет и в этом заходе не появится:
- * протяжка идёт следующим шагом и будет вешаться снаружи, на контейнер, через
- * `useDragSelection`. Разделено так намеренно — картинка проверяется глазами,
- * жест проверяется тестами, и в одном компоненте они лишают друг друга
- * оракула.
- *
- * Раскладка приходит готовой из `buildOwnGrid`: компонент её не считает, а
- * красит.
+ * Компонент ничего не решает: раскладка приходит готовой из `buildOwnGrid`,
+ * обработчики жеста — из `useDragSelection`, а здесь только разметка и цвета.
+ * Разделение то же, что и во всей цепочке: картинка проверяется глазами, а
+ * решения под ней — тестами, и в одном файле они лишают друг друга оракула.
  */
 
 interface Props {
@@ -24,22 +20,59 @@ interface Props {
   highlightAt?: (row: number, col: number) => DragHighlight | null
   /** Обработчики протяжки, навешиваются на контейнер таблицы. */
   gridProps?: React.HTMLAttributes<HTMLDivElement>
+  /**
+   * Углы тач-выделения, куда сажаются ручки. `null` — ручек нет (мышиный
+   * жест их не показывает: там выделение живёт только пока зажата кнопка).
+   */
+  handles?: { start: { row: number; col: number }; end: { row: number; col: number } } | null
+  handleProps?: (handle: SelectionHandle) => React.HTMLAttributes<HTMLElement>
+}
+
+/**
+ * Ручка растягивания тач-выделения.
+ *
+ * Видимый маркер маленький — ячейка на 375px узкая, и крупный кружок закрыл бы
+ * то, что человек выделяет. Зона захвата при этом 44×44: она даётся
+ * псевдоэлементом `::before`, который в поток не попадает и ничего не
+ * загораживает, но попадания принимает на себя. Раздувать сам маркер ради
+ * попадаемости — значит менять видимое ради невидимого.
+ *
+ * `touch-none` (`touch-action: none`) висит **только здесь**. На контейнере
+ * сетки его нет и быть не должно: там нативный скролл, и это единственный
+ * способ листать сутки на телефоне.
+ */
+function Handle({ position, props }: { position: 'start' | 'end'; props?: React.HTMLAttributes<HTMLElement> }) {
+  const corner = position === 'start' ? '-left-1 -top-1' : '-bottom-1 -right-1'
+  return (
+    <span
+      {...props}
+      role="slider"
+      tabIndex={-1}
+      aria-label={position === 'start' ? 'Начало выделения' : 'Конец выделения'}
+      className={`absolute ${corner} z-20 h-3 w-3 touch-none rounded-full bg-gm-600 ring-2 ring-white dark:bg-gm-300 dark:ring-gray-800 before:absolute before:-inset-4 before:content-['']`}
+    />
+  )
 }
 
 /**
  * Подсветка перекрывает постоянную заливку ячейки, а не смешивается с ней:
  * пока идёт жест, человеку важно, что произойдёт по отпусканию, а не что там
- * было. Кольцо снаружи — чтобы граница выделения читалась как рамка вокруг
- * прямоугольника, а не как каждая ячейка по отдельности.
+ * было.
+ *
+ * Семь состояний на одну шкалу — тесно, поэтому разводятся не все пары, а те,
+ * что попадают в один взгляд: три подсветки между собой и четыре постоянных
+ * между собой. Пары из разных наборов (подсветка против покоя) могут стоять
+ * рядом по светлоте — они и означают одно и то же «здесь ничего не
+ * изменится».
+ *
+ * Первая версия этого не различала: `create` был `gm-400`, а `partial` в
+ * покое — `gm-300`, соседняя ступень. На снимке стенда подсвеченная ячейка и
+ * невыделенный «только в списке» оказались почти одним цветом.
  */
 const HIGHLIGHT_CLASS: Record<DragHighlight, string> = {
   create: 'bg-gm-400 dark:bg-gm-400',
-  unchanged: 'bg-gm-200 dark:bg-gm-700',
-  // Тёмная заливка плюс светлая рамка: «занято, руки прочь» должно читаться и
-  // как другой цвет, и как обведённая область. Первая версия давала
-  // заблокированным почти ту же бледную заливку, что и `unchanged`, и на
-  // снимке стенда они различались только рамкой — то есть почти никак.
-  blocked: 'bg-gm-700 dark:bg-gm-900 ring-1 ring-inset ring-gm-400',
+  unchanged: 'bg-gm-100 dark:bg-gm-800',
+  blocked: 'bg-gm-700 dark:bg-gm-600 ring-1 ring-inset ring-gm-400 dark:ring-gm-100',
 }
 
 const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
@@ -57,9 +90,11 @@ const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
  */
 const CELL_CLASS: Record<CellState, string> = {
   free: 'bg-white dark:bg-gray-800',
-  partial: 'bg-gm-300 dark:bg-gm-700',
+  // Рамка — общий признак «только в списке» у partial и series; светлота при
+  // этом разная, чтобы они не сливались ещё и между собой.
+  partial: 'bg-gm-200 dark:bg-gm-800 ring-1 ring-inset ring-gm-500 dark:ring-gm-400',
   busy: 'bg-gm-600 dark:bg-gm-500',
-  series: 'bg-gm-800 dark:bg-gm-300 ring-1 ring-inset ring-gm-400 dark:ring-gm-700',
+  series: 'bg-gm-900 dark:bg-gm-200 ring-1 ring-inset ring-gm-400 dark:ring-gm-700',
 }
 
 /** Ключи перечислены явно, а не собираются из имени состояния: собранный
@@ -71,13 +106,13 @@ const LEGEND = [
   { state: 'partial', labelKey: 'group.availabilityTab.grid.legendPartial' },
 ] as const satisfies readonly { state: CellState; labelKey: string }[]
 
-export function MyAvailabilityGrid({ grid, highlightAt, gridProps }: Props) {
+export function MyAvailabilityGrid({ grid, highlightAt, gridProps, handles, handleProps }: Props) {
   const { t } = useTranslation()
   const { cells, timeLabels, weekStart } = grid
 
   const cellTitle = (state: CellState): string | undefined => {
-    if (state === 'busy') return t('group.availabilityTab.grid.legendBusy')
-    if (state === 'series') return t('group.availabilityTab.grid.legendSeries')
+    if (state === 'busy') return t('group.availabilityTab.grid.busyHint')
+    if (state === 'series') return t('group.availabilityTab.grid.seriesHint')
     if (state === 'partial') return t('group.availabilityTab.grid.partialHint')
     return undefined
   }
@@ -115,6 +150,8 @@ export function MyAvailabilityGrid({ grid, highlightAt, gridProps }: Props) {
                 </td>
                 {row.map((state, colIdx) => {
                   const highlight = highlightAt?.(rowIdx, colIdx) ?? null
+                  const isStart = handles?.start.row === rowIdx && handles.start.col === colIdx
+                  const isEnd = handles?.end.row === rowIdx && handles.end.col === colIdx
                   return (
                     <td
                       key={colIdx}
@@ -124,10 +161,14 @@ export function MyAvailabilityGrid({ grid, highlightAt, gridProps }: Props) {
                       data-row={rowIdx}
                       data-col={colIdx}
                       title={cellTitle(state)}
-                      className={`border-b border-r border-gray-100 dark:border-gray-700/30 ${
+                      aria-label={cellTitle(state)}
+                      className={`relative border-b border-r border-gray-100 dark:border-gray-700/30 ${
                         highlight ? HIGHLIGHT_CLASS[highlight] : CELL_CLASS[state]
                       }`}
-                    />
+                    >
+                      {isStart && <Handle position="start" props={handleProps?.('start')} />}
+                      {isEnd && <Handle position="end" props={handleProps?.('end')} />}
+                    </td>
                   )
                 })}
               </tr>

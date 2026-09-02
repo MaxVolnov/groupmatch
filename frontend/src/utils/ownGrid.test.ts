@@ -3,7 +3,7 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { DateTime } from 'luxon'
 import type { AvailabilityResponse } from '@/types'
-import { buildOwnGrid, DAYS_PER_WEEK, ROWS_PER_DAY, STEP_MINUTES } from './ownGrid'
+import { buildOwnGrid, DAYS_PER_WEEK, isBlockedState, ROWS_PER_DAY, STEP_MINUTES } from './ownGrid'
 import { resolveSelection, selectionToSlots } from './selection'
 
 /**
@@ -124,6 +124,49 @@ describe('раскладка слотов', () => {
     )
     const column = grid.cells.map((row) => row[0])
     expect(column.slice(20, 24)).toEqual(['busy', 'busy', 'series', 'busy'])
+  })
+})
+
+/**
+ * Состояние покоя обязано отвечать на вопрос «что здесь можно поправить
+ * пальцем». До этой правки ночной слот красился обычным `busy`: человек видел
+ * ровный редактируемый блок, тапал и только тогда узнавал, что нельзя.
+ */
+describe('нередактируемое видно в покое', () => {
+  it('ночной слот красится «только в списке», а не обычным', () => {
+    const overnight = slot('2026-10-19T23:00:00Z', '2026-10-20T01:00:00Z')
+    const grid = buildOwnGrid([overnight], MONDAY)
+
+    expect(grid.cells.map((r) => r[0]).slice(46, 48)).toEqual(['partial', 'partial'])
+    expect(grid.cells.map((r) => r[1]).slice(0, 2)).toEqual(['partial', 'partial'])
+  })
+
+  /**
+   * Ключевая инварианта захода: то, что сетка красит нередактируемым, и то,
+   * что протяжка отказывается менять, — один и тот же набор ячеек. Иначе
+   * подсветка обещает одно, а жест делает другое.
+   */
+  it('нередактируемые ячейки совпадают с тем, что протяжка возвращает в blocked', () => {
+    const all = [
+      slot('2026-10-19T10:00:00Z', '2026-10-19T12:00:00Z'),                    // обычный
+      slot('2026-10-20T09:00:00Z', '2026-10-20T11:00:00Z', 'series-1'),        // серия
+      slot('2026-10-21T23:00:00Z', '2026-10-22T01:00:00Z'),                    // через полночь
+      slot('2026-10-23T14:15:00Z', '2026-10-23T16:00:00Z'),                    // не по получасам
+    ]
+    const grid = buildOwnGrid(all, MONDAY)
+
+    for (let col = 0; col < 7; col++) {
+      for (let row = 0; row < 48; row++) {
+        const state = grid.cells[row][col]
+        const plan = selectionToSlots(
+          resolveSelection({ row, col }, { row, col }, grid.spec),
+          all,
+          grid.spec,
+        )
+        expect(plan.blocked.length > 0, `ячейка ${row}:${col} в состоянии ${state}`)
+          .toBe(isBlockedState(state))
+      }
+    }
   })
 })
 
