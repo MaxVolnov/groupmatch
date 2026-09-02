@@ -21,6 +21,15 @@ export const availabilityApi = {
           .post<AvailabilitySeriesResponse>(`/groups/${groupId}/availability/series`, data)
           .then((r) => r.data),
 
+  /**
+   * Удаление с областью действия. Путь плоский, без группы: идентификатор
+   * слота уникален глобально, и группа выводится из него на сервере.
+   */
+  deleteSlotScoped: (slotId: string, scope: 'single' | 'series'): Promise<void> =>
+    IS_MOCK
+      ? mockApi.availability.deleteSlotScoped(slotId, scope)
+      : api.delete(`/availability/${slotId}`, { params: { scope } }).then(() => undefined),
+
   mySlots: (groupId: string): Promise<AvailabilityResponse[]> =>
     IS_MOCK
       ? mockApi.availability.mySlots(groupId)

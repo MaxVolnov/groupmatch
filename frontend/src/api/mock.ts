@@ -355,6 +355,19 @@ export const mockApi = {
       }
       return { seriesId, createdCount: created }
     },
+    deleteSlotScoped: async (slotId: string, scope: 'single' | 'series'): Promise<void> => {
+      await delay()
+      for (const arr of Object.values(slotsByGroupUser)) {
+        const target = arr.find((s) => s.id === slotId)
+        if (!target) continue
+        const doomed =
+          scope === 'series' && target.seriesId
+            ? arr.filter((s) => s.seriesId === target.seriesId)
+            : [target]
+        for (const s of doomed) arr.splice(arr.indexOf(s), 1)
+        return
+      }
+    },
     deleteSlot: async (groupId: string, slotId: string): Promise<void> => {
       await delay()
       const key = `${groupId}:${MOCK_USER_ID}`

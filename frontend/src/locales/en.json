@@ -99,11 +99,15 @@
       },
       "series": {
         "open": "Repeat",
+        "badge": "Series",
         "fromDate": "From date",
         "toDate": "To date",
         "days": "Days of week",
         "willCreate": "Slots to create: {{count}}",
         "submit": "Create series",
+        "deleteAll": "Delete series",
+        "confirmAll": "Delete the whole series — {{count}} slots?",
+        "confirmAllYes": "Yes, delete the series",
         "planLimit": "Not enough room on your plan: {{limit}} slots per group in total. Remove some slots or upgrade to Pro.",
         "issue": {
           "noDays": "Pick at least one day of the week",
