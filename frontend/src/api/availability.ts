@@ -1,12 +1,25 @@
 import { api } from './axios'
 import { IS_MOCK, mockApi } from './mock'
-import type { AvailabilityRequest, AvailabilityResponse, HeatmapResponse } from '@/types'
+import type {
+  AvailabilityRequest,
+  AvailabilityResponse,
+  AvailabilitySeriesRequest,
+  AvailabilitySeriesResponse,
+  HeatmapResponse,
+} from '@/types'
 
 export const availabilityApi = {
   addSlot: (groupId: string, data: AvailabilityRequest): Promise<AvailabilityResponse> =>
     IS_MOCK
       ? mockApi.availability.addSlot(groupId, data)
       : api.post<AvailabilityResponse>(`/groups/${groupId}/availability`, data).then((r) => r.data),
+
+  addSeries: (groupId: string, data: AvailabilitySeriesRequest): Promise<AvailabilitySeriesResponse> =>
+    IS_MOCK
+      ? mockApi.availability.addSeries(groupId, data)
+      : api
+          .post<AvailabilitySeriesResponse>(`/groups/${groupId}/availability/series`, data)
+          .then((r) => r.data),
 
   mySlots: (groupId: string): Promise<AvailabilityResponse[]> =>
     IS_MOCK

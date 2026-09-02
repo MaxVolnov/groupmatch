@@ -96,6 +96,24 @@
         "cancel": "Cancel",
         "selectedCells": "Cells selected: {{count}}",
         "confirmErase": "Erase"
+      },
+      "series": {
+        "open": "Repeat",
+        "fromDate": "From date",
+        "toDate": "To date",
+        "days": "Days of week",
+        "willCreate": "Slots to create: {{count}}",
+        "submit": "Create series",
+        "planLimit": "Not enough room on your plan: {{limit}} slots per group in total. Remove some slots or upgrade to Pro.",
+        "issue": {
+          "noDays": "Pick at least one day of the week",
+          "invalidDates": "Check the dates and times",
+          "endBeforeStart": "End date is before the start date",
+          "horizon": "The range must not exceed one year",
+          "endTimeNotAfterStart": "End time must be after the start time",
+          "noMatchingDates": "No selected weekday falls into this range — there would be no slots",
+          "tooManySlots": "no more than {{max}} at once, narrow the range"
+        }
       }
     },
     "heatmapTab": {

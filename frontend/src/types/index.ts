@@ -101,6 +101,38 @@ export interface AvailabilityRequest {
   note?: string
 }
 
+/** Тело `POST /groups/{id}/availability/series`. */
+export interface AvailabilitySeriesRequest {
+  startDate: string
+  endDate: string
+  /** Имена дней недели: `'MONDAY'` … `'SUNDAY'`. */
+  daysOfWeek: string[]
+  startTime: string
+  endTime: string
+  timeZone: string
+}
+
+export interface AvailabilitySeriesResponse {
+  seriesId: string
+  createdCount: number
+}
+
+/** Тело `DELETE /groups/{id}/availability/bulk`. */
+export interface AvailabilityBulkClearRequest {
+  daysOfWeek: string[]
+  startTime: string
+  endTime: string
+  fromDate: string
+  toDate: string
+  timeZone: string
+  dryRun: boolean
+}
+
+export interface AvailabilityBulkClearResponse {
+  /** При `dryRun` — сколько было бы удалено. */
+  deletedCount: number
+}
+
 export interface HeatmapSlot {
   startsAt: string
   endsAt: string

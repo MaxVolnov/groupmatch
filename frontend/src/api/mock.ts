@@ -3,14 +3,16 @@
  * All handlers return the exact same shapes as the real backend DTOs.
  */
 import type {
-  InvitePreview,
   AuthResponse,
   AvailabilityResponse,
+  AvailabilitySeriesRequest,
+  AvailabilitySeriesResponse,
   FeedbackCategory,
   FeedbackResponse,
   GroupResponse,
   HeatmapResponse,
   HeatmapSlot,
+  InvitePreview,
   InviteResponse,
   MeetingResponse,
   MemberResponse,
@@ -323,6 +325,35 @@ export const mockApi = {
       if (!slot) throw new Error('Slot not found')
       Object.assign(slot, { startsAt: data.startsAt, endsAt: data.endsAt, note: data.note ?? null })
       return slot
+    },
+    addSeries: async (groupId: string, data: AvailabilitySeriesRequest): Promise<AvailabilitySeriesResponse> => {
+      await delay(300)
+      const seriesId = `series-${Date.now()}`
+      const key = `${groupId}:${MOCK_USER_ID}`
+      if (!slotsByGroupUser[key]) slotsByGroupUser[key] = []
+      const wanted = new Set(data.daysOfWeek)
+      const names = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']
+      let created = 0
+      for (
+        let d = new Date(`${data.startDate}T00:00:00Z`);
+        d <= new Date(`${data.endDate}T00:00:00Z`);
+        d = new Date(d.getTime() + 864e5)
+      ) {
+        if (!wanted.has(names[(d.getUTCDay() + 6) % 7])) continue
+        const day = d.toISOString().slice(0, 10)
+        slotsByGroupUser[key].push({
+          id: `slot-${Date.now()}-${created}`,
+          groupId,
+          userId: MOCK_USER_ID,
+          startsAt: `${day}T${data.startTime}:00Z`,
+          endsAt: `${day}T${data.endTime}:00Z`,
+          note: null,
+          seriesId,
+          createdAt: new Date().toISOString(),
+        })
+        created++
+      }
+      return { seriesId, createdCount: created }
     },
     deleteSlot: async (groupId: string, slotId: string): Promise<void> => {
       await delay()
