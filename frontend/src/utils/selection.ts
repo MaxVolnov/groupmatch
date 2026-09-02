@@ -71,6 +71,24 @@ export interface SlotDraft {
   endsAt: string
 }
 
+/**
+ * Почему слот не редактируется протяжкой.
+ *
+ * - `series` — у слота есть `seriesId`; резать серию жестом нельзя, у неё
+ *   своя механика удаления.
+ * - `overnight` — слот начинается в одном календарном дне сетки, а
+ *   заканчивается в другом. Протяжка по вторнику 00:00–01:00, поглотившая
+ *   слот 23:00–01:00, унесла бы вместе с ним кусок понедельника, которого в
+ *   жесте не было. Тот же принцип, по которому массовая очистка на бэкенде не
+ *   режет частично пересекающиеся слоты.
+ */
+export type BlockReason = 'series' | 'overnight'
+
+export interface BlockedSlot {
+  slot: AvailabilityResponse
+  reason: BlockReason
+}
+
 export interface SelectionPlan {
   /** Что создать. Соседние ячейки уже склеены, слияния со старыми учтены. */
   toCreate: SlotDraft[]
@@ -79,11 +97,16 @@ export interface SelectionPlan {
   /** Чего касались, но менять не нужно. */
   unchanged: AvailabilityResponse[]
   /**
-   * Слоты серии, попавшие под выделение. Резать серию протяжкой нельзя — у
-   * неё своя механика удаления, — поэтому они не попадают ни в `toCreate`, ни
-   * в `toDelete`, а возвращаются отдельно: интерфейс решит, что показать.
+   * Слоты, которые выделение задело, но менять не будет. Не попадают ни в
+   * `toCreate`, ни в `toDelete`; их интервалы вырезаны из выделения, остальная
+   * его часть обрабатывается как обычно.
+   *
+   * Один список с причиной, а не поле на каждый вид: вызывающему нужен ответ
+   * на вопрос «есть ли что объяснить человеку», и он должен быть одной
+   * проверкой. Два параллельных поля — развилка, которую при появлении
+   * третьего вида забудут дополнить.
    */
-  blockedBySeries: AvailabilityResponse[]
+  blocked: BlockedSlot[]
 }
 
 /**
@@ -220,6 +243,22 @@ function toInterval(slot: AvailabilityResponse, zone: string): Interval {
   }
 }
 
+/**
+ * Слот пересекает границу суток: заканчивается позже ближайшей полуночи после
+ * своего начала.
+ *
+ * Слот, заканчивающийся ровно в полночь (23:00–00:00), сюда не попадает — он
+ * целиком лежит в своём дне и редактируется протяжкой как любой другой.
+ *
+ * Полночь считается календарным шагом, а не «плюс 24 часа»: в сутки перевода
+ * часов их 23 или 25, и слот 23:00–00:30 в неделю перевода иначе то попадал
+ * бы в ночные, то нет.
+ */
+export function isOvernightSlot(slot: AvailabilityResponse, zone: string): boolean {
+  const { start, end } = toInterval(slot, zone)
+  return end > start.startOf('day').plus({ days: 1 })
+}
+
 /** Вычитает из интервала занятые куски; остаётся то, что действительно свободно. */
 function subtract(base: Interval, holes: Interval[]): Interval[] {
   let pieces: Interval[] = [base]
@@ -259,10 +298,16 @@ export function selectionToSlots(
   const toCreate: SlotDraft[] = []
   const toDelete = new Map<string, AvailabilityResponse>()
   const unchanged = new Map<string, AvailabilityResponse>()
-  const blockedBySeries = new Map<string, AvailabilityResponse>()
+  const blocked = new Map<string, BlockedSlot>()
 
-  const series = existingSlots.filter((s) => !!s.seriesId)
-  const plain = existingSlots.filter((s) => !s.seriesId)
+  // Серия проверяется первой: ночной слот серии остаётся серией. Причина
+  // важнее для человека именно эта — у серии есть свой способ удаления, а
+  // «через полночь» звучало бы как техническая случайность.
+  const reasonFor = (slot: AvailabilityResponse): BlockReason | null =>
+    slot.seriesId ? 'series' : isOvernightSlot(slot, zone) ? 'overnight' : null
+
+  const untouchable = existingSlots.filter((s) => reasonFor(s) !== null)
+  const plain = existingSlots.filter((s) => reasonFor(s) === null)
 
   for (const day of range.days) {
     if (day.col < 0 || day.col >= grid.days.length) continue
@@ -272,11 +317,11 @@ export function selectionToSlots(
       end: cellStart(day.col, day.endRow + 1, grid),
     }
 
-    // Серии выделение не режут: их куски вырезаются из выделения целиком, а
-    // сами слоты уходят наверх отдельным списком.
-    const blocking = series.filter((s) => overlaps(toInterval(s, zone), selection))
+    // Неприкосновенные слоты выделение не режут: их интервалы вырезаются из
+    // выделения целиком, а сами слоты уходят наверх отдельным списком.
+    const blocking = untouchable.filter((s) => overlaps(toInterval(s, zone), selection))
     for (const s of blocking) {
-      blockedBySeries.set(s.id, s)
+      blocked.set(s.id, { slot: s, reason: reasonFor(s)! })
       unchanged.set(s.id, s)
     }
 
@@ -316,6 +361,6 @@ export function selectionToSlots(
     toCreate,
     toDelete: [...toDelete.values()],
     unchanged: [...unchanged.values()],
-    blockedBySeries: [...blockedBySeries.values()],
+    blocked: [...blocked.values()],
   }
 }
