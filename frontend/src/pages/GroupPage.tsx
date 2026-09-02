@@ -56,6 +56,13 @@ export function GroupPage() {
    * на этой вкладке тоже срабатывало.
    */
   const [addSlotRequest, setAddSlotRequest] = useState(0)
+  /**
+   * Смещение недели, общее для теплокарты и сетки своего времени. Раньше жило
+   * внутри HeatmapTab; после появления второй сетки локальное состояние стало
+   * ошибкой: человек листает неделю на одной вкладке, переключается — и видит
+   * другую, без единого объяснения.
+   */
+  const [weekOffset, setWeekOffset] = useState(0)
   const [showEdit, setShowEdit] = useState(false)
   const [showCreateMeeting, setShowCreateMeeting] = useState(false)
   const [meetingPrefill, setMeetingPrefill] = useState<{ startsAt: string; endsAt: string } | undefined>(undefined)
@@ -228,7 +235,13 @@ export function GroupPage() {
         <MembersTab group={group} currentUserId={userId} />
       )}
       {activeTab === 'availability' && plan && (
-        <AvailabilityTab groupId={group.id} callerPlan={plan} focusRequest={addSlotRequest} />
+        <AvailabilityTab
+          groupId={group.id}
+          callerPlan={plan}
+          focusRequest={addSlotRequest}
+          weekOffset={weekOffset}
+          onWeekOffsetChange={setWeekOffset}
+        />
       )}
       {activeTab === 'heatmap' && (
         <HeatmapTab
@@ -236,6 +249,8 @@ export function GroupPage() {
           isOwner={isOwner}
           onCreateMeeting={handleHeatmapSlotClick}
           onSetMyTime={goToAddAvailability}
+          weekOffset={weekOffset}
+          onWeekOffsetChange={setWeekOffset}
         />
       )}
       {activeTab === 'meetings' && userId && (
