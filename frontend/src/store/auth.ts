@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { authApi } from '@/api/auth'
+import { decodeJwt } from '@/utils/jwt'
 import type { Plan, Role } from '@/types'
 
 interface AuthState {
@@ -19,16 +20,6 @@ interface AuthState {
   refresh: () => Promise<string>
   setProfile: (userId: string, email: string, displayName: string, role: Role, plan: Plan) => void
   upgradeGuest: (data: { email: string; password: string; displayName: string }) => Promise<void>
-}
-
-// Decode a JWT payload without verifying (client-side only)
-function decodeJwt(token: string): Record<string, unknown> {
-  try {
-    const payload = token.split('.')[1]
-    return JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))
-  } catch {
-    return {}
-  }
 }
 
 // Module-level mutex so concurrent callers share a single in-flight refresh
