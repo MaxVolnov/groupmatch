@@ -118,6 +118,15 @@
           "noMatchingDates": "No selected weekday falls into this range — there would be no slots",
           "tooManySlots": "no more than {{max}} at once, narrow the range"
         }
+      },
+      "clear": {
+        "open": "Clear time",
+        "preview": "Count",
+        "willDelete": "Slots to delete: {{count}}",
+        "nothing": "Nothing falls into this window",
+        "confirm": "Delete",
+        "seriesIncluded": "Some of them belong to repeating series — clearing removes those too.",
+        "partialRule": "Only slots that fit entirely inside the window are removed. A 9:00–15:00 slot survives a 10:00–14:00 clear — we do not cut slots in half."
       }
     },
     "heatmapTab": {

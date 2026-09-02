@@ -4,6 +4,8 @@
  */
 import type {
   AuthResponse,
+  AvailabilityBulkClearRequest,
+  AvailabilityBulkClearResponse,
   AvailabilityResponse,
   AvailabilitySeriesRequest,
   AvailabilitySeriesResponse,
@@ -367,6 +369,27 @@ export const mockApi = {
         for (const s of doomed) arr.splice(arr.indexOf(s), 1)
         return
       }
+    },
+    bulkClear: async (
+      groupId: string,
+      data: AvailabilityBulkClearRequest,
+    ): Promise<AvailabilityBulkClearResponse> => {
+      await delay(300)
+      const key = `${groupId}:${MOCK_USER_ID}`
+      const arr = slotsByGroupUser[key] ?? []
+      const names = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']
+      const wanted = new Set(data.daysOfWeek)
+      const doomed = arr.filter((s) => {
+        const start = new Date(s.startsAt)
+        const day = start.toISOString().slice(0, 10)
+        if (day < data.fromDate || day > data.toDate) return false
+        if (!wanted.has(names[(start.getUTCDay() + 6) % 7])) return false
+        return (
+          s.startsAt >= `${day}T${data.startTime}:00Z` && s.endsAt <= `${day}T${data.endTime}:00Z`
+        )
+      })
+      if (!data.dryRun) for (const s of doomed) arr.splice(arr.indexOf(s), 1)
+      return { deletedCount: doomed.length }
     },
     deleteSlot: async (groupId: string, slotId: string): Promise<void> => {
       await delay()

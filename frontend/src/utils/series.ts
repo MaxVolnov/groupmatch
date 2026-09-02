@@ -130,3 +130,55 @@ export function toSeriesRequest(rule: SeriesRule, timeZone: string) {
   }
 }
 
+// ── массовая очистка ────────────────────────────────────────────────────────
+
+export interface ClearWindow {
+  daysOfWeek: number[]
+  startTime: string
+  endTime: string
+  fromDate: string
+  toDate: string
+}
+
+/**
+ * Слоты, которые попадут под очистку.
+ *
+ * Зеркало `AvailabilityService.fitsEntirelyInWindow`: слот удаляется, только
+ * если лежит в окне своего дня **целиком**. Задевающий окно краем не
+ * трогается — молча откусить у человека половину его 9:00–15:00, потому что он
+ * чистил 10:00–14:00, хуже, чем не удалить ничего.
+ *
+ * Зачем вторая реализация того же правила, если бэкенд и так умеет `dryRun`:
+ * тот отвечает одним числом, а подтверждение обязано сказать, попали ли под
+ * окно слоты серий. Число в интерфейсе показывается **серверное** — эта
+ * функция отвечает только на вопрос «какие именно», и её согласие с бэкендом
+ * закреплено тестом.
+ */
+export function slotsInClearWindow<T extends { startsAt: string; endsAt: string }>(
+  slots: T[],
+  window: ClearWindow,
+  zone: string,
+): T[] {
+  const wanted = new Set(window.daysOfWeek)
+
+  return slots.filter((slot) => {
+    const start = DateTime.fromISO(slot.startsAt, { zone })
+    const end = DateTime.fromISO(slot.endsAt, { zone })
+    const date = start.startOf('day')
+
+    // Сравнение строками ISO-дат, а не объектами: `DateTime.fromISO` без зоны
+    // разбирает границы диапазона в системной зоне, и сравнение с датой в
+    // зоне сетки уезжает на смещение. Ночной слот по Москве из-за этого
+    // выпадал из своего же диапазона.
+    const day = start.toISODate()!
+    if (day < window.fromDate || day > window.toDate) return false
+    if (!wanted.has(start.weekday)) return false
+
+    const [fh, fm] = window.startTime.split(':').map(Number)
+    const [th, tm] = window.endTime.split(':').map(Number)
+    const windowStart = date.set({ hour: fh, minute: fm, second: 0, millisecond: 0 })
+    const windowEnd = date.set({ hour: th, minute: tm, second: 0, millisecond: 0 })
+
+    return start >= windowStart && end <= windowEnd
+  })
+}

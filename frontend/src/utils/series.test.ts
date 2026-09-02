@@ -4,6 +4,8 @@ import {
   MAX_SERIES_SLOTS,
   toSeriesRequest,
   validateSeries,
+  slotsInClearWindow,
+  type ClearWindow,
   type SeriesRule,
 } from './series'
 
@@ -159,3 +161,59 @@ describe('toSeriesRequest', () => {
   })
 })
 
+/**
+ * Зеркало правила очистки с бэкенда. Случаи взяты из
+ * `AvailabilityBulkClearTest`: там та же неделя и те же четыре ситуации.
+ */
+describe('slotsInClearWindow', () => {
+  const win: ClearWindow = {
+    daysOfWeek: [2],          // вторник
+    startTime: '10:00',
+    endTime: '14:00',
+    fromDate: '2026-11-03',
+    toDate: '2026-11-04',
+  }
+  const s = (startsAt: string, endsAt: string, seriesId: string | null = null) =>
+    ({ startsAt, endsAt, seriesId })
+
+  it('слот целиком внутри окна попадает под очистку', () => {
+    const slot = s('2026-11-03T11:00:00Z', '2026-11-03T13:00:00Z')
+    expect(slotsInClearWindow([slot], win, 'UTC')).toEqual([slot])
+  })
+
+  /** Осознанное решение бэкенда: половину слота не откусываем. */
+  it('слот, пересекающий окно частично, не попадает', () => {
+    const slot = s('2026-11-03T09:00:00Z', '2026-11-03T15:00:00Z')
+    expect(slotsInClearWindow([slot], win, 'UTC')).toEqual([])
+  })
+
+  it('тот же день, но вне окна по времени — не попадает', () => {
+    expect(slotsInClearWindow([s('2026-11-03T16:00:00Z', '2026-11-03T17:00:00Z')], win, 'UTC'))
+      .toEqual([])
+  })
+
+  it('то же время, но не тот день недели — не попадает', () => {
+    expect(slotsInClearWindow([s('2026-11-04T11:00:00Z', '2026-11-04T13:00:00Z')], win, 'UTC'))
+      .toEqual([])
+  })
+
+  it('вне диапазона дат — не попадает', () => {
+    expect(slotsInClearWindow([s('2026-12-01T11:00:00Z', '2026-12-01T13:00:00Z')], win, 'UTC'))
+      .toEqual([])
+  })
+
+  /** Очистка не различает серии: попал целиком — удалится. */
+  it('слот серии под окном попадает наравне с обычным', () => {
+    const series = s('2026-11-03T11:00:00Z', '2026-11-03T13:00:00Z', 'series-1')
+    expect(slotsInClearWindow([series], win, 'UTC')).toEqual([series])
+  })
+
+  /** День недели и окно считаются в зоне, а не в UTC. */
+  it('день недели определяется в переданной зоне', () => {
+    // 22:00 UTC понедельника — это 01:00 вторника по Москве.
+    const slot = s('2026-11-02T22:00:00Z', '2026-11-02T23:00:00Z')
+    const night: ClearWindow = { ...win, startTime: '00:00', endTime: '03:00' }
+    expect(slotsInClearWindow([slot], night, 'Europe/Moscow')).toEqual([slot])
+    expect(slotsInClearWindow([slot], night, 'UTC')).toEqual([])
+  })
+})

@@ -1,6 +1,8 @@
 import { api } from './axios'
 import { IS_MOCK, mockApi } from './mock'
 import type {
+  AvailabilityBulkClearRequest,
+  AvailabilityBulkClearResponse,
   AvailabilityRequest,
   AvailabilityResponse,
   AvailabilitySeriesRequest,
@@ -29,6 +31,20 @@ export const availabilityApi = {
     IS_MOCK
       ? mockApi.availability.deleteSlotScoped(slotId, scope)
       : api.delete(`/availability/${slotId}`, { params: { scope } }).then(() => undefined),
+
+  /**
+   * Массовая очистка. Тело у DELETE намеренное — так его принимает бэкенд;
+   * axios передаёт тело через `data`.
+   */
+  bulkClear: (
+    groupId: string,
+    data: AvailabilityBulkClearRequest,
+  ): Promise<AvailabilityBulkClearResponse> =>
+    IS_MOCK
+      ? mockApi.availability.bulkClear(groupId, data)
+      : api
+          .delete<AvailabilityBulkClearResponse>(`/groups/${groupId}/availability/bulk`, { data })
+          .then((r) => r.data),
 
   mySlots: (groupId: string): Promise<AvailabilityResponse[]> =>
     IS_MOCK
