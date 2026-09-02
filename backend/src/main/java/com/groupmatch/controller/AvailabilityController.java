@@ -1,7 +1,11 @@
 package com.groupmatch.controller;
 
+import com.groupmatch.dto.availability.AvailabilityBulkClearRequest;
+import com.groupmatch.dto.availability.AvailabilityBulkClearResponse;
 import com.groupmatch.dto.availability.AvailabilityRequest;
 import com.groupmatch.dto.availability.AvailabilityResponse;
+import com.groupmatch.dto.availability.AvailabilitySeriesRequest;
+import com.groupmatch.dto.availability.AvailabilitySeriesResponse;
 import com.groupmatch.dto.availability.HeatmapResponse;
 import com.groupmatch.security.UserPrincipal;
 import com.groupmatch.service.AvailabilityService;
@@ -31,6 +35,18 @@ public class AvailabilityController {
         return availabilityService.addSlot(groupId, principal.getId(), principal.getPlan(), req);
     }
 
+    /**
+     * Создание повторяющейся серии. Возвращает только идентификатор серии и
+     * число созданных слотов — сами слоты клиент забирает через {@code /my}.
+     */
+    @PostMapping("/series")
+    @ResponseStatus(HttpStatus.CREATED)
+    public AvailabilitySeriesResponse addSeries(@AuthenticationPrincipal UserPrincipal principal,
+                                                @PathVariable UUID groupId,
+                                                @Valid @RequestBody AvailabilitySeriesRequest req) {
+        return availabilityService.createSeries(groupId, principal.getId(), principal.getPlan(), req);
+    }
+
     @GetMapping("/my")
     public List<AvailabilityResponse> getMySlots(@AuthenticationPrincipal UserPrincipal principal,
                                                   @PathVariable UUID groupId) {
@@ -51,6 +67,18 @@ public class AvailabilityController {
                        @PathVariable UUID groupId,
                        @PathVariable UUID slotId) {
         availabilityService.deleteSlot(slotId, groupId, principal.getId());
+    }
+
+    /**
+     * Массовая очистка собственных слотов по окну «дни недели × время».
+     * Тело у DELETE намеренное: параметров шесть, и в query-строке они
+     * читались бы хуже, чем в JSON.
+     */
+    @DeleteMapping("/bulk")
+    public AvailabilityBulkClearResponse bulkClear(@AuthenticationPrincipal UserPrincipal principal,
+                                                   @PathVariable UUID groupId,
+                                                   @Valid @RequestBody AvailabilityBulkClearRequest req) {
+        return availabilityService.bulkClear(groupId, principal.getId(), req);
     }
 
     @GetMapping("/heatmap")

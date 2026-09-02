@@ -9,6 +9,8 @@ import com.groupmatch.auth.GuestUpgradeTest;
 import com.groupmatch.auth.LocaleTest;
 import com.groupmatch.auth.TrialPremiumTest;
 import com.groupmatch.auth.TrialServiceTest;
+import com.groupmatch.availability.AvailabilityBulkClearTest;
+import com.groupmatch.availability.AvailabilitySeriesTest;
 import com.groupmatch.availability.AvailabilityTest;
 import com.groupmatch.groups.GroupErrorPathTest;
 import com.groupmatch.groups.GroupTest;
@@ -58,6 +60,8 @@ import org.junit.platform.suite.api.Suite;
     NotificationTest.class,
     NotificationPreferencesTest.class,
     AvailabilityTest.class,
+    AvailabilitySeriesTest.class,
+    AvailabilityBulkClearTest.class,
     PaymentTest.class,
     CidrMatcherTest.class,
     PlanPeriodTest.class,

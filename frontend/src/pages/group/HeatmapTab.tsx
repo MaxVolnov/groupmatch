@@ -15,6 +15,14 @@ interface Props {
   onCreateMeeting: (slot: HeatmapSlot) => void
   /** Увести на вкладку доступности из пустого состояния. */
   onSetMyTime?: () => void
+  /**
+   * Смещение недели в неделях от текущей. Состояние поднято в GroupPage и
+   * общее с вкладкой доступности: две сетки с независимыми неделями
+   * разъезжаются, и человек читает это как поломку — переключил вкладку, а
+   * там другая неделя.
+   */
+  weekOffset: number
+  onWeekOffsetChange: (next: number) => void
 }
 
 const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
@@ -62,9 +70,8 @@ function buildGrid(slots: HeatmapSlot[], from: DateTime): {
   return { grid, timeLabels, maxCount }
 }
 
-export function HeatmapTab({ groupId, isOwner, onCreateMeeting, onSetMyTime}: Props) {
+export function HeatmapTab({ groupId, isOwner, onCreateMeeting, onSetMyTime, weekOffset, onWeekOffsetChange }: Props) {
   const { t } = useTranslation()
-  const [weekOffset, setWeekOffset] = useState(0)
   const [initialLoaded, setInitialLoaded] = useState(false)
 
   const monday = DateTime.now().startOf('week').plus({ weeks: weekOffset })
@@ -93,17 +100,17 @@ export function HeatmapTab({ groupId, isOwner, onCreateMeeting, onSetMyTime}: Pr
     <div>
       {/* Week navigation */}
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <Button variant="secondary" size="sm" onClick={() => setWeekOffset((w) => w - 1)}>
+        <Button variant="secondary" size="sm" onClick={() => onWeekOffsetChange(weekOffset - 1)}>
           {t('group.heatmapTab.prev')}
         </Button>
         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
           {monday.toFormat('dd MMM')} – {sunday.minus({ days: 1 }).toFormat('dd MMM yyyy')}
         </span>
-        <Button variant="secondary" size="sm" onClick={() => setWeekOffset((w) => w + 1)}>
+        <Button variant="secondary" size="sm" onClick={() => onWeekOffsetChange(weekOffset + 1)}>
           {t('group.heatmapTab.next')}
         </Button>
         {weekOffset !== 0 && (
-          <Button variant="ghost" size="sm" onClick={() => setWeekOffset(0)}>
+          <Button variant="ghost" size="sm" onClick={() => onWeekOffsetChange(0)}>
             {t('group.heatmapTab.today')}
           </Button>
         )}
