@@ -9,6 +9,12 @@ import { ErrorMessage } from '@/components/ErrorMessage'
 import type { Plan } from '@/types'
 import { DateTime } from 'luxon'
 import { defaultDatetime, fmtRange, toIso } from '@/utils/datetime'
+import { slotsInClearWindow, toSeriesRequest, type ClearWindow, type SeriesRule } from '@/utils/series'
+import { SeriesForm } from './SeriesForm'
+import { BulkClearForm, type ClearPreview } from './BulkClearForm'
+import type { AvailabilityResponse } from '@/types'
+import { AxiosError } from 'axios'
+import { DAY_OF_WEEK_NAMES as DAY_NAMES } from '@/utils/series'
 
 interface Props {
   groupId: string
@@ -63,6 +69,17 @@ export function AvailabilityTab({ groupId, callerPlan, focusRequest }: Props) {
   const [endsAt, setEndsAt] = useState(defaultDatetime(2))
   const [note, setNote] = useState('')
   const [formError, setFormError] = useState('')
+  /** Что открыто рядом с формой одиночного слота: серия или очистка. */
+  const [panel, setPanel] = useState<'none' | 'series' | 'clear'>('none')
+  const [clearPreview, setClearPreview] = useState<ClearPreview | null>(null)
+  /** Слот, для которого спрашиваем «этот или всю серию». */
+  const [confirmSeries, setConfirmSeries] = useState<AvailabilityResponse | null>(null)
+
+  /**
+   * Зона, в которой считаются серии и очистка. Та же, что у сетки и у формы
+   * одиночного слота, — зона машины пользователя.
+   */
+  const timeZone = DateTime.local().zoneName
 
   const onStartsAtChange = (value: string) => {
     setStartsAt(value)
@@ -104,6 +121,78 @@ export function AvailabilityTab({ groupId, callerPlan, focusRequest }: Props) {
       qc.invalidateQueries({ queryKey: ['heatmap', groupId] })
     },
   })
+
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ['availability', groupId] })
+    qc.invalidateQueries({ queryKey: ['heatmap', groupId] })
+  }
+
+  const addSeries = useMutation({
+    mutationFn: (rule: SeriesRule) =>
+      availabilityApi.addSeries(groupId, toSeriesRequest(rule, timeZone)),
+    onSuccess: () => {
+      invalidate()
+      setPanel('none')
+    },
+  })
+
+  /** Удаление с областью действия: только этот слот или вся его серия. */
+  const delScoped = useMutation({
+    mutationFn: ({ slotId, scope }: { slotId: string; scope: 'single' | 'series' }) =>
+      availabilityApi.deleteSlotScoped(slotId, scope),
+    onSuccess: () => {
+      invalidate()
+      setConfirmSeries(null)
+    },
+  })
+
+  const clear = useMutation({
+    mutationFn: ({ window, dryRun }: { window: ClearWindow; dryRun: boolean }) =>
+      availabilityApi.bulkClear(groupId, {
+        daysOfWeek: window.daysOfWeek.map((d) => DAY_NAMES[d - 1]),
+        startTime: window.startTime,
+        endTime: window.endTime,
+        fromDate: window.fromDate,
+        toDate: window.toDate,
+        timeZone,
+        dryRun,
+      }),
+  })
+
+  /**
+   * Предпросмотр очистки. Число показывается **серверное** — оно и есть
+   * правда; локальный расчёт нужен только чтобы сказать, попали ли под окно
+   * слоты серий: сервер отвечает одним числом и о принадлежности молчит.
+   */
+  const previewClear = (window: ClearWindow) => {
+    clear.mutate(
+      { window, dryRun: true },
+      {
+        onSuccess: (res) =>
+          setClearPreview({
+            count: res.deletedCount,
+            includesSeries: slotsInClearWindow(slots ?? [], window, timeZone).some((s) => !!s.seriesId),
+          }),
+      },
+    )
+  }
+
+  const confirmClear = (window: ClearWindow) => {
+    clear.mutate(
+      { window, dryRun: false },
+      {
+        onSuccess: () => {
+          invalidate()
+          setClearPreview(null)
+          setPanel('none')
+        },
+      },
+    )
+  }
+
+  /** Сколько слотов в серии этого слота — для подтверждения «удалить всю». */
+  const seriesSize = (slot: AvailabilityResponse) =>
+    (slots ?? []).filter((s) => s.seriesId && s.seriesId === slot.seriesId).length
 
   const planLimits: Record<Plan, number> = { FREE: 50, PRO: 200, TEAM: 500 }
   const limit = planLimits[callerPlan]
@@ -149,6 +238,69 @@ export function AvailabilityTab({ groupId, callerPlan, focusRequest }: Props) {
             {count} / {limit} {t('group.availabilityTab.slotsUsed')}
           </p>
         </div>
+
+        {/*
+          Серия и очистка — рядом с формой одиночного слота, а не отдельной
+          вкладкой: это три способа сделать одно и то же, и разносить их по
+          экранам значит повторять ошибку, из-за которой сеток стало две.
+        */}
+        <div className="mt-4 flex flex-wrap gap-2 border-t border-gray-200 pt-4 dark:border-gray-700">
+          <Button
+            variant={panel === 'series' ? 'primary' : 'secondary'}
+            size="sm"
+            onClick={() => setPanel(panel === 'series' ? 'none' : 'series')}
+          >
+            {t('group.availabilityTab.series.open')}
+          </Button>
+          <Button
+            variant={panel === 'clear' ? 'primary' : 'secondary'}
+            size="sm"
+            onClick={() => {
+              setPanel(panel === 'clear' ? 'none' : 'clear')
+              setClearPreview(null)
+            }}
+          >
+            {t('group.availabilityTab.clear.open')}
+          </Button>
+        </div>
+
+        {panel === 'series' && (
+          <div className="mt-4">
+            <SeriesForm
+              submitting={addSeries.isPending}
+              onSubmit={(rule) => addSeries.mutate(rule)}
+              onCancel={() => setPanel('none')}
+              error={
+                addSeries.error ? (
+                  // 402 — это тариф, а не сбой. Бэкенд отвечает техническим
+                  // английским текстом («Plan limit reached: max 50 slots…»),
+                  // и показывать его человеку значит объяснять ему устройство
+                  // сервера вместо его собственной ситуации.
+                  (addSeries.error as AxiosError).response?.status === 402 ? (
+                    <p className="text-sm text-red-600 dark:text-red-400">
+                      {t('group.availabilityTab.series.planLimit', { limit })}
+                    </p>
+                  ) : (
+                    <ErrorMessage error={addSeries.error} />
+                  )
+                ) : null
+              }
+            />
+          </div>
+        )}
+
+        {panel === 'clear' && (
+          <div className="mt-4">
+            <BulkClearForm
+              preview={clearPreview}
+              busy={clear.isPending}
+              error={clear.error ? <ErrorMessage error={clear.error} /> : null}
+              onPreview={previewClear}
+              onConfirm={confirmClear}
+              onReset={() => setClearPreview(null)}
+            />
+          </div>
+        )}
       </div>
 
       {/* My slots list */}
@@ -171,19 +323,68 @@ export function AvailabilityTab({ groupId, callerPlan, focusRequest }: Props) {
                     <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                       {fmtRange(s.startsAt, s.endsAt)}
                     </p>
+                    {s.seriesId && (
+                      <span className="mt-0.5 inline-block rounded bg-gm-100 px-1.5 py-0.5 text-[11px] font-medium text-gm-700 dark:bg-gm-900 dark:text-gm-300">
+                        {t('group.availabilityTab.series.badge')}
+                      </span>
+                    )}
                     {s.note && <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{s.note}</p>}
                   </div>
-                  <button
-                    className="ml-2 shrink-0 flex items-center justify-center min-h-[44px] min-w-[44px] text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-                    onClick={() => del.mutate(s.id)}
-                    title={t('group.availabilityTab.delete')}
-                  >
-                    ✕
-                  </button>
+                  {/*
+                    Крестик у слота серии удаляет только его. Всю серию — через
+                    отдельное подтверждение с числом: случайно снести двадцать
+                    слотов одним нажатием нельзя, случайно снести один — терпимо,
+                    он и раньше так удалялся.
+                  */}
+                  <div className="ml-2 flex shrink-0 items-center">
+                    {s.seriesId && (
+                      <button
+                        className="flex min-h-[44px] items-center justify-center px-2 text-xs font-medium text-gm-600 hover:underline dark:text-gm-400"
+                        onClick={() => setConfirmSeries(s)}
+                      >
+                        {t('group.availabilityTab.series.deleteAll')}
+                      </button>
+                    )}
+                    <button
+                      className="flex min-h-[44px] min-w-[44px] items-center justify-center text-gray-300 transition-colors hover:text-red-500 dark:text-gray-600 dark:hover:text-red-400"
+                      onClick={() => del.mutate(s.id)}
+                      title={t('group.availabilityTab.delete')}
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
           </>
+        )}
+
+        {confirmSeries && (
+          <div className="mt-3 flex flex-col gap-2 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
+            <p className="text-sm font-medium text-red-700 dark:text-red-400">
+              {t('group.availabilityTab.series.confirmAll', { count: seriesSize(confirmSeries) })}
+            </p>
+            {delScoped.error && <ErrorMessage error={delScoped.error} />}
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="danger"
+                size="sm"
+                loading={delScoped.isPending}
+                className="min-h-[44px] justify-center"
+                onClick={() => delScoped.mutate({ slotId: confirmSeries.id, scope: 'series' })}
+              >
+                {t('group.availabilityTab.series.confirmAllYes')}
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="min-h-[44px] justify-center"
+                onClick={() => setConfirmSeries(null)}
+              >
+                {t('group.availabilityTab.grid.cancel')}
+              </Button>
+            </div>
+          </div>
         )}
       </div>
     </div>
