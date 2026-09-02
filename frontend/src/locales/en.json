@@ -81,7 +81,14 @@
       "mySlots": "My slots",
       "noSlots": "🕐 No slots yet. Add your available times.",
       "endAfterStart": "End must be after start",
-      "delete": "Delete"
+      "delete": "Delete",
+      "grid": {
+        "title": "My week",
+        "legendBusy": "Marked",
+        "legendSeries": "From a repeating series",
+        "legendPartial": "Off the half-hour",
+        "partialHint": "This slot doesn't fit the half-hour grid — exact time is in the list below"
+      }
     },
     "heatmapTab": {
       "prev": "← Prev",

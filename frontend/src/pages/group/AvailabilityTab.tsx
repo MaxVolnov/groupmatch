@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { availabilityApi } from '@/api/availability'
@@ -9,6 +9,8 @@ import { ErrorMessage } from '@/components/ErrorMessage'
 import type { Plan } from '@/types'
 import { DateTime } from 'luxon'
 import { defaultDatetime, fmtRange, toIso } from '@/utils/datetime'
+import { buildOwnGrid } from '@/utils/ownGrid'
+import { MyAvailabilityGrid } from './MyAvailabilityGrid'
 
 interface Props {
   groupId: string
@@ -25,6 +27,12 @@ interface Props {
    * это довести до неё каретку, а не показать.
    */
   focusRequest?: number
+  /**
+   * Смещение недели в неделях от текущей. Общее с теплокартой, поднято в
+   * GroupPage — см. комментарий там.
+   */
+  weekOffset: number
+  onWeekOffsetChange: (next: number) => void
 }
 
 function SlotSkeletonList() {
@@ -43,7 +51,7 @@ function SlotSkeletonList() {
   )
 }
 
-export function AvailabilityTab({ groupId, callerPlan, focusRequest }: Props) {
+export function AvailabilityTab({ groupId, callerPlan, focusRequest, weekOffset, onWeekOffsetChange }: Props) {
   const addFormRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -109,9 +117,45 @@ export function AvailabilityTab({ groupId, callerPlan, focusRequest }: Props) {
   const limit = planLimits[callerPlan]
   const count = slots?.length ?? 0
 
+  /**
+   * Понедельник показываемой недели и раскладка слотов по ячейкам. Тот же
+   * queryKey, что у списка ниже, — сетка данных не запрашивает, она их
+   * переиспользует.
+   */
+  const weekStart = DateTime.now().startOf('week').plus({ weeks: weekOffset })
+  const ownGrid = useMemo(() => buildOwnGrid(slots ?? [], weekStart), [slots, weekStart])
+
   if (error) return <ErrorMessage error={error} />
 
   return (
+    <div className="flex flex-col gap-6">
+      {/* Сетка своего времени. Только показывает: протяжка — следующий заход. */}
+      <div>
+        <h3 className="mb-2 font-medium text-gray-900 dark:text-gray-100">
+          {t('group.availabilityTab.grid.title')}
+        </h3>
+        {/* Навигация своей строкой: на 375px заголовок рядом с тремя кнопками
+            переносился так, что «След. →» оставалась одна на строке и читалась
+            как сбой вёрстки. */}
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <Button variant="secondary" size="sm" onClick={() => onWeekOffsetChange(weekOffset - 1)}>
+            {t('group.heatmapTab.prev')}
+          </Button>
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            {weekStart.toFormat('dd MMM')} – {weekStart.plus({ days: 6 }).toFormat('dd MMM yyyy')}
+          </span>
+          <Button variant="secondary" size="sm" onClick={() => onWeekOffsetChange(weekOffset + 1)}>
+            {t('group.heatmapTab.next')}
+          </Button>
+          {weekOffset !== 0 && (
+            <Button variant="ghost" size="sm" onClick={() => onWeekOffsetChange(0)}>
+              {t('group.heatmapTab.today')}
+            </Button>
+          )}
+        </div>
+        {isLoading ? <Skeleton className="h-96 w-full" /> : <MyAvailabilityGrid grid={ownGrid} />}
+      </div>
+
     <div className="grid gap-6 lg:grid-cols-2">
       {/* Add slot form */}
       <div ref={addFormRef} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5">
@@ -186,6 +230,7 @@ export function AvailabilityTab({ groupId, callerPlan, focusRequest }: Props) {
           </>
         )}
       </div>
+    </div>
     </div>
   )
 }
