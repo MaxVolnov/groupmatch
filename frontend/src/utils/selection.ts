@@ -281,6 +281,48 @@ export function isUnalignedSlot(slot: AvailabilityResponse, grid: GridSpec): boo
   return !onBoundary(start) || !onBoundary(end)
 }
 
+/**
+ * Почему слот не редактируется жестом, или `null`, если редактируется.
+ *
+ * Серия проверяется первой: ночной слот серии остаётся серией. Причина важнее
+ * для человека именно эта — у серии есть свой способ удаления, а «через
+ * полночь» звучало бы как техническая случайность.
+ */
+export function blockReason(slot: AvailabilityResponse, grid: GridSpec): BlockReason | null {
+  if (slot.seriesId) return 'series'
+  if (isOvernightSlot(slot, grid.zone)) return 'overnight'
+  if (isUnalignedSlot(slot, grid)) return 'unaligned'
+  return null
+}
+
+/** Чем занята одна ячейка с точки зрения жеста. */
+export type CellOwnership = 'free' | 'mine' | 'blocked'
+
+/**
+ * Кому принадлежит ячейка. По ней жест решает, что он делает: рисует, стирает
+ * или не начинается вовсе.
+ *
+ * Заблокированное перевешивает своё — ровно как в раскраске сетки: решает не
+ * «чего больше», а что человек здесь может сделать.
+ */
+export function cellOwnership(
+  cell: Cell,
+  existingSlots: AvailabilityResponse[],
+  grid: GridSpec,
+): CellOwnership {
+  const window: Interval = {
+    start: cellStart(cell.col, cell.row, grid),
+    end: cellStart(cell.col, cell.row + 1, grid),
+  }
+  let mine = false
+  for (const slot of existingSlots) {
+    if (!overlaps(toInterval(slot, grid.zone), window)) continue
+    if (blockReason(slot, grid)) return 'blocked'
+    mine = true
+  }
+  return mine ? 'mine' : 'free'
+}
+
 /** Вычитает из интервала занятые куски; остаётся то, что действительно свободно. */
 function subtract(base: Interval, holes: Interval[]): Interval[] {
   let pieces: Interval[] = [base]
@@ -322,20 +364,8 @@ export function selectionToSlots(
   const unchanged = new Map<string, AvailabilityResponse>()
   const blocked = new Map<string, BlockedSlot>()
 
-  // Серия проверяется первой: ночной слот серии остаётся серией. Причина
-  // важнее для человека именно эта — у серии есть свой способ удаления, а
-  // «через полночь» звучало бы как техническая случайность.
-  const reasonFor = (slot: AvailabilityResponse): BlockReason | null =>
-    slot.seriesId
-      ? 'series'
-      : isOvernightSlot(slot, zone)
-        ? 'overnight'
-        : isUnalignedSlot(slot, grid)
-          ? 'unaligned'
-          : null
-
-  const untouchable = existingSlots.filter((s) => reasonFor(s) !== null)
-  const plain = existingSlots.filter((s) => reasonFor(s) === null)
+  const untouchable = existingSlots.filter((s) => blockReason(s, grid) !== null)
+  const plain = existingSlots.filter((s) => blockReason(s, grid) === null)
 
   for (const day of range.days) {
     if (day.col < 0 || day.col >= grid.days.length) continue
@@ -349,7 +379,7 @@ export function selectionToSlots(
     // выделения целиком, а сами слоты уходят наверх отдельным списком.
     const blocking = untouchable.filter((s) => overlaps(toInterval(s, zone), selection))
     for (const s of blocking) {
-      blocked.set(s.id, { slot: s, reason: reasonFor(s)! })
+      blocked.set(s.id, { slot: s, reason: blockReason(s, grid)! })
       unchanged.set(s.id, s)
     }
 
@@ -382,6 +412,74 @@ export function selectionToSlots(
         startsAt: start.toUTC().toISO()!,
         endsAt: end.toUTC().toISO()!,
       })
+    }
+  }
+
+  return {
+    toCreate,
+    toDelete: [...toDelete.values()],
+    unchanged: [...unchanged.values()],
+    blocked: [...blocked.values()],
+  }
+}
+
+/**
+ * Превращает выделение в стирание.
+ *
+ * Режим определяется первой ячейкой жеста, а не отдельной кнопкой: человек
+ * начал на своём отмеченном времени — значит, он его убирает. До этого
+ * протяжка внутри своего слота подсвечивалась и не делала ничего: интерфейс
+ * обещал действие и не выполнял, что хуже обоих чистых вариантов.
+ *
+ * Стирание в середине слота **разрезает** его надвое: 10:00–14:00, стёрли
+ * 11:00–12:00 → остаются 10:00–11:00 и 12:00–14:00. Деление сделано тем же
+ * `subtract`, что вычитает неприкосновенные куски при создании: интервальная
+ * арифметика здесь одна на оба направления.
+ *
+ * Серии, ночные и неровные слоты стиранием не трогаются — то же правило, что
+ * при создании, и по той же причине: результат жеста должен быть виден в
+ * жесте.
+ */
+export function selectionToErase(
+  range: SelectionRange,
+  existingSlots: AvailabilityResponse[],
+  grid: GridSpec,
+): SelectionPlan {
+  const zone = grid.zone
+  const toCreate: SlotDraft[] = []
+  const toDelete = new Map<string, AvailabilityResponse>()
+  const unchanged = new Map<string, AvailabilityResponse>()
+  const blocked = new Map<string, BlockedSlot>()
+
+  for (const day of range.days) {
+    if (day.col < 0 || day.col >= grid.days.length) continue
+
+    const selection: Interval = {
+      start: cellStart(day.col, day.startRow, grid),
+      end: cellStart(day.col, day.endRow + 1, grid),
+    }
+
+    for (const slot of existingSlots) {
+      const iv = toInterval(slot, zone)
+      if (!overlaps(iv, selection)) continue
+
+      const reason = blockReason(slot, grid)
+      if (reason) {
+        blocked.set(slot.id, { slot, reason })
+        unchanged.set(slot.id, slot)
+        continue
+      }
+
+      // Слот уходит целиком, а остатки заводятся заново. Правки на месте нет
+      // намеренно: PUT менял бы одну границу, а разрез в середине даёт два
+      // слота, и «изменить» тут нечего.
+      toDelete.set(slot.id, slot)
+      for (const piece of subtract(iv, [selection])) {
+        toCreate.push({
+          startsAt: piece.start.toUTC().toISO()!,
+          endsAt: piece.end.toUTC().toISO()!,
+        })
+      }
     }
   }
 

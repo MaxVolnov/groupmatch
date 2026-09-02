@@ -140,6 +140,10 @@ export function HeatmapTab({ groupId, isOwner, onCreateMeeting, onSetMyTime, wee
     if (!inSelection) return null
     const state = ownGrid.cells[row][col]
     if (isBlockedState(state)) return 'blocked'
+    // Режим выбран по первой ячейке жеста и до конца не меняется. В стирании
+    // подсвечивается только то, что реально исчезнет: свободные ячейки под
+    // выделением останутся свободными, обещать по ним нечего.
+    if (drag.mode === 'erase') return state === 'free' ? 'unchanged' : 'erase'
     if (state !== 'free') return 'unchanged'
     return 'create'
   }
@@ -247,8 +251,15 @@ export function HeatmapTab({ groupId, isOwner, onCreateMeeting, onSetMyTime, wee
                 <Button variant="secondary" size="sm" onClick={drag.cancel} className="min-h-[44px]">
                   {t('group.availabilityTab.grid.cancel')}
                 </Button>
-                <Button size="sm" onClick={drag.commit} className="min-h-[44px]">
-                  {t('group.availabilityTab.grid.confirm')}
+                <Button
+                  size="sm"
+                  variant={drag.mode === 'erase' ? 'danger' : 'primary'}
+                  onClick={drag.commit}
+                  className="min-h-[44px]"
+                >
+                  {t(drag.mode === 'erase'
+                    ? 'group.availabilityTab.grid.confirmErase'
+                    : 'group.availabilityTab.grid.confirm')}
                 </Button>
               </div>
             )}

@@ -6,6 +6,8 @@ import {
   clampSelection,
   isOvernightSlot,
   isUnalignedSlot,
+  cellOwnership,
+  selectionToErase,
   resolveSelection,
   selectionToSlots,
   type GridSpec,
@@ -405,5 +407,115 @@ describe('ячейка → момент времени', () => {
     expect(plan.toCreate).toEqual([
       { startsAt: '2026-11-03T07:00:00.000Z', endsAt: '2026-11-03T09:00:00.000Z' },
     ])
+  })
+})
+
+// ── стирание ────────────────────────────────────────────────────────────────
+
+describe('selectionToErase', () => {
+  it('выделение целиком по слоту удаляет его и ничего не создаёт', () => {
+    const mine = slot('2026-10-19T10:00:00Z', '2026-10-19T12:00:00Z')
+    const range = resolveSelection({ row: 20, col: 0 }, { row: 23, col: 0 }, grid())
+    const plan = selectionToErase(range, [mine], grid())
+
+    expect(plan.toDelete.map((s) => s.id)).toEqual([mine.id])
+    expect(plan.toCreate).toHaveLength(0)
+  })
+
+  /**
+   * Главный случай режима: стёрли середину — остались два слота по краям.
+   * Раньше такого действия не было вовсе, и протяжка внутри своего времени
+   * подсвечивалась впустую.
+   */
+  it('стирание в середине разрезает слот надвое', () => {
+    const mine = slot('2026-10-19T10:00:00Z', '2026-10-19T14:00:00Z')
+    // 11:00–12:00 — строки 22..23.
+    const range = resolveSelection({ row: 22, col: 0 }, { row: 23, col: 0 }, grid())
+    const plan = selectionToErase(range, [mine], grid())
+
+    expect(plan.toDelete.map((s) => s.id)).toEqual([mine.id])
+    expect(plan.toCreate).toEqual([
+      { startsAt: '2026-10-19T10:00:00.000Z', endsAt: '2026-10-19T11:00:00.000Z' },
+      { startsAt: '2026-10-19T12:00:00.000Z', endsAt: '2026-10-19T14:00:00.000Z' },
+    ])
+  })
+
+  it('стирание с края укорачивает слот, а не режет его', () => {
+    const mine = slot('2026-10-19T10:00:00Z', '2026-10-19T14:00:00Z')
+    // 10:00–11:00 — строки 20..21.
+    const range = resolveSelection({ row: 20, col: 0 }, { row: 21, col: 0 }, grid())
+    const plan = selectionToErase(range, [mine], grid())
+
+    expect(plan.toCreate).toEqual([
+      { startsAt: '2026-10-19T11:00:00.000Z', endsAt: '2026-10-19T14:00:00.000Z' },
+    ])
+  })
+
+  it('выделение шире слота стирает его целиком, лишнего не создаёт', () => {
+    const mine = slot('2026-10-19T11:00:00Z', '2026-10-19T12:00:00Z')
+    const range = resolveSelection({ row: 20, col: 0 }, { row: 27, col: 0 }, grid())
+    const plan = selectionToErase(range, [mine], grid())
+
+    expect(plan.toDelete.map((s) => s.id)).toEqual([mine.id])
+    expect(plan.toCreate).toHaveLength(0)
+  })
+
+  /** То же правило, что при создании: серию жестом не режут. */
+  it('серия под стиранием не трогается и объясняется', () => {
+    const series = slot('2026-10-19T10:00:00Z', '2026-10-19T12:00:00Z', 'series-1')
+    const range = resolveSelection({ row: 20, col: 0 }, { row: 23, col: 0 }, grid())
+    const plan = selectionToErase(range, [series], grid())
+
+    expect(plan.toDelete).toHaveLength(0)
+    expect(plan.toCreate).toHaveLength(0)
+    expect(plan.blocked).toEqual([{ slot: series, reason: 'series' }])
+  })
+
+  it('ночной и неровный слоты стиранием тоже не трогаются', () => {
+    const overnight = slot('2026-10-19T23:00:00Z', '2026-10-20T01:00:00Z')
+    const unaligned = slot('2026-10-19T14:15:00Z', '2026-10-19T16:00:00Z')
+    const wide = resolveSelection({ row: 0, col: 0 }, { row: 47, col: 0 }, grid())
+    const plan = selectionToErase(wide, [overnight, unaligned], grid())
+
+    expect(plan.toDelete).toHaveLength(0)
+    expect(plan.blocked.map((b) => b.reason).sort()).toEqual(['overnight', 'unaligned'])
+  })
+
+  /**
+   * Смешанный случай: стирание, начатое на своём, прошло через серию. Своё
+   * стирается, серия остаётся и объясняется — так же, как при создании.
+   */
+  it('своё стирается, задетая серия остаётся', () => {
+    const mine = slot('2026-10-19T10:00:00Z', '2026-10-19T11:00:00Z')
+    const series = slot('2026-10-19T11:00:00Z', '2026-10-19T12:00:00Z', 'series-1')
+    const range = resolveSelection({ row: 20, col: 0 }, { row: 23, col: 0 }, grid())
+    const plan = selectionToErase(range, [mine, series], grid())
+
+    expect(plan.toDelete.map((s) => s.id)).toEqual([mine.id])
+    expect(plan.toCreate).toHaveLength(0)
+    expect(plan.blocked).toEqual([{ slot: series, reason: 'series' }])
+  })
+})
+
+describe('cellOwnership', () => {
+  const mine = slot('2026-10-19T10:00:00Z', '2026-10-19T12:00:00Z')
+  const series = slot('2026-10-20T10:00:00Z', '2026-10-20T12:00:00Z', 'series-1')
+
+  it('свободная ячейка', () => {
+    expect(cellOwnership({ row: 30, col: 0 }, [mine, series], grid())).toBe('free')
+  })
+
+  it('своя занятая ячейка', () => {
+    expect(cellOwnership({ row: 20, col: 0 }, [mine, series], grid())).toBe('mine')
+  })
+
+  it('заблокированная ячейка', () => {
+    expect(cellOwnership({ row: 20, col: 1 }, [mine, series], grid())).toBe('blocked')
+  })
+
+  /** Заблокированное перевешивает своё — как и в раскраске сетки. */
+  it('на пересечении своего и серии — заблокирована', () => {
+    const overlap = slot('2026-10-19T10:00:00Z', '2026-10-19T11:00:00Z', 'series-2')
+    expect(cellOwnership({ row: 20, col: 0 }, [mine, overlap], grid())).toBe('blocked')
   })
 })

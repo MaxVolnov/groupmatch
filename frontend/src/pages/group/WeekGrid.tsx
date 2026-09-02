@@ -67,14 +67,25 @@ function intensityClass(count: number, max: number): string {
 const MINE_CLASS: Record<Exclude<CellState, 'free'>, string> = {
   busy: 'bg-gm-600 dark:bg-gm-500',
   series: 'bg-gm-900 dark:bg-gm-200',
-  partial: 'bg-gm-200 dark:bg-gm-800',
+  // gm-300, а не gm-200: на снимке стенда бледно-голубая вставка поверх
+  // светло-зелёного фона агрегата почти сливалась с ним. В тёмной теме
+  // gm-800 контрастен и без правки.
+  partial: 'bg-gm-300 dark:bg-gm-800',
 }
 
-/** Подсветка на время жеста. Кладётся поверх обоих слоёв. */
+/**
+ * Подсветка на время жеста. Кладётся поверх обоих слоёв.
+ *
+ * `erase` намеренно выпадает из синей шкалы: стирание — единственное здесь
+ * необратимое действие, и оно обязано читаться как другое по роду, а не как
+ * ещё один оттенок того же. Красный тут семантический, а не фирменный —
+ * ровно как зелёный у плотности.
+ */
 const HIGHLIGHT_CLASS: Record<DragHighlight, string> = {
   create: 'bg-gm-400 dark:bg-gm-400',
   unchanged: 'bg-gm-100 dark:bg-gm-800',
   blocked: 'bg-gm-700 dark:bg-gm-600 ring-1 ring-inset ring-gm-400 dark:ring-gm-100',
+  erase: 'bg-red-400 dark:bg-red-500',
 }
 
 /**
