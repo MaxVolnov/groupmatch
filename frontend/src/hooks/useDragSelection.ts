@@ -12,7 +12,19 @@ import {
 } from '@/utils/selection'
 
 /**
- * Протяжка по сетке доступности: зажал ячейку, потянул, отпустил.
+ * Выделение по сетке доступности — двумя разными жестами на одном состоянии.
+ *
+ * Мышь: зажал ячейку, потянул, отпустил — применилось.
+ *
+ * Тач: тап по ячейке, ручки по углам, подтверждение кнопкой. Жест другой не
+ * из вкусовых соображений: проведение пальцем по ячейкам неотличимо от
+ * скролла, а скролл — единственный способ листать сутки на телефоне. Отнимать
+ * его ради выделения нельзя, поэтому `touch-action: none` висит только на
+ * ручках, а не на контейнере сетки.
+ *
+ * Состояние при этом одно на оба жеста: `anchor`, `focus` и нормализация те
+ * же самые. Отличается только источник событий и то, применяется ли выделение
+ * по отпусканию.
  *
  * Файл делится надвое сознательно.
  *
@@ -44,14 +56,33 @@ export interface DragSelectionConfig {
   onChange: (range: SelectionRange | null) => void
 }
 
+/** За какой угол выделения держатся: верхний-левый или нижний-правый. */
+export type SelectionHandle = 'start' | 'end'
+
 export interface DragSelection {
-  /** @returns начат ли жест */
+  /** Мышь: зажали ячейку. Отпускание применит выделение. @returns начат ли жест */
   down(cell: Cell, button: number): boolean
   move(cell: Cell): void
   up(): void
   cancel(): void
+  /** Ведём ли выделение прямо сейчас (кнопка или палец в движении). */
   isActive(): boolean
   range(): SelectionRange | null
+
+  /**
+   * Тач: тап по ячейке. Выделение остаётся жить и ждёт подтверждения.
+   * @returns создано ли выделение (нет — если ячейка заблокирована или
+   *          выделение уже было и тап его отменил)
+   */
+  tap(cell: Cell): boolean
+  /** Тач: взялись за ручку. Дальше `move` тянет именно её. */
+  grab(handle: SelectionHandle): boolean
+  /** Тач: применить то, что выделено. */
+  commit(): void
+  /** Есть живое выделение (мышиное в процессе или тач-выделение в ожидании). */
+  hasSelection(): boolean
+  /** Выделение ждёт подтверждения — значит, надо показать ручки и кнопки. */
+  isPending(): boolean
 }
 
 /**
@@ -66,6 +97,16 @@ export interface DragSelection {
 export function createDragSelection(config: DragSelectionConfig): DragSelection {
   let anchor: Cell | null = null
   let focus: Cell | null = null
+  /** Ведём ли выделение прямо сейчас: кнопка зажата или палец на ручке. */
+  let dragging = false
+  /**
+   * Применить ли выделение по отпусканию.
+   *
+   * Мышь — да: отпустил кнопку, получил слот. Тач — нет: палец поднимается и
+   * с ручки, и просто так, а угадывать по этому намерение нельзя. Там
+   * применение отдельным нажатием.
+   */
+  let commitOnRelease = true
 
   const range = (): SelectionRange | null => {
     if (!anchor || !focus) return null
@@ -76,7 +117,31 @@ export function createDragSelection(config: DragSelectionConfig): DragSelection 
   const reset = () => {
     anchor = null
     focus = null
+    dragging = false
     config.onChange(null)
+  }
+
+  /** Применить текущее выделение и сбросить его. */
+  const applyCurrent = () => {
+    const finished = range()
+    reset()
+    if (!finished) return
+
+    const plan = selectionToSlots(finished, config.getSlots(), config.getGrid())
+    if (plan.blocked.length > 0) config.onBlocked(plan.blocked)
+    if (plan.toCreate.length > 0 || plan.toDelete.length > 0) config.onApply(plan)
+  }
+
+  /** Крайние ячейки выделения: верхняя-левая и нижняя-правая. */
+  const corners = (): { start: Cell; end: Cell } | null => {
+    const r = range()
+    if (!r || r.days.length === 0) return null
+    const first = r.days[0]
+    const last = r.days[r.days.length - 1]
+    return {
+      start: { row: first.startRow, col: first.col },
+      end: { row: last.endRow, col: last.col },
+    }
   }
 
   return {
@@ -88,12 +153,14 @@ export function createDragSelection(config: DragSelectionConfig): DragSelection 
       if (config.isBusy()) return false
       anchor = cell
       focus = cell
+      dragging = true
+      commitOnRelease = true
       config.onChange(range())
       return true
     },
 
     move(cell) {
-      if (!anchor) return
+      if (!dragging) return
       if (focus && focus.row === cell.row && focus.col === cell.col) return
       focus = cell
       config.onChange(range())
@@ -103,14 +170,13 @@ export function createDragSelection(config: DragSelectionConfig): DragSelection 
       // Отпускание без начатого жеста — обычное дело: кнопку могли зажать вне
       // сетки, а отпустить над ней. Выходим молча, не трогая состояние: лишний
       // onChange(null) заставил бы подписчиков думать, что что-то отменилось.
-      if (!anchor) return
-      const finished = range()
-      reset()
-      if (!finished) return
-
-      const plan = selectionToSlots(finished, config.getSlots(), config.getGrid())
-      if (plan.blocked.length > 0) config.onBlocked(plan.blocked)
-      if (plan.toCreate.length > 0 || plan.toDelete.length > 0) config.onApply(plan)
+      if (!dragging) return
+      if (!commitOnRelease) {
+        // Тач: палец отпустили, выделение осталось ждать подтверждения.
+        dragging = false
+        return
+      }
+      applyCurrent()
     },
 
     /** Отмена: жест не завершён, значит не применяется. Ни запроса, ни разбора. */
@@ -119,7 +185,58 @@ export function createDragSelection(config: DragSelectionConfig): DragSelection 
       reset()
     },
 
-    isActive: () => anchor !== null,
+    tap(cell) {
+      if (config.isBusy()) return false
+
+      // Тап при живом выделении — отмена, а не новое выделение. Иначе
+      // промах мимо ручки молча переносил бы выделение в другое место, и
+      // человек подтверждал бы не то, что видел секунду назад.
+      if (anchor) {
+        reset()
+        return false
+      }
+
+      const grid = config.getGrid()
+      const probe = clampSelection(resolveSelection(cell, cell, grid), grid)
+      const plan = selectionToSlots(probe, config.getSlots(), grid)
+      if (plan.blocked.length > 0) {
+        // Тап без единой реакции читается как неработающий интерфейс, поэтому
+        // отказ обязан быть громким.
+        config.onBlocked(plan.blocked)
+        return false
+      }
+
+      anchor = cell
+      focus = cell
+      dragging = false
+      commitOnRelease = false
+      config.onChange(range())
+      return true
+    },
+
+    grab(handle) {
+      if (config.isBusy()) return false
+      const ends = corners()
+      if (!ends) return false
+
+      // Тянут ту ручку, за которую взялись; противоположная становится
+      // якорем. Нормализацию дальше делает resolveSelection — ручки можно
+      // протащить одну сквозь другую, выделение просто перевернётся.
+      anchor = handle === 'end' ? ends.start : ends.end
+      focus = handle === 'end' ? ends.end : ends.start
+      dragging = true
+      commitOnRelease = false
+      return true
+    },
+
+    commit() {
+      if (config.isBusy()) return
+      applyCurrent()
+    },
+
+    isActive: () => dragging,
+    hasSelection: () => anchor !== null,
+    isPending: () => anchor !== null && !commitOnRelease,
     range,
   }
 }
@@ -166,6 +283,8 @@ export interface UseDragSelectionOptions {
 
 export function useDragSelection(options: UseDragSelectionOptions) {
   const [range, setRange] = useState<SelectionRange | null>(null)
+  /** Отдельный флаг: выделение живо, но подтверждения ещё не было. */
+  const [pending, setPending] = useState(false)
 
   // Свежие значения для контроллера: он создаётся один раз, а неделя, слоты и
   // состояние запроса меняются под ним.
@@ -185,8 +304,20 @@ export function useDragSelection(options: UseDragSelectionOptions) {
     [],
   )
 
+  /**
+   * Тип указателя последнего нажатия. По нему решается, чей это жест: у мыши
+   * выделение ведётся зажатой кнопкой, у пальца — только за ручку, а
+   * проведение по ячейкам обязано остаться скроллом.
+   */
+  const lastPointerType = useRef<string>('mouse')
+
   const onPointerDown = useCallback(
     (e: React.PointerEvent<HTMLElement>) => {
+      lastPointerType.current = e.pointerType
+      // Палец по ячейкам не выделяет — он скроллит. Тач-выделение начинается
+      // тапом (событие click, которое браузер не пришлёт, если был скролл) и
+      // растягивается ручками.
+      if (e.pointerType === 'touch') return
       const cell = domCellFromPoint(e.clientX, e.clientY)
       if (!cell) return
       if (!controller.down(cell, e.button)) return
@@ -220,6 +351,7 @@ export function useDragSelection(options: UseDragSelectionOptions) {
     (e: React.PointerEvent<HTMLElement>) => {
       release(e)
       controller.up()
+      setPending(controller.isPending())
     },
     [controller],
   )
@@ -228,6 +360,7 @@ export function useDragSelection(options: UseDragSelectionOptions) {
     (e: React.PointerEvent<HTMLElement>) => {
       release(e)
       controller.cancel()
+      setPending(controller.isPending())
     },
     [controller],
   )
@@ -239,9 +372,18 @@ export function useDragSelection(options: UseDragSelectionOptions) {
   useEffect(() => {
     if (!range) return
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') controller.cancel()
+      if (e.key !== 'Escape') return
+      controller.cancel()
+      setPending(false)
     }
-    const onBlur = () => controller.cancel()
+    // Потеря фокуса окна отменяет только незавершённый жест. Тач-выделение,
+    // уже ждущее подтверждения, переживает переключение вкладки: человек
+    // вернётся и нажмёт кнопку.
+    const onBlur = () => {
+      if (!controller.isActive()) return
+      controller.cancel()
+      setPending(false)
+    }
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('blur', onBlur)
     return () => {
@@ -250,9 +392,62 @@ export function useDragSelection(options: UseDragSelectionOptions) {
     }
   }, [range, controller])
 
+  /**
+   * Тач-тап. Именно `click`, а не `pointerup`: браузер сам не присылает click
+   * после того, как касание превратилось в скролл, — то есть он уже отличил
+   * тап от прокрутки, и повторять эту логику руками не нужно.
+   */
+  const onClick = useCallback(
+    (e: React.MouseEvent<HTMLElement>) => {
+      if (lastPointerType.current !== 'touch') return
+      const target = e.target instanceof Element ? e.target : null
+      if (target?.closest('[data-handle]')) return
+      const cell = target?.closest('[data-row][data-col]')
+      if (!cell) return
+      controller.tap({
+        row: Number(cell.getAttribute('data-row')),
+        col: Number(cell.getAttribute('data-col')),
+      })
+      setPending(controller.isPending())
+    },
+    [controller],
+  )
+
+  const handleProps = useCallback(
+    (handle: SelectionHandle) => ({
+      'data-handle': handle,
+      onPointerDown: (e: React.PointerEvent<HTMLElement>) => {
+        // Не даём событию дойти до контейнера: там оно завело бы мышиный жест
+        // от ячейки под ручкой.
+        e.stopPropagation()
+        if (!controller.grab(handle)) return
+        e.currentTarget.setPointerCapture(e.pointerId)
+        // Единственное место, где нативный жест перебивается. touch-action на
+        // контейнере убил бы скролл сетки целиком.
+        e.preventDefault()
+      },
+    }),
+    [controller],
+  )
+
+  const commit = useCallback(() => {
+    controller.commit()
+    setPending(controller.isPending())
+  }, [controller])
+
+  const cancel = useCallback(() => {
+    controller.cancel()
+    setPending(controller.isPending())
+  }, [controller])
+
   return {
     range,
     isDragging: range !== null,
-    gridProps: { onPointerDown, onPointerMove, onPointerUp, onPointerCancel },
+    /** Выделение ждёт подтверждения: показываем ручки и кнопки. */
+    pending,
+    gridProps: { onPointerDown, onPointerMove, onPointerUp, onPointerCancel, onClick },
+    handleProps,
+    commit,
+    cancel,
   }
 }

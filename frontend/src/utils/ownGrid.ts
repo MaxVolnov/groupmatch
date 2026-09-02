@@ -1,6 +1,6 @@
 import { DateTime } from 'luxon'
 import type { AvailabilityResponse } from '@/types'
-import { cellStart, type GridSpec } from './selection'
+import { cellStart, isOvernightSlot, isUnalignedSlot, type GridSpec } from './selection'
 
 /**
  * Сетка своего времени: раскладка собственных слотов участника по ячейкам
@@ -34,12 +34,21 @@ export const DAYS_PER_WEEK = 7
  * Состояние одной ячейки.
  *
  * - `free` — время не отмечено;
- * - `busy` — ячейку целиком покрывает обычный слот;
- * - `series` — ячейку задевает слот повторяющейся серии;
- * - `partial` — слот покрывает ячейку не полностью (14:15–15:47 в сетке по
- *   полчаса выражается только так).
+ * - `busy` — обычный слот, редактируется протяжкой;
+ * - `series` — слот повторяющейся серии: меняется только в списке;
+ * - `partial` — слот занят, но сеткой не выражается — границы не по получасам
+ *   (14:15–15:47) или он переходит через полночь. Тоже только в списке.
+ *
+ * Три занятых состояния делятся ровно по тому признаку, который человеку и
+ * нужен: что из этого можно поправить пальцем прямо здесь. `series` и
+ * `partial` — нельзя, и набор ячеек в этих двух состояниях совпадает с тем,
+ * что `selectionToSlots` возвращает в `blocked`. Совпадает не случайно: обе
+ * стороны спрашивают одни и те же предикаты.
  */
 export type CellState = 'free' | 'busy' | 'series' | 'partial'
+
+/** Ячейку нельзя редактировать жестом — только через список слотов. */
+export const isBlockedState = (state: CellState) => state === 'series' || state === 'partial'
 
 export interface OwnGrid {
   /** Ровно тот `GridSpec`, который принимает `selection.ts`. Без переходников. */
@@ -110,21 +119,29 @@ export function buildOwnGrid(slots: AvailabilityResponse[], weekStart: DateTime)
      * 14:30–15:00. Пометка теряет смысл ровно там, где нужна: человек видит
      * в списке 14:15, в сетке — ровный блок, и не понимает, откуда взялось
      * расхождение. Достаточно одной неровной границы, чтобы весь слот был
-     * «не по получасам».
+     * «только в списке».
+     *
+     * Предикаты берутся из `selection.ts`, а не считаются здесь заново: набор
+     * ячеек, которые сетка красит нередактируемыми, обязан совпадать с тем,
+     * что протяжка возвращает в `blocked`. Второй реализации того же признака
+     * достаточно разойтись на один случай, чтобы сетка начала обещать
+     * редактируемость, которой нет.
      */
+    const state: CellState = slot.seriesId
+      ? 'series'
+      : isOvernightSlot(slot, spec.zone) || isUnalignedSlot(slot, spec)
+        ? 'partial'
+        : 'busy'
+
     const touched: [number, number][] = []
-    let alignedToGrid = true
     for (let col = 0; col < DAYS_PER_WEEK; col++) {
       for (let row = 0; row < ROWS_PER_DAY; row++) {
         const from = bounds[col][row]
         const to = bounds[col][row + 1]
-        if (!(start < to && end > from)) continue
-        touched.push([row, col])
-        if (!(start <= from && end >= to)) alignedToGrid = false
+        if (start < to && end > from) touched.push([row, col])
       }
     }
 
-    const state: CellState = slot.seriesId ? 'series' : alignedToGrid ? 'busy' : 'partial'
     for (const [row, col] of touched) {
       if (PRIORITY[state] > PRIORITY[cells[row][col]]) cells[row][col] = state
     }

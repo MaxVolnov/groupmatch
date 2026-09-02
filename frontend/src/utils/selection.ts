@@ -81,8 +81,13 @@ export interface SlotDraft {
  *   слот 23:00–01:00, унесла бы вместе с ним кусок понедельника, которого в
  *   жесте не было. Тот же принцип, по которому массовая очистка на бэкенде не
  *   режет частично пересекающиеся слоты.
+ * - `unaligned` — границы слота не лежат на границах ячеек (14:15–15:47 при
+ *   шаге в полчаса). Сетка такой слот не выражает: протяжка рядом с ним
+ *   сливалась бы в слот, начинающийся в 14:15, — время, которого в жесте не
+ *   было и которое в сетке не видно. Причина та же, что у `overnight`:
+ *   результат жеста должен быть виден в жесте.
  */
-export type BlockReason = 'series' | 'overnight'
+export type BlockReason = 'series' | 'overnight' | 'unaligned'
 
 export interface BlockedSlot {
   slot: AvailabilityResponse
@@ -259,6 +264,23 @@ export function isOvernightSlot(slot: AvailabilityResponse, zone: string): boole
   return end > start.startOf('day').plus({ days: 1 })
 }
 
+/**
+ * Границы слота не совпадают с границами ячеек: 14:15–15:47 при шаге в
+ * полчаса.
+ *
+ * Считается минутами от начала своих суток, а не по `minute % 30`: в зонах со
+ * сдвигом в полчаса (Индия, Непал) полдень приходится не на круглый час, и
+ * проверка по минутам часа объявила бы неровным каждый слот подряд.
+ */
+export function isUnalignedSlot(slot: AvailabilityResponse, grid: GridSpec): boolean {
+  const { start, end } = toInterval(slot, grid.zone)
+  const onBoundary = (t: DateTime) => {
+    const minutes = t.diff(t.startOf('day'), 'minutes').minutes
+    return Number.isInteger(minutes) && minutes % grid.stepMinutes === 0
+  }
+  return !onBoundary(start) || !onBoundary(end)
+}
+
 /** Вычитает из интервала занятые куски; остаётся то, что действительно свободно. */
 function subtract(base: Interval, holes: Interval[]): Interval[] {
   let pieces: Interval[] = [base]
@@ -304,7 +326,13 @@ export function selectionToSlots(
   // важнее для человека именно эта — у серии есть свой способ удаления, а
   // «через полночь» звучало бы как техническая случайность.
   const reasonFor = (slot: AvailabilityResponse): BlockReason | null =>
-    slot.seriesId ? 'series' : isOvernightSlot(slot, zone) ? 'overnight' : null
+    slot.seriesId
+      ? 'series'
+      : isOvernightSlot(slot, zone)
+        ? 'overnight'
+        : isUnalignedSlot(slot, grid)
+          ? 'unaligned'
+          : null
 
   const untouchable = existingSlots.filter((s) => reasonFor(s) !== null)
   const plain = existingSlots.filter((s) => reasonFor(s) === null)

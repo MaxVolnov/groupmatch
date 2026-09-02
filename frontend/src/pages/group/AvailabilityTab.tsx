@@ -9,8 +9,8 @@ import { ErrorMessage } from '@/components/ErrorMessage'
 import type { Plan } from '@/types'
 import { DateTime } from 'luxon'
 import { defaultDatetime, fmtRange, toIso } from '@/utils/datetime'
-import { buildOwnGrid } from '@/utils/ownGrid'
-import { isOvernightSlot, type SelectionPlan } from '@/utils/selection'
+import { buildOwnGrid, isBlockedState } from '@/utils/ownGrid'
+import type { SelectionPlan } from '@/utils/selection'
 import { applyPlan, useDragSelection, type DragHighlight } from '@/hooks/useDragSelection'
 import { MyAvailabilityGrid } from './MyAvailabilityGrid'
 
@@ -129,24 +129,6 @@ export function AvailabilityTab({ groupId, callerPlan, focusRequest, weekOffset,
   const weekStart = DateTime.now().startOf('week').plus({ weeks: weekOffset })
   const ownGrid = useMemo(() => buildOwnGrid(slots ?? [], weekStart), [slots, weekStart])
 
-  /**
-   * Вторая сетка — по одним лишь неприкосновенным слотам. Ячейка, не
-   * свободная в ней, протяжкой не редактируется.
-   *
-   * Считается тем же `buildOwnGrid`, а не отдельным обходом: покрытие ячеек
-   * уже описано и проверено там, а второй реализации того же расчёта
-   * достаточно разъехаться на полчаса, чтобы подсветка начала врать о том,
-   * что произойдёт.
-   */
-  const blockedGrid = useMemo(
-    () =>
-      buildOwnGrid(
-        (slots ?? []).filter((s) => !!s.seriesId || isOvernightSlot(s, ownGrid.spec.zone)),
-        weekStart,
-      ),
-    [slots, weekStart, ownGrid.spec.zone],
-  )
-
   const applySelection = useMutation({
     mutationFn: (plan: SelectionPlan) =>
       applyPlan(
@@ -190,10 +172,30 @@ export function AvailabilityTab({ groupId, callerPlan, focusRequest, weekOffset,
       (d) => d.col === col && row >= d.startRow && row <= d.endRow,
     )
     if (!inSelection) return null
-    if (blockedGrid.cells[row][col] !== 'free') return 'blocked'
-    if (ownGrid.cells[row][col] !== 'free') return 'unchanged'
+    // Постоянное состояние ячейки уже отвечает на вопрос «можно ли её
+    // трогать»: `series` и `partial` — те же самые слоты, что протяжка
+    // возвращает в `blocked`. Второй сетки для этого больше не нужно.
+    const state = ownGrid.cells[row][col]
+    if (isBlockedState(state)) return 'blocked'
+    if (state !== 'free') return 'unchanged'
     return 'create'
   }
+
+  /**
+   * Углы тач-выделения, куда садятся ручки. У мышиного жеста ручек нет:
+   * выделение там живёт только пока зажата кнопка, и вешать на него маркеры
+   * значит рисовать то, за что нельзя взяться.
+   */
+  const handles =
+    drag.pending && drag.range && drag.range.days.length > 0
+      ? {
+          start: { row: drag.range.days[0].startRow, col: drag.range.days[0].col },
+          end: {
+            row: drag.range.days[drag.range.days.length - 1].endRow,
+            col: drag.range.days[drag.range.days.length - 1].col,
+          },
+        }
+      : null
 
   if (error) return <ErrorMessage error={error} />
 
@@ -226,7 +228,33 @@ export function AvailabilityTab({ groupId, callerPlan, focusRequest, weekOffset,
         {isLoading ? (
           <Skeleton className="h-96 w-full" />
         ) : (
-          <MyAvailabilityGrid grid={ownGrid} highlightAt={highlightAt} gridProps={drag.gridProps} />
+          <MyAvailabilityGrid
+            grid={ownGrid}
+            highlightAt={highlightAt}
+            gridProps={drag.gridProps}
+            handles={handles}
+            handleProps={drag.handleProps}
+          />
+        )}
+        {/*
+          Панель подтверждения. Прилипает к низу экрана — на телефоне это
+          единственное место, куда дотягивается большой палец, — и появляется
+          только когда есть что подтверждать. Отступ снизу у обёртки добавлен
+          на то же время: без него панель ложилась бы поверх нижних строк
+          сетки, то есть поверх того самого выделения.
+        */}
+        {drag.pending && (
+          <div className="sticky bottom-0 z-30 -mx-4 mt-2 flex items-center gap-2 border-t border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800 sm:mx-0 sm:rounded-xl sm:border">
+            <span className="mr-auto text-sm text-gray-700 dark:text-gray-300">
+              {t('group.availabilityTab.grid.selectedCells', { count: drag.range?.cellCount ?? 0 })}
+            </span>
+            <Button variant="secondary" size="sm" onClick={drag.cancel} className="min-h-[44px]">
+              {t('group.availabilityTab.grid.cancel')}
+            </Button>
+            <Button size="sm" onClick={drag.commit} className="min-h-[44px]">
+              {t('group.availabilityTab.grid.confirm')}
+            </Button>
+          </div>
         )}
         <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
           {t('group.availabilityTab.grid.dragHint')}
