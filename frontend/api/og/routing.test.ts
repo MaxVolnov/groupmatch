@@ -3,10 +3,14 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 /**
- * `vercel.json` — единственное место, где описан весь роутинг продакшена, и
- * ошибка в нём не ловится ни типами, ни сборкой: она обнаруживается тем, что
- * `/promo` вдруг отдаёт SPA. Здесь проверяется не Vercel, а наши правила:
- * порядок, адресаты и то, что новое правило для `/join` никого не съело.
+ * `vercel.json` — единственное место, где описаны роутинг и заголовки
+ * продакшена, и ошибка в нём не ловится ни типами, ни сборкой: она
+ * обнаруживается тем, что `/promo` вдруг отдаёт SPA. Здесь проверяется не
+ * Vercel, а наши правила: порядок, адресаты, то, что правило для `/join`
+ * никого не съело, и состав заголовков безопасности.
+ *
+ * Файл формата JSON комментариев не допускает, поэтому обоснование решений,
+ * записанных в нём, живёт здесь.
  */
 
 interface Rewrite {
@@ -15,9 +19,16 @@ interface Rewrite {
   has?: { type: string; key: string; value: string }[]
 }
 
-const config: { rewrites: Rewrite[]; redirects: { source: string }[] } = JSON.parse(
-  readFileSync(resolve(__dirname, '../../vercel.json'), 'utf-8'),
-)
+interface HeaderRule {
+  source: string
+  headers: { key: string; value: string }[]
+}
+
+const config: {
+  rewrites: Rewrite[]
+  redirects: { source: string }[]
+  headers: HeaderRule[]
+} = JSON.parse(readFileSync(resolve(__dirname, '../../vercel.json'), 'utf-8'))
 
 const { rewrites } = config
 const joinRules = rewrites.filter((r) => r.source.startsWith('/join/'))
@@ -111,5 +122,66 @@ describe('кого правило считает краулером', () => {
 
   it.each(HUMANS)('человек: %s', (ua) => {
     expect(uaMatcher.test(ua)).toBe(false)
+  })
+})
+
+/**
+ * Заголовки безопасности. До этой правки прод не отдавал ни одного своего:
+ * единственный, `strict-transport-security`, добавляет сама платформа.
+ *
+ * CSP здесь намеренно нет. Для React-приложения со сторонними шрифтами она
+ * требует итераций в report-only и легко выключает половину интерфейса — это
+ * отдельная задача, а не строчка в этом списке.
+ */
+describe('заголовки безопасности', () => {
+  const catchAll = config.headers.find((rule) => rule.source === '/(.*)')
+  const value = (key: string) =>
+    catchAll?.headers.find((h) => h.key.toLowerCase() === key.toLowerCase())?.value
+
+  it('правило одно и покрывает все пути', () => {
+    expect(config.headers).toHaveLength(1)
+    expect(catchAll, 'нет правила на /(.*)').toBeDefined()
+  })
+
+  /**
+   * Самый ценный из трёх. Без него приложение можно положить в iframe на чужом
+   * сайте и собирать клики по «покинуть группу» и «удалить встречу». DENY, а не
+   * SAMEORIGIN: своих iframe в приложении нет ни одного.
+   */
+  it('X-Frame-Options: DENY', () => {
+    expect(value('X-Frame-Options')).toBe('DENY')
+  })
+
+  it('X-Content-Type-Options: nosniff', () => {
+    expect(value('X-Content-Type-Options')).toBe('nosniff')
+  })
+
+  /**
+   * `strict-origin-when-cross-origin`, а не `no-referrer`: свой Referer нужен,
+   * а наружу уходит только origin. Для продукта это не абстракция — в адресе
+   * `/join/{token}` лежит секрет приглашения, и при переходе по внешней ссылке
+   * с этой страницы полный путь ушёл бы чужому сайту вместе с токеном.
+   */
+  it('Referrer-Policy не пускает путь на чужой домен', () => {
+    expect(value('Referrer-Policy')).toBe('strict-origin-when-cross-origin')
+  })
+
+  /** CSP — отдельная задача; появиться она должна осознанно, а не мимоходом. */
+  it('CSP тут пока нет', () => {
+    expect(value('Content-Security-Policy')).toBeUndefined()
+    expect(value('Content-Security-Policy-Report-Only')).toBeUndefined()
+  })
+
+  /**
+   * Заголовки Vercel сопоставляет с входящим путём, до перезаписей, поэтому
+   * `/(.*)` накрывает и четыре точки входа MPA, и `/join/:token`, уходящий в
+   * edge-функцию. Проверяем, что общее правило не сузили: сузить его — значит
+   * незаметно оставить часть страниц без заголовков.
+   */
+  it('под правило попадают все точки входа и /join', () => {
+    const pattern = new RegExp(`^${catchAll!.source}$`)
+    for (const path of ['/', '/promo', '/legal', '/about', '/signup', '/join/abc123']) {
+      expect(pattern.test(path), `${path} не покрыт правилом`).toBe(true)
+    }
   })
 })
