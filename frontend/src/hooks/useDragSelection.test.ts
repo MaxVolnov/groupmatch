@@ -39,7 +39,11 @@ function slot(startsAt: string, endsAt: string, seriesId: string | null = null):
 }
 
 /** Стенд вокруг контроллера: те же колбэки, что подставляет хук, но со шпионами. */
-function harness(slots: AvailabilityResponse[] = [], busy = false) {
+function harness(
+  slots: AvailabilityResponse[] = [],
+  busy = false,
+  onActivateSlot?: (cell: { row: number; col: number }) => void,
+) {
   const onApply = vi.fn<[SelectionPlan], void>()
   const onBlocked = vi.fn<[BlockedSlot[]], void>()
   const changes: (SelectionRange | null)[] = []
@@ -53,6 +57,7 @@ function harness(slots: AvailabilityResponse[] = [], busy = false) {
     isBusy: () => state.busy,
     onApply,
     onBlocked,
+    onActivateSlot,
     onChange: (r) => changes.push(r),
   })
 
@@ -310,16 +315,111 @@ describe('тач: тап и подтверждение', () => {
   })
 
   /**
-   * Тап мимо выделения — отмена, а не новое выделение. Иначе промах мимо
-   * ручки молча переносил бы выделение, и человек подтверждал бы не то, что
-   * видел секунду назад.
+   * Подтверждение — тап по самому выделению.
+   *
+   * Раньше здесь стояла пара кнопок «отметить / отменить»: одного размера, в
+   * одном месте, разница только в подписи. Теперь подтверждение — жест по
+   * тому, что подтверждаешь, а отмена одна и стоит в стороне.
    */
-  it('тап при живом выделении отменяет его, а не создаёт новое', () => {
+  it('тап по выделению подтверждает и применяет', () => {
+    const h = harness()
+
+    h.drag.tap({ row: 20, col: 0 })
+    h.drag.grab('end')
+    h.drag.move({ row: 23, col: 0 })
+    h.drag.up()
+
+    h.drag.tap({ row: 21, col: 0 })   // внутри выделения
+
+    expect(h.onApply).toHaveBeenCalledTimes(1)
+    expect(h.onApply.mock.calls[0][0].toCreate).toEqual([
+      { startsAt: '2026-10-19T10:00:00.000Z', endsAt: '2026-10-19T12:00:00.000Z' },
+    ])
+    expect(h.drag.hasSelection()).toBe(false)
+  })
+
+  /**
+   * Тап мимо выделения не делает ничего — и в частности не отменяет.
+   *
+   * Промах пальцем мимо ячейки высотой в шестнадцать пикселей — обычное дело,
+   * и терять из-за него настроенное выделение человек не подписывался. Отмена
+   * есть, но она кнопкой и в стороне.
+   */
+  it('тап вне выделения ничего не делает, выделение живо', () => {
     const h = harness()
 
     h.drag.tap({ row: 20, col: 0 })
     expect(h.drag.tap({ row: 40, col: 3 })).toBe(false)
 
+    expect(h.onApply).not.toHaveBeenCalled()
+    expect(h.drag.hasSelection()).toBe(true)
+    expect(h.drag.isPending()).toBe(true)
+  })
+
+  it('кнопка отмены сбрасывает выделение и ничего не шлёт', () => {
+    const h = harness()
+
+    h.drag.tap({ row: 20, col: 0 })
+    h.drag.cancel()
+
+    expect(h.onApply).not.toHaveBeenCalled()
+    expect(h.drag.hasSelection()).toBe(false)
+  })
+
+  it('тап по выделению при летящей мутации второй запрос не шлёт', () => {
+    const h = harness()
+    h.drag.tap({ row: 20, col: 0 })
+
+    h.busy = true
+    h.drag.tap({ row: 20, col: 0 })
+
+    expect(h.onApply).not.toHaveBeenCalled()
+    expect(h.drag.hasSelection(), 'выделение остаётся — подтвердить можно будет позже').toBe(true)
+  })
+
+  /**
+   * Ручки одноклеточного выделения перекрывают его целиком своими зонами
+   * захвата — 44 пикселя вокруг маркера на ячейке высотой шестнадцать. Тап,
+   * которым человек подтверждает, приходит поэтому в ручку, а не в клетку.
+   * Взялись и отпустили, не сдвинув, — это тот же тап.
+   */
+  it('взялись за ручку и отпустили, не сдвинув, — это подтверждение', () => {
+    const h = harness()
+
+    h.drag.tap({ row: 20, col: 0 })
+    h.drag.grab('end')
+    h.drag.up()
+
+    expect(h.onApply).toHaveBeenCalledTimes(1)
+    expect(h.drag.hasSelection()).toBe(false)
+  })
+
+  it('взялись за ручку, сдвинули и отпустили — выделение живо, запроса нет', () => {
+    const h = harness()
+
+    h.drag.tap({ row: 20, col: 0 })
+    h.drag.grab('end')
+    h.drag.move({ row: 24, col: 0 })
+    h.drag.up()
+
+    expect(h.onApply).not.toHaveBeenCalled()
+    expect(h.drag.isPending()).toBe(true)
+    expect(h.last()?.cellCount).toBe(5)
+  })
+
+  /**
+   * Тап по своей занятой ячейке открывает слот, а не начинает стирание.
+   * Посмотреть и поправить на телефоне нужно чаще, чем стереть, а удаление
+   * осталось кнопкой в модалке.
+   */
+  it('тап по своей занятой ячейке отдаёт слот наружу вместо выделения', () => {
+    const mine = slot('2026-10-19T10:00:00Z', '2026-10-19T12:00:00Z')
+    const opened: { row: number; col: number }[] = []
+    const h = harness([mine], false, (cell) => opened.push(cell))
+
+    expect(h.drag.tap({ row: 20, col: 0 })).toBe(false)
+
+    expect(opened).toEqual([{ row: 20, col: 0 }])
     expect(h.drag.hasSelection()).toBe(false)
     expect(h.onApply).not.toHaveBeenCalled()
   })
@@ -460,6 +560,86 @@ describe('режим определяется первой ячейкой', () =
     h.drag.down({ row: 20, col: 0 }, 0)
     h.drag.move({ row: 40, col: 0 })
     expect(h.drag.mode()).toBe('erase')
+  })
+})
+
+/**
+ * Мышь: щелчок без движения по своей занятой ячейке открывает слот.
+ *
+ * Раньше он молча стирал получас времени — одно нажатие без единого вопроса.
+ * Протяжка для стирания при этом не изменилась.
+ */
+describe('щелчок мышью по своему слоту', () => {
+  const mine = () => slot('2026-10-19T10:00:00Z', '2026-10-19T14:00:00Z')
+
+  it('щелчок без движения открывает слот, а не стирает', () => {
+    const opened: { row: number; col: number }[] = []
+    const h = harness([mine()], false, (cell) => opened.push(cell))
+
+    h.drag.down({ row: 20, col: 0 }, 0)
+    h.drag.up()
+
+    expect(opened).toEqual([{ row: 20, col: 0 }])
+    expect(h.onApply).not.toHaveBeenCalled()
+  })
+
+  it('протяжка по своему слоту по-прежнему стирает', () => {
+    const target = mine()
+    const h = harness([target], false, () => { throw new Error('модалка тут не при чём') })
+
+    h.drag.down({ row: 20, col: 0 }, 0)
+    h.drag.move({ row: 21, col: 0 })
+    h.drag.up()
+
+    expect(h.onApply.mock.calls[0][0].toDelete.map((s) => s.id)).toEqual([target.id])
+  })
+})
+
+/**
+ * Заблокированные ячейки — серия, ночной слот, неровный — жестом не правятся,
+ * но открываться обязаны: иначе единственный ответ на нажатие по собственному
+ * слоту серии — «сюда нельзя», и человек упирается в тупик.
+ */
+describe('нажатие по заблокированной ячейке', () => {
+  const series = () => slot('2026-10-19T10:00:00Z', '2026-10-19T12:00:00Z', 'series-1')
+
+  it('щелчок мышью открывает слот серии', () => {
+    const opened: { row: number; col: number }[] = []
+    const h = harness([series()], false, (cell) => opened.push(cell))
+
+    expect(h.drag.down({ row: 20, col: 0 }, 0)).toBe(false)
+
+    expect(opened).toEqual([{ row: 20, col: 0 }])
+    expect(h.onBlocked).not.toHaveBeenCalled()
+  })
+
+  it('тап открывает его же', () => {
+    const opened: { row: number; col: number }[] = []
+    const h = harness([series()], false, (cell) => opened.push(cell))
+
+    expect(h.drag.tap({ row: 20, col: 0 })).toBe(false)
+    expect(opened).toEqual([{ row: 20, col: 0 }])
+  })
+
+  /** Без обработчика открытия поведение прежнее: громкий отказ. */
+  it('без обработчика открытия остаётся объяснение', () => {
+    const s = series()
+    const h = harness([s])
+
+    expect(h.drag.tap({ row: 20, col: 0 })).toBe(false)
+    expect(h.onBlocked.mock.calls[0][0]).toEqual([{ slot: s, reason: 'series' }])
+  })
+
+  /** Протяжка, прошедшая через серию, по-прежнему объясняет, почему не тронула. */
+  it('протяжка через серию по-прежнему объясняет отказ', () => {
+    const s = series()
+    const h = harness([s], false, () => { throw new Error('модалка тут не при чём') })
+
+    h.drag.down({ row: 24, col: 0 }, 0)   // старт на свободной
+    h.drag.move({ row: 20, col: 0 })      // дотянули до серии
+    h.drag.up()
+
+    expect(h.onBlocked.mock.calls[0][0]).toEqual([{ slot: s, reason: 'series' }])
   })
 })
 

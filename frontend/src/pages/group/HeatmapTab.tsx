@@ -12,6 +12,9 @@ import { buildOwnGrid, DAYS_PER_WEEK, isBlockedState, ROWS_PER_DAY } from '@/uti
 import { cellStart, type SelectionPlan } from '@/utils/selection'
 import { applyPlan, useDragSelection, type DragHighlight } from '@/hooks/useDragSelection'
 import { WeekGrid } from './WeekGrid'
+import { SlotModal } from './SlotModal'
+import { useSlotEditor, userZone } from '@/hooks/useSlotEditor'
+import { slotAtCell } from '@/utils/slotEditor'
 
 interface Props {
   groupId: string
@@ -118,10 +121,18 @@ export function HeatmapTab({ groupId, isOwner, onCreateMeeting, onSetMyTime, wee
     },
   })
 
+  const editor = useSlotEditor(groupId, mySlots ?? [], userZone())
+
   const drag = useDragSelection({
     grid: ownGrid.spec,
     slots: mySlots ?? [],
     busy: applySelection.isPending,
+    // Тап по своей занятой ячейке открывает слот вместо стирающего выделения:
+    // посмотреть и поправить на телефоне нужно чаще, чем стереть.
+    onActivateSlot: (cell) => {
+      const slot = slotAtCell(cell, mySlots ?? [], ownGrid.spec)
+      if (slot) editor.open(slot)
+    },
     onApply: (plan) => {
       setBlockedNotice(plan.blocked.length > 0)
       applySelection.mutate(plan)
@@ -243,23 +254,29 @@ export function HeatmapTab({ groupId, isOwner, onCreateMeeting, onSetMyTime, wee
             {/* Панель подтверждения тач-выделения: прилипает к низу, чтобы
                 доставаться большим пальцем, и появляется только когда есть что
                 подтверждать. */}
+            {/*
+              Подтверждение — тапом по самому выделению, а не кнопкой. Пара
+              кнопок «отметить / отменить» стояла рядом, читалась одинаково и
+              путала: обе одного размера, обе в одном месте, разница только в
+              подписи. Теперь подтверждение — жест по тому, что подтверждаешь,
+              а отмена одна и стоит в стороне, чтобы промах по ней был
+              маловероятен.
+            */}
             {drag.pending && (
-              <div className="sticky bottom-0 z-30 -mx-4 mt-2 flex items-center gap-2 border-t border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800 sm:mx-0 sm:rounded-xl sm:border">
-                <span className="mr-auto text-sm text-gray-700 dark:text-gray-300">
-                  {t('group.availabilityTab.grid.selectedCells', { count: drag.range?.cellCount ?? 0 })}
-                </span>
-                <Button variant="secondary" size="sm" onClick={drag.cancel} className="min-h-[44px]">
-                  {t('group.availabilityTab.grid.cancel')}
-                </Button>
-                <Button
-                  size="sm"
-                  variant={drag.mode === 'erase' ? 'danger' : 'primary'}
-                  onClick={drag.commit}
-                  className="min-h-[44px]"
-                >
+              <div className="sticky bottom-0 z-30 -mx-4 mt-2 flex items-center gap-3 border-t border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800 sm:mx-0 sm:rounded-xl sm:border">
+                <span className="text-sm text-gray-700 dark:text-gray-300">
                   {t(drag.mode === 'erase'
-                    ? 'group.availabilityTab.grid.confirmErase'
-                    : 'group.availabilityTab.grid.confirm')}
+                    ? 'group.availabilityTab.grid.tapToErase'
+                    : 'group.availabilityTab.grid.tapToConfirm',
+                    { count: drag.range?.cellCount ?? 0 })}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={drag.cancel}
+                  className="ml-auto min-h-[44px]"
+                >
+                  {t('group.availabilityTab.grid.cancel')}
                 </Button>
               </div>
             )}
@@ -297,6 +314,17 @@ export function HeatmapTab({ groupId, isOwner, onCreateMeeting, onSetMyTime, wee
           </>
         )
       )}
+
+      <SlotModal
+        state={editor.state}
+        busy={editor.busy}
+        copySubmitting={editor.copySubmitting}
+        error={editor.error}
+        onClose={editor.close}
+        onSave={editor.onSave}
+        onDelete={editor.onDelete}
+        onCopy={editor.onCopy}
+      />
     </div>
   )
 }

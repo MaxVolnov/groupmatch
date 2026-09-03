@@ -10,6 +10,7 @@ import com.groupmatch.auth.LocaleTest;
 import com.groupmatch.auth.TrialPremiumTest;
 import com.groupmatch.auth.TrialServiceTest;
 import com.groupmatch.availability.AvailabilityBulkClearTest;
+import com.groupmatch.availability.AvailabilityRetimeTest;
 import com.groupmatch.availability.AvailabilitySeriesTest;
 import com.groupmatch.availability.AvailabilityTest;
 import com.groupmatch.groups.GroupErrorPathTest;
@@ -62,6 +63,7 @@ import org.junit.platform.suite.api.Suite;
     AvailabilityTest.class,
     AvailabilitySeriesTest.class,
     AvailabilityBulkClearTest.class,
+    AvailabilityRetimeTest.class,
     PaymentTest.class,
     CidrMatcherTest.class,
     PlanPeriodTest.class,

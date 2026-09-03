@@ -65,6 +65,14 @@ export interface DragSelectionConfig {
   onBlocked: (blocked: BlockedSlot[]) => void
   /** Текущее выделение изменилось (в том числе на `null` при отмене). */
   onChange: (range: SelectionRange | null) => void
+  /**
+   * Тап по своей занятой ячейке, когда выделения нет: открыть слот.
+   *
+   * Раньше такой тап начинал стирающее выделение. Тап по своему слоту на
+   * телефоне гораздо чаще значит «посмотреть и поправить», чем «стереть», а
+   * удаление в модалке никуда не делось — оно там отдельной кнопкой.
+   */
+  onActivateSlot?: (cell: Cell) => void
 }
 
 /** За какой угол выделения держатся: верхний-левый или нижний-правый. */
@@ -122,6 +130,15 @@ export function createDragSelection(config: DragSelectionConfig): DragSelection 
   let commitOnRelease = true
   /** Режим текущего жеста. Ставится по первой ячейке и дальше не меняется. */
   let mode: DragMode | null = null
+  /**
+   * Двигали ли выделение с момента, как за него взялись.
+   *
+   * Нужно на тач-экране: ручки одноклеточного выделения перекрывают его
+   * целиком своими зонами захвата, и подтверждающий тап приходит не в ячейку,
+   * а в ручку. Взялись и отпустили, не сдвинув, — это тот же тап по
+   * выделению, и значит он то же самое.
+   */
+  let movedSinceGrab = false
 
   const range = (): SelectionRange | null => {
     if (!anchor || !focus) return null
@@ -148,6 +165,14 @@ export function createDragSelection(config: DragSelectionConfig): DragSelection 
     const slots = config.getSlots()
     const owner = cellOwnership(cell, slots, grid)
     if (owner === 'blocked') {
+      // Заблокированная ячейка — это всегда чей-то слот, и почти всегда свой:
+      // серия, ночной или неровный. Жестом его не поправить, но открыть можно
+      // и нужно — иначе единственный ответ на нажатие по собственному слоту
+      // серии оставался бы «сюда нельзя», что и есть тупик.
+      if (config.onActivateSlot) {
+        config.onActivateSlot(cell)
+        return null
+      }
       const probe = clampSelection(resolveSelection(cell, cell, grid), grid)
       config.onBlocked(selectionToSlots(probe, slots, grid).blocked)
       return null
@@ -198,6 +223,7 @@ export function createDragSelection(config: DragSelectionConfig): DragSelection 
       anchor = cell
       focus = cell
       dragging = true
+      movedSinceGrab = false
       commitOnRelease = true
       config.onChange(range())
       return true
@@ -206,6 +232,7 @@ export function createDragSelection(config: DragSelectionConfig): DragSelection 
     move(cell) {
       if (!dragging) return
       if (focus && focus.row === cell.row && focus.col === cell.col) return
+      movedSinceGrab = true
       focus = cell
       config.onChange(range())
     },
@@ -216,8 +243,20 @@ export function createDragSelection(config: DragSelectionConfig): DragSelection 
       // onChange(null) заставил бы подписчиков думать, что что-то отменилось.
       if (!dragging) return
       if (!commitOnRelease) {
-        // Тач: палец отпустили, выделение осталось ждать подтверждения.
         dragging = false
+        // Взялись за ручку и отпустили, не сдвинув, — это тап по выделению, а
+        // не растягивание. Отличить их иначе нельзя: зона захвата ручки
+        // накрывает одноклеточное выделение целиком.
+        if (!movedSinceGrab) applyCurrent()
+        return
+      }
+      // Мышь: щелчок без движения по своей занятой ячейке открывает слот, а
+      // не стирает его. Одно нажатие, стирающее время без единого вопроса, —
+      // не то, чего человек ждёт от клика; протяжка для стирания осталась.
+      if (mode === 'erase' && !movedSinceGrab && config.onActivateSlot && anchor) {
+        const cell = anchor
+        reset()
+        config.onActivateSlot(cell)
         return
       }
       applyCurrent()
@@ -232,21 +271,51 @@ export function createDragSelection(config: DragSelectionConfig): DragSelection 
     tap(cell) {
       if (config.isBusy()) return false
 
-      // Тап при живом выделении — отмена, а не новое выделение. Иначе
-      // промах мимо ручки молча переносил бы выделение в другое место, и
-      // человек подтверждал бы не то, что видел секунду назад.
+      /*
+       * Тап при живом выделении.
+       *
+       * По выделению — подтверждение: это самый естественный жест «да, вот
+       * это», и он же убирает пару одинаковых кнопок, которые раньше стояли
+       * рядом и читались одинаково.
+       *
+       * Мимо выделения — ничего. Не отмена: промах пальцем мимо узкой ячейки
+       * — обычное дело, и терять из-за него настроенное выделение человек не
+       * подписывался. Отмена теперь одна и отдельной кнопкой, вдали от самого
+       * выделения.
+       */
       if (anchor) {
-        reset()
+        const current = range()
+        const inside = current?.days.some(
+          (d) => d.col === cell.col && cell.row >= d.startRow && cell.row <= d.endRow,
+        )
+        if (inside) applyCurrent()
         return false
       }
 
-      const next = modeFor(cell)
-      if (!next) return false
+      const grid = config.getGrid()
+      const slots = config.getSlots()
+      const owner = cellOwnership(cell, slots, grid)
 
-      mode = next
+      // Занятая ячейка — своя обычная или заблокированная — открывает слот.
+      // На тач-экране посмотреть и поправить нужно чаще, чем стереть, а
+      // удаление никуда не делось: оно кнопкой в самой модалке.
+      if (owner !== 'free') {
+        if (config.onActivateSlot) {
+          config.onActivateSlot(cell)
+          return false
+        }
+        if (owner === 'blocked') {
+          const probe = clampSelection(resolveSelection(cell, cell, grid), grid)
+          config.onBlocked(selectionToSlots(probe, slots, grid).blocked)
+          return false
+        }
+      }
+
+      mode = owner === 'mine' ? 'erase' : 'create'
       anchor = cell
       focus = cell
       dragging = false
+      movedSinceGrab = false
       commitOnRelease = false
       config.onChange(range())
       return true
@@ -263,6 +332,7 @@ export function createDragSelection(config: DragSelectionConfig): DragSelection 
       anchor = handle === 'end' ? ends.start : ends.end
       focus = handle === 'end' ? ends.end : ends.start
       dragging = true
+      movedSinceGrab = false
       commitOnRelease = false
       return true
     },
@@ -318,6 +388,8 @@ export interface UseDragSelectionOptions {
   busy: boolean
   onApply: (plan: SelectionPlan) => void
   onBlocked: (blocked: BlockedSlot[]) => void
+  /** Тап по своей занятой ячейке без активного выделения: открыть слот. */
+  onActivateSlot?: (cell: Cell) => void
 }
 
 export function useDragSelection(options: UseDragSelectionOptions) {
@@ -338,6 +410,7 @@ export function useDragSelection(options: UseDragSelectionOptions) {
         isBusy: () => latest.current.busy,
         onApply: (plan) => latest.current.onApply(plan),
         onBlocked: (blocked) => latest.current.onBlocked(blocked),
+        onActivateSlot: (cell) => latest.current.onActivateSlot?.(cell),
         onChange: setRange,
       }),
     [],

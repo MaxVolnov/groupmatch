@@ -6,7 +6,9 @@ import type {
   AvailabilityRequest,
   AvailabilityResponse,
   AvailabilitySeriesRequest,
+  AvailabilityRetimeResponse,
   AvailabilitySeriesResponse,
+  AvailabilityTimeRequest,
   HeatmapResponse,
 } from '@/types'
 
@@ -21,6 +23,20 @@ export const availabilityApi = {
       ? mockApi.availability.addSeries(groupId, data)
       : api
           .post<AvailabilitySeriesResponse>(`/groups/${groupId}/availability/series`, data)
+          .then((r) => r.data),
+
+  /** Правка времени одного слота. Слот при этом выпадает из своей серии. */
+  retimeSlot: (slotId: string, data: AvailabilityTimeRequest): Promise<AvailabilityResponse> =>
+    IS_MOCK
+      ? mockApi.availability.retimeSlot(slotId, data)
+      : api.patch<AvailabilityResponse>(`/availability/${slotId}`, data).then((r) => r.data),
+
+  /** Правка времени всей серии слота. Даты у слотов остаются свои. */
+  retimeSeries: (slotId: string, data: AvailabilityTimeRequest): Promise<AvailabilityRetimeResponse> =>
+    IS_MOCK
+      ? mockApi.availability.retimeSeries(slotId, data)
+      : api
+          .patch<AvailabilityRetimeResponse>(`/availability/${slotId}/series`, data)
           .then((r) => r.data),
 
   /**
