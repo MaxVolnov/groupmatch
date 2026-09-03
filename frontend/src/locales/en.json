@@ -95,7 +95,9 @@
         "confirm": "Mark",
         "cancel": "Cancel",
         "selectedCells": "Cells selected: {{count}}",
-        "confirmErase": "Erase"
+        "confirmErase": "Erase",
+        "tapToConfirm": "Cells selected: {{count}}. Tap the selection to mark it",
+        "tapToErase": "Cells selected: {{count}}. Tap the selection to erase it"
       },
       "series": {
         "open": "Repeat",
@@ -189,7 +191,28 @@
       "privacyNote": "The link contains the group's secret key — anyone who gets it can see upcoming meetings. Share it with members only."
     },
     "setMyTime": "Set my time",
-    "changeMyTime": "Change my time"
+    "changeMyTime": "Change my time",
+    "slotModal": {
+      "title": "Slot",
+      "save": "Save",
+      "delete": "Delete",
+      "deleteSeries": "Delete series ({{count}})",
+      "copy": "Make a copy",
+      "copyTitle": "Copy of the slot",
+      "copyHint": "The time is taken from this slot. Pick the days and the range — the original slot stays where it is.",
+      "copySubmit": "Create series",
+      "seriesNote": "Part of a repeating series, {{count}} slots in total",
+      "scopeQuestion": "Change only this slot or the whole series?",
+      "scopeSingleWarning": "Changing only this one takes it out of the series — it will live on its own from then on.",
+      "scopeSingle": "Only this one",
+      "scopeSeries": "Whole series ({{count}})",
+      "issue": {
+        "endNotAfterStart": "End must be after the start",
+        "tooShort": "The slot is shorter than five minutes",
+        "tooLong": "The slot is longer than 48 hours",
+        "invalid": "Check the time"
+      }
+    }
   },
   "auth": {
     "signIn": "Sign in",

@@ -133,6 +133,19 @@ export interface AvailabilityBulkClearResponse {
   deletedCount: number
 }
 
+/** Тело `PATCH /availability/{id}` и `PATCH /availability/{id}/series`. */
+export interface AvailabilityTimeRequest {
+  startTime: string
+  endTime: string
+  timeZone: string
+}
+
+export interface AvailabilityRetimeResponse {
+  /** `null`, если у слота не было серии. */
+  seriesId: string | null
+  updatedCount: number
+}
+
 export interface HeatmapSlot {
   startsAt: string
   endsAt: string

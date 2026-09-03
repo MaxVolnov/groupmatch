@@ -11,6 +11,8 @@ import { DateTime } from 'luxon'
 import { defaultDatetime, fmtRange, toIso } from '@/utils/datetime'
 import { slotsInClearWindow, toSeriesRequest, type ClearWindow, type SeriesRule } from '@/utils/series'
 import { SeriesForm } from './SeriesForm'
+import { SlotModal } from './SlotModal'
+import { useSlotEditor } from '@/hooks/useSlotEditor'
 import { BulkClearForm, type ClearPreview } from './BulkClearForm'
 import type { AvailabilityResponse } from '@/types'
 import { AxiosError } from 'axios'
@@ -190,6 +192,8 @@ export function AvailabilityTab({ groupId, callerPlan, focusRequest }: Props) {
     )
   }
 
+  const editor = useSlotEditor(groupId, slots ?? [], timeZone)
+
   /** Сколько слотов в серии этого слота — для подтверждения «удалить всю». */
   const seriesSize = (slot: AvailabilityResponse) =>
     (slots ?? []).filter((s) => s.seriesId && s.seriesId === slot.seriesId).length
@@ -319,7 +323,12 @@ export function AvailabilityTab({ groupId, callerPlan, focusRequest }: Props) {
                   key={s.id}
                   className="flex items-start justify-between rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3"
                 >
-                  <div>
+                  {/* Вся строка — вход в модалку. Крестик рядом остаётся
+                      быстрым путём для тех, кому нужно только удалить. */}
+                  <button
+                    className="min-h-[44px] flex-1 text-left"
+                    onClick={() => editor.open(s)}
+                  >
                     <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                       {fmtRange(s.startsAt, s.endsAt)}
                     </p>
@@ -329,7 +338,7 @@ export function AvailabilityTab({ groupId, callerPlan, focusRequest }: Props) {
                       </span>
                     )}
                     {s.note && <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{s.note}</p>}
-                  </div>
+                  </button>
                   {/*
                     Крестик у слота серии удаляет только его. Всю серию — через
                     отдельное подтверждение с числом: случайно снести двадцать
@@ -387,6 +396,17 @@ export function AvailabilityTab({ groupId, callerPlan, focusRequest }: Props) {
           </div>
         )}
       </div>
+
+      <SlotModal
+        state={editor.state}
+        busy={editor.busy}
+        copySubmitting={editor.copySubmitting}
+        error={editor.error}
+        onClose={editor.close}
+        onSave={editor.onSave}
+        onDelete={editor.onDelete}
+        onCopy={editor.onCopy}
+      />
     </div>
   )
 }

@@ -8,7 +8,9 @@ import type {
   AvailabilityBulkClearResponse,
   AvailabilityResponse,
   AvailabilitySeriesRequest,
+  AvailabilityRetimeResponse,
   AvailabilitySeriesResponse,
+  AvailabilityTimeRequest,
   FeedbackCategory,
   FeedbackResponse,
   GroupResponse,
@@ -356,6 +358,34 @@ export const mockApi = {
         created++
       }
       return { seriesId, createdCount: created }
+    },
+    retimeSlot: async (slotId: string, data: AvailabilityTimeRequest): Promise<AvailabilityResponse> => {
+      await delay()
+      for (const arr of Object.values(slotsByGroupUser)) {
+        const s = arr.find((x) => x.id === slotId)
+        if (!s) continue
+        const day = s.startsAt.slice(0, 10)
+        s.startsAt = `${day}T${data.startTime}:00Z`
+        s.endsAt = `${day}T${data.endTime}:00Z`
+        s.seriesId = null
+        return s
+      }
+      throw new Error('slot not found')
+    },
+    retimeSeries: async (slotId: string, data: AvailabilityTimeRequest): Promise<AvailabilityRetimeResponse> => {
+      await delay()
+      for (const arr of Object.values(slotsByGroupUser)) {
+        const target = arr.find((x) => x.id === slotId)
+        if (!target) continue
+        const family = target.seriesId ? arr.filter((x) => x.seriesId === target.seriesId) : [target]
+        for (const s of family) {
+          const day = s.startsAt.slice(0, 10)
+          s.startsAt = `${day}T${data.startTime}:00Z`
+          s.endsAt = `${day}T${data.endTime}:00Z`
+        }
+        return { seriesId: target.seriesId, updatedCount: family.length }
+      }
+      throw new Error('slot not found')
     },
     deleteSlotScoped: async (slotId: string, scope: 'single' | 'series'): Promise<void> => {
       await delay()
