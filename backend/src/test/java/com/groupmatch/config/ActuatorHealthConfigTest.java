@@ -81,12 +81,34 @@ public class ActuatorHealthConfigTest {
         }
     }
 
-    /** health и info должны отдаваться наружу, иначе проверять нечего. */
+    /** health должен отдаваться наружу, иначе платформе нечего опрашивать. */
     @Test
     void healthEndpointIsExposed() {
         assertThat(String.valueOf(at(yaml("application.yml"),
                 "management", "endpoints", "web", "exposure", "include")))
                 .contains("health");
+    }
+
+    /**
+     * …и ничего, кроме health.
+     *
+     * Проверка на равенство, а не на «не содержит metrics»: список правится
+     * одной строкой, и следующий добавленный эндпоинт должен упереться в тест,
+     * какой бы он ни был. Каждое расширение обязано приходить вместе с ответом
+     * на вопрос, кто снаружи это читает, — обоснование в комментарии над самой
+     * строкой в application.yml.
+     *
+     * Что именно доступно гостевому токену, эта проверка не говорит — это
+     * вопрос авторизации, и на него отвечает ActuatorAccessTest реальными
+     * запросами. Два слоя проверяются раздельно намеренно: иначе откат одного
+     * из них маскировался бы вторым.
+     */
+    @Test
+    void nothingBesidesHealthIsExposed() {
+        assertThat(String.valueOf(at(yaml("application.yml"),
+                "management", "endpoints", "web", "exposure", "include")))
+                .as("management.endpoints.web.exposure.include")
+                .isEqualTo("health");
     }
 
     /**

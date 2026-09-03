@@ -116,8 +116,7 @@ public class SecurityConfig {
                     "/api/v1/auth/forgot-password",
                     "/api/v1/auth/reset-password",
                     "/api/v1/payments/yookassa/webhook",
-                    "/actuator/health",
-                    "/actuator/info"
+                    "/actuator/health"
                 ).permitAll()
                 // Группы health-эндпоинта: /actuator/health/liveness и
                 // /actuator/health/readiness. Именно liveness должна опрашивать
@@ -125,6 +124,25 @@ public class SecurityConfig {
                 // строки совпадает только точный путь /actuator/health, а
                 // подпути отдают 401, и проверка платформы валится.
                 .requestMatchers("/actuator/health/**").permitAll()
+                // Всё остальное в actuator — только ADMIN.
+                //
+                // Порядок строк здесь значим: Spring Security берёт первое
+                // совпадение, поэтому health и его группы выше остаются
+                // публичными, а этот матчер ловит только то, что ниже них.
+                //
+                // ПОЧЕМУ ПО РОЛИ, А НЕ ПО АУТЕНТИФИКАЦИИ. Раньше служебные
+                // пути закрывал общий `.anyRequest().authenticated()`, то есть
+                // требовался просто валидный токен. Токен у нас выдаёт
+                // публичный POST /api/v1/auth/guest — без почты и пароля, за
+                // один анонимный запрос, и выданный им пользователь получает
+                // Role.USER (AuthService.guestSignin). Значит «закрыто
+                // аутентификацией» на практике означало «открыто всем».
+                //
+                // Список экспонируемых эндпоинтов в application.yml сокращён до
+                // одного health, но полагаться только на него нельзя: он
+                // решает, что существует, а не кому доступно, и правится одной
+                // строкой. Эта строка — второй, независимый слой.
+                .requestMatchers("/actuator/**").hasRole("ADMIN")
                 // .ics-фид группы: календарные клиенты не шлют Authorization,
                 // доступ авторизует токен в query (см. GroupCalendarService).
                 // Дублируется в JwtAuthenticationFilter.shouldNotFilter —
