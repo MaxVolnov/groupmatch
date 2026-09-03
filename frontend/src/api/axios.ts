@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { useAuthStore } from '@/store/auth'
+import { isTokenExpiring } from '@/utils/jwt'
 
 /**
  * Адрес API. Дефолта намеренно нет.
@@ -33,11 +34,69 @@ export const api = axios.create({
   withCredentials: true,
 })
 
-// Attach access token to every request except /auth/ endpoints
-api.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().accessToken
-  const isAuthEndpoint = config.url?.includes('/auth/')
-  if (token && !isAuthEndpoint) config.headers.Authorization = `Bearer ${token}`
+/**
+ * Откуда брать и как обновлять токен. Порт нужен, чтобы решение об
+ * авторизации запроса можно было проверить тестом, не поднимая ни axios, ни
+ * zustand, ни localStorage.
+ */
+export interface AuthPort {
+  getAccessToken(): string | null
+  refresh(): Promise<string>
+}
+
+/**
+ * Ставит `Authorization` на запрос, обновляя токен **заранее**, если он уже
+ * протух или протухнет в ближайшие секунды.
+ *
+ * Раньше обновление было исключительно реактивным: запрос уходил с мёртвым
+ * токеном, ловил 401, и только потом интерцептор ответа обновлял токен и
+ * повторял. Работало это верно — данные в итоге приходили, — но каждые 15
+ * минут страница группы выдавала в консоль три красных 401 подряд
+ * (`/groups/{id}`, `/notifications`, `/groups/{id}/availability/my`), по
+ * одному на каждый параллельный запрос. Отличить их от настоящей поломки
+ * авторизации по консоли невозможно, и один раз это уже стоило дня
+ * разбирательств.
+ *
+ * Реактивный путь при этом остаётся: часы могут разойтись сильнее запаса,
+ * токен могут отозвать, сервер может перевыпустить ключ. Проактивное
+ * обновление снимает штатный случай, аварийный ловится по-прежнему.
+ *
+ * Гонки нет: три параллельных запроса зовут `refresh()` одновременно, но у
+ * стора внутри мьютекс на общий промис — сетевой вызов будет один.
+ */
+export async function attachAuthorization(
+  config: { url?: string; headers: Record<string, unknown> },
+  auth: AuthPort,
+): Promise<void> {
+  // На сам /auth/** токен не нужен и вреден: refresh с протухшим
+  // Authorization — это лишний повод для сервера ответить 401.
+  if (config.url?.includes('/auth/')) return
+
+  let token = auth.getAccessToken()
+  if (!token) return
+
+  if (isTokenExpiring(token)) {
+    try {
+      token = await auth.refresh()
+    } catch {
+      // Обновиться не вышло — отправляем что есть. Ответ будет 401, его
+      // разберёт интерцептор ответа ровно так же, как разбирал раньше.
+    }
+  }
+
+  config.headers.Authorization = `Bearer ${token}`
+}
+
+const storeAuth: AuthPort = {
+  getAccessToken: () => useAuthStore.getState().accessToken,
+  refresh: () => useAuthStore.getState().refresh(),
+}
+
+api.interceptors.request.use(async (config) => {
+  await attachAuthorization(
+    config as unknown as { url?: string; headers: Record<string, unknown> },
+    storeAuth,
+  )
   return config
 })
 

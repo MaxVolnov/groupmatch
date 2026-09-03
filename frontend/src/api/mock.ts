@@ -3,14 +3,20 @@
  * All handlers return the exact same shapes as the real backend DTOs.
  */
 import type {
-  InvitePreview,
   AuthResponse,
+  AvailabilityBulkClearRequest,
+  AvailabilityBulkClearResponse,
   AvailabilityResponse,
+  AvailabilitySeriesRequest,
+  AvailabilityRetimeResponse,
+  AvailabilitySeriesResponse,
+  AvailabilityTimeRequest,
   FeedbackCategory,
   FeedbackResponse,
   GroupResponse,
   HeatmapResponse,
   HeatmapSlot,
+  InvitePreview,
   InviteResponse,
   MeetingResponse,
   MemberResponse,
@@ -323,6 +329,97 @@ export const mockApi = {
       if (!slot) throw new Error('Slot not found')
       Object.assign(slot, { startsAt: data.startsAt, endsAt: data.endsAt, note: data.note ?? null })
       return slot
+    },
+    addSeries: async (groupId: string, data: AvailabilitySeriesRequest): Promise<AvailabilitySeriesResponse> => {
+      await delay(300)
+      const seriesId = `series-${Date.now()}`
+      const key = `${groupId}:${MOCK_USER_ID}`
+      if (!slotsByGroupUser[key]) slotsByGroupUser[key] = []
+      const wanted = new Set(data.daysOfWeek)
+      const names = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']
+      let created = 0
+      for (
+        let d = new Date(`${data.startDate}T00:00:00Z`);
+        d <= new Date(`${data.endDate}T00:00:00Z`);
+        d = new Date(d.getTime() + 864e5)
+      ) {
+        if (!wanted.has(names[(d.getUTCDay() + 6) % 7])) continue
+        const day = d.toISOString().slice(0, 10)
+        slotsByGroupUser[key].push({
+          id: `slot-${Date.now()}-${created}`,
+          groupId,
+          userId: MOCK_USER_ID,
+          startsAt: `${day}T${data.startTime}:00Z`,
+          endsAt: `${day}T${data.endTime}:00Z`,
+          note: null,
+          seriesId,
+          createdAt: new Date().toISOString(),
+        })
+        created++
+      }
+      return { seriesId, createdCount: created }
+    },
+    retimeSlot: async (slotId: string, data: AvailabilityTimeRequest): Promise<AvailabilityResponse> => {
+      await delay()
+      for (const arr of Object.values(slotsByGroupUser)) {
+        const s = arr.find((x) => x.id === slotId)
+        if (!s) continue
+        const day = s.startsAt.slice(0, 10)
+        s.startsAt = `${day}T${data.startTime}:00Z`
+        s.endsAt = `${day}T${data.endTime}:00Z`
+        s.seriesId = null
+        return s
+      }
+      throw new Error('slot not found')
+    },
+    retimeSeries: async (slotId: string, data: AvailabilityTimeRequest): Promise<AvailabilityRetimeResponse> => {
+      await delay()
+      for (const arr of Object.values(slotsByGroupUser)) {
+        const target = arr.find((x) => x.id === slotId)
+        if (!target) continue
+        const family = target.seriesId ? arr.filter((x) => x.seriesId === target.seriesId) : [target]
+        for (const s of family) {
+          const day = s.startsAt.slice(0, 10)
+          s.startsAt = `${day}T${data.startTime}:00Z`
+          s.endsAt = `${day}T${data.endTime}:00Z`
+        }
+        return { seriesId: target.seriesId, updatedCount: family.length }
+      }
+      throw new Error('slot not found')
+    },
+    deleteSlotScoped: async (slotId: string, scope: 'single' | 'series'): Promise<void> => {
+      await delay()
+      for (const arr of Object.values(slotsByGroupUser)) {
+        const target = arr.find((s) => s.id === slotId)
+        if (!target) continue
+        const doomed =
+          scope === 'series' && target.seriesId
+            ? arr.filter((s) => s.seriesId === target.seriesId)
+            : [target]
+        for (const s of doomed) arr.splice(arr.indexOf(s), 1)
+        return
+      }
+    },
+    bulkClear: async (
+      groupId: string,
+      data: AvailabilityBulkClearRequest,
+    ): Promise<AvailabilityBulkClearResponse> => {
+      await delay(300)
+      const key = `${groupId}:${MOCK_USER_ID}`
+      const arr = slotsByGroupUser[key] ?? []
+      const names = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']
+      const wanted = new Set(data.daysOfWeek)
+      const doomed = arr.filter((s) => {
+        const start = new Date(s.startsAt)
+        const day = start.toISOString().slice(0, 10)
+        if (day < data.fromDate || day > data.toDate) return false
+        if (!wanted.has(names[(start.getUTCDay() + 6) % 7])) return false
+        return (
+          s.startsAt >= `${day}T${data.startTime}:00Z` && s.endsAt <= `${day}T${data.endTime}:00Z`
+        )
+      })
+      if (!data.dryRun) for (const s of doomed) arr.splice(arr.indexOf(s), 1)
+      return { deletedCount: doomed.length }
     },
     deleteSlot: async (groupId: string, slotId: string): Promise<void> => {
       await delay()
