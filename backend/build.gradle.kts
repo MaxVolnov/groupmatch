@@ -74,7 +74,9 @@ dependencies {
 // Timeweb App Platform прописана в дашборде строкой (java -jar
 // build/libs/app.jar) и молча ломалась бы при каждом бампе версии.
 // Версия при этом никуда не девается — она остаётся в манифесте
-// (Implementation-Version) и в /actuator/info.
+// (Implementation-Version). В /actuator/info её нет и не было: buildInfo()
+// здесь не вызывается, а сам эндпоинт больше не экспонируется (см.
+// management.endpoints.web.exposure.include в application.yml).
 tasks.bootJar {
     archiveFileName = "app.jar"
 }

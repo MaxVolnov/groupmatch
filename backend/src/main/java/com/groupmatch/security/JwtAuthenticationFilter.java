@@ -49,8 +49,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             "/api/v1/auth/forgot-password",
             "/api/v1/auth/reset-password",
             "/api/v1/payments/yookassa/webhook",
-            "/actuator/health",
-            "/actuator/info"
+            "/actuator/health"
+            // /actuator/info отсюда убран вместе с permitAll в SecurityConfig:
+            // эндпоинт больше не экспонируется, а весь /actuator/** закрыт
+            // ролью ADMIN — значит токен на этих путях, наоборот, обязан
+            // разбираться, иначе админ не пройдёт проверку роли.
     );
 
     private final JwtUtils jwtUtils;

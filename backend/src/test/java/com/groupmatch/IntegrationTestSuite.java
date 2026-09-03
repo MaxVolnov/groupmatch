@@ -1,6 +1,7 @@
 package com.groupmatch;
 
 import com.groupmatch.admin.AdminTest;
+import com.groupmatch.config.ActuatorAccessTest;
 import com.groupmatch.config.ActuatorHealthConfigTest;
 import com.groupmatch.config.LoggingLevelsTest;
 import com.groupmatch.auth.AuthTest;
@@ -40,6 +41,7 @@ import org.junit.platform.suite.api.Suite;
 @SelectClasses({
     LoggingLevelsTest.class,
     ActuatorHealthConfigTest.class,
+    ActuatorAccessTest.class,
     AuthTest.class,
     GuestUpgradeTest.class,
     GuestCleanupTest.class,
