@@ -3,6 +3,7 @@ package com.groupmatch;
 import com.groupmatch.admin.AdminTest;
 import com.groupmatch.config.ActuatorAccessTest;
 import com.groupmatch.config.ActuatorHealthConfigTest;
+import com.groupmatch.config.JwtSecretGuardTest;
 import com.groupmatch.config.LoggingLevelsTest;
 import com.groupmatch.auth.AuthTest;
 import com.groupmatch.auth.GuestCleanupTest;
@@ -42,6 +43,7 @@ import org.junit.platform.suite.api.Suite;
     LoggingLevelsTest.class,
     ActuatorHealthConfigTest.class,
     ActuatorAccessTest.class,
+    JwtSecretGuardTest.class,
     AuthTest.class,
     GuestUpgradeTest.class,
     GuestCleanupTest.class,
