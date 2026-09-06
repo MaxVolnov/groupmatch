@@ -11,6 +11,7 @@ import com.groupmatch.repository.AvailabilityRepository;
 import com.groupmatch.repository.GrpMemberRepository;
 import com.groupmatch.repository.GroupRepository;
 import com.groupmatch.repository.UserRepository;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,7 @@ public class GroupService {
     private final UserRepository userRepository;
     private final AvailabilityRepository availabilityRepository;
     private final GroupLifecycleService groupLifecycleService;
+    private final EntityManager entityManager;
 
     @Value("${app.features.monetization-enabled}")
     private boolean monetizationEnabled;
@@ -92,13 +94,26 @@ public class GroupService {
         Group group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new GroupNotFoundException(groupId));
 
+        // Смену этой настройки замечает триггер БД (V25) и двигает grp.version,
+        // на которой держится ключ кэша теплокарты.
+        boolean heatmapSettingChanged =
+                req.showParticipants() != null && req.showParticipants() != group.isShowParticipants();
+
         group.setTitle(req.title());
         group.setDescription(req.description());
         if (req.tzId() != null) group.setTzId(req.tzId());
         if (req.locked() != null) group.setLocked(req.locked());
         if (req.showParticipants() != null) group.setShowParticipants(req.showParticipants());
 
-        return toResponse(groupRepository.save(group));
+        Group saved = groupRepository.saveAndFlush(group);
+
+        // Версию перечитываем из БД: её проставил триггер, а сущность в памяти
+        // об этом не знает и отдала бы в ответе число на единицу меньше
+        // настоящего. Дублировать арифметику триггера в Java нельзя — тогда
+        // источников правды станет два, и разойдутся они молча.
+        if (heatmapSettingChanged) entityManager.refresh(saved);
+
+        return toResponse(saved);
     }
 
     @Transactional

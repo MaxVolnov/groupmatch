@@ -451,6 +451,12 @@ public class AvailabilityService {
         if (from == null) from = Instant.now().truncatedTo(ChronoUnit.DAYS);
         if (to == null) to = from.plus(7L, ChronoUnit.DAYS);
 
+        // Версия в ключе кэша — единственное, что отличает старый ответ от
+        // нового. Её двигают триггеры БД: на изменение availability и на смену
+        // group.showParticipants — той самой настройки, которую читают двумя
+        // строчками ниже. Появится здесь ещё одно поле группы — придётся
+        // добавить его и в условие триггера (V25), иначе настройка будет
+        // «не работать» до истечения TTL.
         Optional<HeatmapResponse> cached = heatmapCacheService.get(groupId, group.getVersion(), from, to, granularity);
         if (cached.isPresent()) {
             return cached.get();
