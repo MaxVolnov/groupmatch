@@ -3,11 +3,13 @@ package com.groupmatch.controller;
 import com.groupmatch.domain.FeedbackCategory;
 import com.groupmatch.dto.admin.AdminFeedbackPageResponse;
 import com.groupmatch.dto.admin.AdminGroupPageResponse;
+import com.groupmatch.dto.admin.AdminUserFilter;
 import com.groupmatch.dto.admin.AdminUsersPageResponse;
 import com.groupmatch.dto.admin.BanUserRequest;
 import com.groupmatch.dto.admin.ChangeRoleRequest;
 import com.groupmatch.dto.admin.ChangePlanRequest;
 import com.groupmatch.security.UserPrincipal;
+import com.groupmatch.service.AccountDeletionService;
 import com.groupmatch.service.AdminService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,7 @@ import java.util.UUID;
 public class AdminController {
 
     private final AdminService adminService;
+    private final AccountDeletionService accountDeletionService;
 
     @GetMapping("/ping")
     @PreAuthorize("hasRole('ADMIN')")
@@ -40,10 +43,11 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<AdminUsersPageResponse> getUsers(
             @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "ALL") AdminUserFilter filter,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
-        return ResponseEntity.ok(adminService.getUsers(search, page, size));
+        return ResponseEntity.ok(adminService.getUsers(search, filter, page, size));
     }
 
     @PatchMapping("/users/{id}/role")
@@ -81,6 +85,33 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> unbanUser(@PathVariable UUID id) {
         adminService.unbanUser(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Удаление чужого аккаунта администратором.
+     *
+     * Делает ровно то же, что DELETE /api/v1/me: мягкое удаление, отзыв
+     * сессий, передача владения группами. Пароля администратор не знает и
+     * знать не должен, поэтому тела у запроса нет.
+     */
+    @DeleteMapping("/users/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteUser(@PathVariable UUID id) {
+        accountDeletionService.deleteByAdmin(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Возврат аккаунта в пределах отсрочки.
+     *
+     * ⚠️ Возвращает только возможность входа. Состав групп не
+     * восстанавливается: владение уже перешло, пустые группы удалены.
+     */
+    @PatchMapping("/users/{id}/restore")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> restoreUser(@PathVariable UUID id) {
+        accountDeletionService.restore(id);
         return ResponseEntity.noContent().build();
     }
 

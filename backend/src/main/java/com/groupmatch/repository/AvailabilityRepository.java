@@ -31,4 +31,13 @@ public interface AvailabilityRepository extends JpaRepository<Availability, UUID
 
     /** Слоты одной серии. По владельцу — по той же причине, что и удаление. */
     List<Availability> findBySeriesIdAndUserId(UUID seriesId, UUID userId);
+
+    /**
+     * Вся личная доступность человека во всех группах. Нужна обезличиванию:
+     * «свободен во вторник с 19:00» без человека, которому это время
+     * принадлежит, — не данные, а мусор в тепловой карте.
+     */
+    int deleteByUserId(UUID userId);
+
+    long countByUserId(UUID userId);
 }

@@ -89,6 +89,32 @@ public class User {
     @Column(name = "trial_expires_at")
     private Instant trialExpiresAt;
 
+    /**
+     * Момент запроса на удаление аккаунта. Пока не пуст — вход запрещён, а сам
+     * человек не показывается в списках участников. Строка при этом остаётся:
+     * физическое удаление унесло бы по каскадам встречи, которые он создавал
+     * для группы, то есть данные других людей.
+     */
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
+    /**
+     * Момент обезличивания. До него аккаунт можно восстановить, после — нет:
+     * адреса, имени и хеша пароля больше не существует.
+     */
+    @Column(name = "anonymized_at")
+    private Instant anonymizedAt;
+
+    /** Удалён — независимо от того, дошло ли уже до обезличивания. */
+    public boolean isDeleted() {
+        return deletedAt != null;
+    }
+
+    /** Удалён и ещё не обезличен: единственное состояние, из которого можно вернуть. */
+    public boolean isRestorable() {
+        return deletedAt != null && anonymizedAt == null;
+    }
+
     @PrePersist
     protected void onCreate() {
         createdAt = Instant.now();
