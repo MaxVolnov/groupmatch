@@ -1,4 +1,4 @@
-import { api } from './axios'
+import { api, longOperation } from './axios'
 import { IS_MOCK, mockApi } from './mock'
 import type {
   AvailabilityBulkClearRequest,
@@ -22,7 +22,10 @@ export const availabilityApi = {
     IS_MOCK
       ? mockApi.availability.addSeries(groupId, data)
       : api
-          .post<AvailabilitySeriesResponse>(`/groups/${groupId}/availability/series`, data)
+          // Продлённый таймаут: операция не идемпотентна, и повтор после
+          // ложного «нет связи» создал бы вторую серию до двухсот слотов.
+          .post<AvailabilitySeriesResponse>(
+            `/groups/${groupId}/availability/series`, data, longOperation())
           .then((r) => r.data),
 
   /** Правка времени одного слота. Слот при этом выпадает из своей серии. */
@@ -36,7 +39,9 @@ export const availabilityApi = {
     IS_MOCK
       ? mockApi.availability.retimeSeries(slotId, data)
       : api
-          .patch<AvailabilityRetimeResponse>(`/availability/${slotId}/series`, data)
+          // Продлённый таймаут: правит до двухсот строк одной транзакцией.
+          .patch<AvailabilityRetimeResponse>(
+            `/availability/${slotId}/series`, data, longOperation())
           .then((r) => r.data),
 
   /**
@@ -59,7 +64,9 @@ export const availabilityApi = {
     IS_MOCK
       ? mockApi.availability.bulkClear(groupId, data)
       : api
-          .delete<AvailabilityBulkClearResponse>(`/groups/${groupId}/availability/bulk`, { data })
+          // Продлённый таймаут: удаляет до двухсот строк одной транзакцией.
+          .delete<AvailabilityBulkClearResponse>(
+            `/groups/${groupId}/availability/bulk`, { data, ...longOperation() })
           .then((r) => r.data),
 
   mySlots: (groupId: string): Promise<AvailabilityResponse[]> =>

@@ -6,9 +6,8 @@ import { useAuthStore } from '@/store/auth'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
 import { PublicLayout } from '@/components/PublicLayout'
-import { AxiosError } from 'axios'
-import type { ApiError } from '@/types'
 import { safeNextPath, withNext } from '@/utils/nextPath'
+import { resolveErrorMessage } from '@/utils/apiError'
 
 export function SignIn() {
   const navigate = useNavigate()
@@ -45,11 +44,11 @@ export function SignIn() {
       login(data.accessToken, data.refreshToken)
       navigate(next)
     } catch (err) {
-      const msg =
-        err instanceof AxiosError
-          ? ((err.response?.data as ApiError)?.message ?? t('auth.invalidCredentials'))
-          : t('errors.somethingWrong')
-      setError(msg)
+      // Фолбэк применяется только когда сервер ответил, но сказать ему нечего.
+      // Отсутствие ответа резолвер разбирает сам и говорит про связь: раньше
+      // здесь стояло «Неверный email или пароль», и при обрыве соединения
+      // интерфейс обвинял человека в чужой ошибке.
+      setError(resolveErrorMessage(err, t, 'auth.invalidCredentials'))
     } finally {
       setLoading(false)
     }
@@ -65,11 +64,7 @@ export function SignIn() {
       login(data.accessToken, data.refreshToken, guestName)
       navigate(next)
     } catch (err) {
-      const msg =
-        err instanceof AxiosError
-          ? ((err.response?.data as ApiError)?.message ?? t('errors.somethingWrong'))
-          : t('errors.somethingWrong')
-      setGuestError(msg)
+      setGuestError(resolveErrorMessage(err, t))
     } finally {
       setGuestLoading(false)
     }
@@ -104,7 +99,7 @@ export function SignIn() {
               {t('auth.forgotPassword')}
             </Link>
           </div>
-          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+          {error && <p className="whitespace-pre-line text-sm text-red-600 dark:text-red-400">{error}</p>}
           <Button type="submit" loading={loading} className="mt-2 w-full justify-center">
             {t('auth.signIn')}
           </Button>
@@ -143,7 +138,7 @@ export function SignIn() {
               required
               autoFocus
             />
-            {guestError && <p className="text-sm text-red-600 dark:text-red-400">{guestError}</p>}
+            {guestError && <p className="whitespace-pre-line text-sm text-red-600 dark:text-red-400">{guestError}</p>}
             <Button
               type="submit"
               loading={guestLoading}
