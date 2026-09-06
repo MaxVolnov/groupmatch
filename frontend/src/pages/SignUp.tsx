@@ -7,9 +7,8 @@ import { useLanguageStore } from '@/store/language'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
 import { PublicLayout } from '@/components/PublicLayout'
-import { AxiosError } from 'axios'
-import type { ApiError } from '@/types'
 import { safeNextPath, withNext } from '@/utils/nextPath'
+import { resolveErrorMessage } from '@/utils/apiError'
 
 export function SignUp() {
   const navigate = useNavigate()
@@ -41,9 +40,10 @@ export function SignUp() {
       login(data.accessToken, data.refreshToken)
       navigate(next)
     } catch (err) {
-      const axErr = err instanceof AxiosError ? err : null
-      const apiErr = axErr?.response?.data as ApiError | undefined
-      setError(apiErr?.message ?? t('auth.registrationFailed'))
+      // Резолвер добавляет к сообщению подробности валидации: при коротком
+      // пароле сервер присылает конкретное требование в details, а здесь
+      // бралось только общее «Invalid input».
+      setError(resolveErrorMessage(err, t, 'auth.registrationFailed'))
     } finally {
       setLoading(false)
     }
@@ -80,7 +80,7 @@ export function SignUp() {
             minLength={8}
             autoComplete="new-password"
           />
-          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+          {error && <p className="whitespace-pre-line text-sm text-red-600 dark:text-red-400">{error}</p>}
           <label className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
             <input
               type="checkbox"

@@ -11,6 +11,7 @@ import { PublicLayout } from '@/components/PublicLayout'
 import { Skeleton } from '@/components/Skeleton'
 import { Spinner } from '@/components/Spinner'
 import { isInAppBrowser } from '@/utils/inAppBrowser'
+import { resolveErrorMessage } from '@/utils/apiError'
 
 /** Общие классы карточки — те же, что на экранах входа и регистрации. */
 const CARD = 'mx-auto w-full max-w-sm rounded-xl border border-white/10 bg-gm-900/70 p-8 shadow-xl backdrop-blur-sm'
@@ -93,9 +94,7 @@ export function JoinInvite() {
       const invite = await invitesApi.join(token)
       navigate(`/groups/${invite.groupId}`)
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-        ?? t('errors.somethingWrong')
-      setError(msg)
+      setError(resolveErrorMessage(err, t))
     } finally {
       setLoading(false)
     }
