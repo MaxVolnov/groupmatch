@@ -126,34 +126,57 @@ http
 
 ## Testcontainers
 
-Integration tests use `@SpringBootTest` + Testcontainers to spin up a real PostgreSQL 16 container. Tests are ordered with `@TestMethodOrder(MethodOrderer.OrderAnnotation.class)` and share one container instance per class via `@Container` + `@DynamicPropertySource`.
+Integration tests use `@SpringBootTest` + Testcontainers to spin up a real PostgreSQL 16 container and a Redis 7 container. Both are `static` fields on `BaseIntegrationTest` started from a static initialiser — **one pair of containers for the whole JVM**, not one per class — and wired in through `@DynamicPropertySource`. `@Container` is deliberately not used: it would tie container lifetime to a single class.
 
-Requires Docker daemon at runtime. In CI (GitHub Actions) Docker is available by default. Local developers need Docker Desktop or equivalent.
+⚠️ Prod runs PostgreSQL 18 and Valkey, so tests do not run on the engines production runs on. Recorded in `docs/backlog.md`.
+
+Gradle runs **only** `IntegrationTestSuite` (`include("**/IntegrationTestSuite.class")` in `build.gradle.kts`). A test class missing from its `@SelectClasses` silently never executes — add every new class there.
+
+When `SPRING_DATASOURCE_URL` is set (GitHub Actions services), Docker is skipped entirely and the tests use the external instances. Otherwise a Docker daemon is required at runtime.
 
 ## Error handling
 
-A `@RestControllerAdvice` class maps exceptions to RFC 7807-style JSON:
+A `@RestControllerAdvice` class maps exceptions to JSON:
 
 ```json
-{ "code": "VALIDATION_ERROR", "message": "...", "details": { "field": "reason" } }
+{ "code": "validation_failed", "message": "Invalid input", "details": { "password": "Password must be at least 8 characters" } }
 ```
 
-Common codes: `VALIDATION_ERROR`, `NOT_FOUND`, `CONFLICT`, `UNAUTHORIZED`, `FORBIDDEN`.
+Codes are **snake_case and specific to the case**, not a short list of generic
+categories: `validation_failed`, `invalid_credentials`, `email_already_exists`,
+`group_not_found`, `slot_not_found`, `meeting_not_found`, `not_group_owner`,
+`not_group_member`, `member_already_exists`, `member_banned`,
+`plan_limit_exceeded`, `invite_invalid`, `invite_not_found`, `bad_request`,
+`invalid_argument`, `server_error`, `webhook_unauthorized`.
+
+`details` is a map of field → reason and is present on validation failures only;
+`message` is an English sentence. The frontend shows `message` and every entry of
+`details` (`frontend/src/utils/apiError.ts`), which is honest but not localised —
+switching to codes plus parameters is an open item in `docs/backlog.md`.
+
+⚠️ 404, 405 and an unparseable request body do **not** go through this handler
+and come back as 500 (аудит 2). Unhandled exceptions are logged with
+`log.error`, validation failures with `log.info`.
 
 ## Package structure
 
 ```
 com.groupmatch
-├── config/          # Security, CORS, Jackson config
+├── config/          # Security, CORS, Jackson, startup guards (JwtSecretGuard)
 ├── controller/      # @RestController classes
 ├── domain/          # @Entity classes + enums
 ├── dto/             # Records: *Request, *Response
 │   ├── auth/
+│   ├── availability/
 │   ├── feedback/
 │   ├── group/
 │   └── ...
 ├── exception/       # Custom exceptions + @RestControllerAdvice
+├── filter/          # RateLimitFilter
+├── job/             # Scheduled cleanup: guests, anonymisation, plan expiry
 ├── repository/      # JpaRepository interfaces
-├── security/        # JWT filter, UserPrincipal, UserDetailsService
-└── service/         # @Service classes (business logic)
+├── scheduler/       # Meeting reminders
+├── security/        # JWT filter, UserPrincipal, UserDetailsService, ClientIpResolver
+├── service/         # @Service classes (business logic)
+└── util/            # Small shared helpers (CidrMatcher, EmailMasker, PlanPeriod)
 ```
