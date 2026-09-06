@@ -153,7 +153,9 @@
       "othersFree": "Others free",
       "modeAvailability": "My time",
       "modeMeeting": "Schedule a meeting",
-      "meetingHint": "Tap a cell where people are free to schedule a meeting"
+      "meetingHint": "Tap a cell where people are free to schedule a meeting",
+      "freeAt": "Free {{when}} — {{count}}",
+      "andMore": "and {{count}} more"
     },
     "meetingsTab": {
       "schedule": "+ Schedule meeting",

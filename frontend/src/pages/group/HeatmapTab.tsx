@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { availabilityApi } from '@/api/availability'
@@ -15,6 +15,7 @@ import { WeekGrid } from './WeekGrid'
 import { SlotModal } from './SlotModal'
 import { useSlotEditor, userZone } from '@/hooks/useSlotEditor'
 import { slotAtCell } from '@/utils/slotEditor'
+import { cellNames } from '@/utils/heatmapNames'
 
 interface Props {
   groupId: string
@@ -77,11 +78,23 @@ function buildAggregate(slots: HeatmapSlot[], from: DateTime) {
 }
 
 export function HeatmapTab({ groupId, isOwner, onCreateMeeting, onSetMyTime, weekOffset, onWeekOffsetChange }: Props) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const qc = useQueryClient()
   const [initialLoaded, setInitialLoaded] = useState(false)
   const [mode, setMode] = useState<GridMode>('availability')
   const [blockedNotice, setBlockedNotice] = useState(false)
+  /**
+   * Ячейка, о которой спрашивают «кто здесь свободен».
+   *
+   * `byTouch` нужен из-за того, что панель живёт под таблицей: на 375px сетка
+   * занимает экран целиком, и панель после касания оказывалась ниже нижнего
+   * края — имена были в разметке, но человек их не видел. Пальцем панель
+   * подтягиваем, мышью нет: прокрутка под курсором уводит сетку из-под него,
+   * ячейка меняется сама, и панель начинает мигать.
+   */
+  const [focusedCell, setFocusedCell] =
+    useState<{ row: number; col: number; byTouch: boolean } | null>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
 
   const monday = DateTime.now().startOf('week').plus({ weeks: weekOffset })
   const sunday = monday.plus({ days: 7 })
@@ -101,6 +114,14 @@ export function HeatmapTab({ groupId, isOwner, onCreateMeeting, onSetMyTime, wee
   useEffect(() => {
     if (data) setInitialLoaded(true)
   }, [data])
+
+  // `nearest` — минимальное движение: если панель уже видна, не двигается
+  // ничего. Об этом же и `scroll-mb-*` на самой панели: без запаса она
+  // останавливается ровно под липкой полосой подтверждения выделения.
+  useEffect(() => {
+    if (!focusedCell?.byTouch) return
+    panelRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [focusedCell])
 
   const ownGrid = useMemo(() => buildOwnGrid(mySlots ?? [], monday), [mySlots, monday])
   const aggregate = useMemo(() => buildAggregate(data?.slots ?? [], monday), [data, monday])
@@ -249,6 +270,21 @@ export function HeatmapTab({ groupId, isOwner, onCreateMeeting, onSetMyTime, wee
               handles={meetingMode ? null : handles}
               handleProps={meetingMode ? undefined : drag.handleProps}
               onCellActivate={meetingMode ? activateCell : undefined}
+              onCellFocus={(row, col, byTouch) => setFocusedCell({ row, col, byTouch })}
+            />
+
+            <CellNamesPanel
+              panelRef={panelRef}
+              names={focusedCell ? aggregate.names[focusedCell.row][focusedCell.col] : null}
+              // Локаль передаётся явно: Luxon по умолчанию форматирует по
+              // локали среды, и в русском интерфейсе день недели выходил как
+              // «Wed». Видно это только на снимке, тестом на чистой функции —
+              // нет, поэтому ручная проверка тут и пригодилась.
+              when={focusedCell
+                ? cellStart(focusedCell.col, focusedCell.row, ownGrid.spec)
+                    .setLocale(i18n.language === 'en' ? 'en-US' : 'ru-RU')
+                    .toFormat('ccc, HH:mm')
+                : null}
             />
 
             {/* Панель подтверждения тач-выделения: прилипает к низу, чтобы
@@ -325,6 +361,62 @@ export function HeatmapTab({ groupId, isOwner, onCreateMeeting, onSetMyTime, wee
         onDelete={editor.onDelete}
         onCopy={editor.onCopy}
       />
+    </div>
+  )
+}
+
+/**
+ * Кто свободен в выбранной ячейке.
+ *
+ * Панель под таблицей, а не всплывающая подсказка над ячейкой. Причины две.
+ *
+ * Первая — край экрана. Таблица лежит в области с горизонтальной прокруткой, и
+ * подсказка, спозиционированная внутри неё, обрезалась бы у крайних ячеек;
+ * выносить её наружу значит считать координаты вручную и следить за
+ * прокруткой. Панель под таблицей этой задачи не имеет вовсе.
+ *
+ * Вторая — тач. Наведения там нет, а тап уже занят: в режиме встречи он
+ * создаёт встречу, в режиме своего времени работает выделение. Панель
+ * наполняется побочно, от того же касания, которым человек и так пользуется, —
+ * поэтому не требует ни нового жеста, ни третьей кнопки режима.
+ */
+function CellNamesPanel({
+  names,
+  when,
+  panelRef,
+}: {
+  names: string[] | null
+  when: string | null
+  // Именованное поле, а не `ref`: в React 18 ref к функциональному компоненту
+  // не проходит как обычный проп — он перехватывается и до тела не доходит.
+  panelRef?: React.Ref<HTMLDivElement>
+}) {
+  const { t } = useTranslation()
+  const shown = cellNames(names)
+
+  // Пустая панель хуже отсутствующей: занимает место и заставляет гадать, что
+  // означает пустота — «никого нет» или «ещё не выбрали».
+  if (!shown || !when) return null
+
+  return (
+    <div
+      ref={panelRef}
+      // scroll-mb-20 — запас под липкую полосу подтверждения выделения: без
+      // него подтягивание останавливает панель ровно за этой полосой.
+      className="mt-3 scroll-mb-20 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm dark:border-gray-700 dark:bg-gray-800"
+    >
+      <p className="font-medium text-gray-900 dark:text-gray-100">
+        {t('group.heatmapTab.freeAt', { when, count: shown.total })}
+      </p>
+      <p className="mt-1 text-gray-700 dark:text-gray-300">
+        {shown.visible.join(', ')}
+        {shown.hiddenCount > 0 && (
+          <span className="text-gray-500 dark:text-gray-400">
+            {' '}
+            {t('group.heatmapTab.andMore', { count: shown.hiddenCount })}
+          </span>
+        )}
+      </p>
     </div>
   )
 }

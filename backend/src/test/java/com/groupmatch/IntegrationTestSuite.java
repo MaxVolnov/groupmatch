@@ -17,6 +17,7 @@ import com.groupmatch.availability.AvailabilityBulkClearTest;
 import com.groupmatch.availability.AvailabilityRetimeTest;
 import com.groupmatch.availability.AvailabilitySeriesTest;
 import com.groupmatch.availability.AvailabilityTest;
+import com.groupmatch.availability.HeatmapCacheInvalidationTest;
 import com.groupmatch.groups.EmptyGroupCleanupTest;
 import com.groupmatch.groups.GroupErrorPathTest;
 import com.groupmatch.groups.GroupTest;
@@ -77,6 +78,7 @@ import org.junit.platform.suite.api.Suite;
     AvailabilitySeriesTest.class,
     AvailabilityBulkClearTest.class,
     AvailabilityRetimeTest.class,
+    HeatmapCacheInvalidationTest.class,
     PaymentTest.class,
     CidrMatcherTest.class,
     EmailMaskerTest.class,
