@@ -61,6 +61,12 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfig {
 
+    /**
+     * Access-Control-Max-Age в секундах: 2 часа. Обоснование выбора — у места
+     * применения, в corsConfigurationSource().
+     */
+    static final long PREFLIGHT_CACHE_SECONDS = 7200L;
+
     @Value("${app.cors.allowed-origins}")
     private String allowedOrigins;
 
@@ -205,6 +211,20 @@ public class SecurityConfig {
         // wildcard в Access-Control-Expose-Headers браузером игнорируется.
         configuration.setExposedHeaders(List.of("Retry-After"));
         configuration.setAllowCredentials(true);
+        // Как долго браузер может не переспрашивать разрешение. Без этого
+        // заголовка он шлёт OPTIONS перед каждым запросом: на странице профиля
+        // это сорок запросов вместо двадцати, и каждый лишний — полный круг до
+        // Москвы.
+        //
+        // Два часа, а не «побольше». Верхнюю границу браузеры режут по-своему —
+        // у Chromium это 2 часа, у Firefox сутки, у Safari меньше, — и всё
+        // сверх неё просто игнорируется. Просить сутки значит получить те же
+        // два часа в Chromium и при этом растянуть на сутки время, за которое
+        // до людей доедет смена CORS-политики: пока разрешение живо, браузер о
+        // ней не узнает. Два часа — это и есть фактический потолок у самого
+        // распространённого движка, а цена ошибки в политике при этом
+        // ограничена одной сессией.
+        configuration.setMaxAge(PREFLIGHT_CACHE_SECONDS);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

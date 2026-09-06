@@ -4,8 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { authApi } from '@/api/auth'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
-import { AxiosError } from 'axios'
-import type { ApiError } from '@/types'
+import { resolveErrorMessage } from '@/utils/apiError'
 
 export function ForgotPassword() {
   const { t } = useTranslation()
@@ -22,11 +21,7 @@ export function ForgotPassword() {
       await authApi.forgotPassword(email)
       setSent(true)
     } catch (err) {
-      const msg =
-        err instanceof AxiosError
-          ? ((err.response?.data as ApiError)?.message ?? t('errors.somethingWrong'))
-          : t('errors.somethingWrong')
-      setError(msg)
+      setError(resolveErrorMessage(err, t))
     } finally {
       setLoading(false)
     }
@@ -52,7 +47,7 @@ export function ForgotPassword() {
               required
               autoComplete="email"
             />
-            {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+            {error && <p className="whitespace-pre-line text-sm text-red-600 dark:text-red-400">{error}</p>}
             <Button type="submit" loading={loading} className="w-full justify-center">
               {t('auth.sendResetLink')}
             </Button>

@@ -4,8 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { authApi } from '@/api/auth'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
-import { AxiosError } from 'axios'
-import type { ApiError } from '@/types'
+import { resolveErrorMessage } from '@/utils/apiError'
 
 export function ResetPassword() {
   const { t } = useTranslation()
@@ -45,11 +44,7 @@ export function ResetPassword() {
       await authApi.resetPassword(token, newPassword)
       setSuccess(true)
     } catch (err) {
-      const msg =
-        err instanceof AxiosError
-          ? ((err.response?.data as ApiError)?.message ?? t('auth.invalidResetLink'))
-          : t('errors.somethingWrong')
-      setError(msg)
+      setError(resolveErrorMessage(err, t, 'auth.invalidResetLink'))
     } finally {
       setLoading(false)
     }
@@ -98,7 +93,7 @@ export function ResetPassword() {
             required
             autoComplete="new-password"
           />
-          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+          {error && <p className="whitespace-pre-line text-sm text-red-600 dark:text-red-400">{error}</p>}
           <Button
             type="submit"
             loading={loading}

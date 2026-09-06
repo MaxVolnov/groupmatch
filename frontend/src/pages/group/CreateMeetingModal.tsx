@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { meetingsApi } from '@/api/meetings'
 import { Button } from '@/components/Button'
@@ -17,6 +18,8 @@ interface Props {
 }
 
 export function CreateMeetingModal({ groupId, open, onClose, initialStartsAt, initialEndsAt }: Props) {
+  const { t } = useTranslation()
+
   const qc = useQueryClient()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -61,42 +64,42 @@ export function CreateMeetingModal({ groupId, open, onClose, initialStartsAt, in
 
   return (
     <Modal
-      title="Schedule meeting"
+      title={t('group.createMeetingModal.title')}
       open={open}
       onClose={onClose}
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button variant="secondary" onClick={onClose}>{t('group.createMeetingModal.cancel')}</Button>
           <Button loading={create.isPending} disabled={!title.trim()} onClick={() => create.mutate()}>
-            Schedule
+            {t('group.createMeetingModal.schedule')}
           </Button>
         </>
       }
     >
       <div className="flex flex-col gap-3">
         <Input
-          label="Title"
+          label={t('group.createMeetingModal.meetingTitle')}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Sprint planning"
+          placeholder={t('group.createMeetingModal.meetingTitlePlaceholder')}
           minLength={3}
           maxLength={100}
           required
         />
         <Input
-          label="Description (optional)"
+          label={t('group.createMeetingModal.description')}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           maxLength={2000}
         />
         <Input
-          label="Starts at"
+          label={t('group.createMeetingModal.startsAt')}
           type="datetime-local"
           value={startsAt}
           onChange={(e) => onStartsAtChange(e.target.value)}
         />
         <Input
-          label="Ends at"
+          label={t('group.createMeetingModal.endsAt')}
           type="datetime-local"
           value={endsAt}
           onChange={(e) => setEndsAt(e.target.value)}
