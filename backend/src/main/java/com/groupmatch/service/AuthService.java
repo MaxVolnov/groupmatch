@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.UUID;
+import com.groupmatch.util.EmailMasker;
 import com.groupmatch.util.TokenMasker;
 
 @Service
@@ -37,9 +38,14 @@ public class AuthService {
 
     @Transactional
     public UserResponse signup(SignupRequest request) {
-        log.info("Signup attempt for email: {}", request.email());
+        log.info("Signup attempt: email={}", EmailMasker.mask(request.email()));
 
         if (userRepository.existsByEmail(request.email())) {
+            // Отказ логируется явно. Раньше строка была только у попытки, и
+            // «Signup attempt без Signup created» приходилось трактовать на
+            // глаз: то ли адрес занят, то ли упало что-то ниже.
+            log.info("Signup rejected: email already registered. email={}",
+                    EmailMasker.mask(request.email()));
             throw new EmailAlreadyExistsException("Email already registered");
         }
 
@@ -67,7 +73,7 @@ public class AuthService {
 
     @Transactional
     public AuthResponse signin(SigninRequest request) {
-        log.info("Signin attempt for email: {}", request.email());
+        log.info("Signin attempt: email={}", EmailMasker.mask(request.email()));
 
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new InvalidCredentialsException("Invalid email or password"));

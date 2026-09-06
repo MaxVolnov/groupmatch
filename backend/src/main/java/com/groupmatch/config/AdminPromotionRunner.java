@@ -2,6 +2,7 @@ package com.groupmatch.config;
 
 import com.groupmatch.domain.Role;
 import com.groupmatch.repository.UserRepository;
+import com.groupmatch.util.EmailMasker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,10 +32,10 @@ public class AdminPromotionRunner implements ApplicationRunner {
             if (user.getRole() != Role.ADMIN) {
                 user.setRole(Role.ADMIN);
                 userRepository.save(user);
-                log.info("User promoted to ADMIN. email={}", adminEmail);
+                log.info("User promoted to ADMIN. email={}", EmailMasker.mask(adminEmail));
             } else {
-                log.info("User already ADMIN. email={}", adminEmail);
+                log.info("User already ADMIN. email={}", EmailMasker.mask(adminEmail));
             }
-        }, () -> log.warn("ADMIN_EMAIL set but user not found. email={}", adminEmail));
+        }, () -> log.warn("ADMIN_EMAIL set but user not found. email={}", EmailMasker.mask(adminEmail)));
     }
 }
