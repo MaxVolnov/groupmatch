@@ -18,6 +18,23 @@ export interface UserResponse {
   trialExpiresAt?: string | null
 }
 
+/** Что станет с группой, если её владелец удалит аккаунт. */
+export interface OwnedGroupFate {
+  groupId: string
+  title: string
+  /** Других активных участников нет — группа исчезнет. */
+  willBeDeleted: boolean
+  /** Кому перейдёт владение; `null`, когда группа удаляется. */
+  newOwnerName: string | null
+}
+
+/** Ответ `GET /me/deletion-preview` — материал для подтверждения удаления. */
+export interface AccountDeletionPreview {
+  ownedGroups: OwnedGroupFate[]
+  /** Срок отсрочки в днях; приходит с сервера, чтобы не дублировать число в текстах. */
+  graceDays: number
+}
+
 export interface NotificationBannerProps {
   message: string
   action?: { label: string; onClick: () => void }

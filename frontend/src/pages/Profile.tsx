@@ -12,6 +12,7 @@ import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
 import { Skeleton } from '@/components/Skeleton'
 import { ErrorMessage } from '@/components/ErrorMessage'
+import { DeleteAccountSection } from '@/components/DeleteAccountSection'
 import { TIMEZONES } from '@/utils/timezones'
 import type { NotificationPreferences } from '@/types'
 
@@ -402,6 +403,12 @@ export function Profile() {
             )}
           </section>
         )}
+
+        {/*
+          Внизу и визуально отдельно — красной рамкой. Соседство с обычными
+          настройками профиля делало бы необратимое действие рядовым.
+        */}
+        <DeleteAccountSection isGuest={isGuest} />
       </div>
     </Layout>
   )

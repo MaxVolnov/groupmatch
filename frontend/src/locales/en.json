@@ -176,6 +176,13 @@
         "userIdPlaceholder": "UUID of the user",
         "cancel": "Cancel",
         "add": "Add"
+      },
+      "transferOwnership": "Transfer ownership",
+      "transferModal": {
+        "title": "Transfer group ownership?",
+        "body": "{{name}} will become the group owner. You stay on as a regular member.",
+        "irreversible": "This cannot be undone: you will not be able to take ownership back — only the new owner can hand it over.",
+        "confirm": "Transfer"
       }
     },
     "calendar": {
@@ -313,7 +320,19 @@
     "emailMeetingReminder": "Email reminder 1 hour before meeting",
     "inappMemberJoined": "In-app alert when someone joins your group",
     "inappMeetingCreated": "In-app alert when a meeting is created",
-    "paymentNotConfigured": "Payment system is not configured yet. Check back soon!"
+    "paymentNotConfigured": "Payment system is not configured yet. Check back soon!",
+    "dangerZone": "Delete account",
+    "deleteAccountHint": "Your account and its data will be deleted. You can undo this within the period stated in the confirmation.",
+    "deleteAccount": "Delete account",
+    "deleteAccountTitle": "Delete your account?",
+    "deleteAccountConfirm": "Yes, delete",
+    "deleteGroupsTransferred": "These groups will get a new owner:",
+    "deleteGroupTransferredItem": "{{title}} — {{name}} becomes the owner",
+    "deleteGroupsRemoved": "These groups will be deleted along with their meetings and slots:",
+    "deleteConsequenceSignin": "You will no longer be able to sign in with this address.",
+    "deleteConsequenceGrace": "After {{days}} days the data is anonymised — the account cannot be restored after that.",
+    "deleteAcknowledge": "I understand the consequences and want to delete my account",
+    "deleteConfirmPassword": "Confirm with your password"
   },
   "admin": {
     "title": "Admin Panel",
@@ -371,7 +390,23 @@
     "unresolve": "Unresolve",
     "unknown": "Unknown",
     "guestBadge": "guest",
-    "deleteGroupConfirm": "Delete group \"{{title}}\"? This cannot be undone."
+    "deleteGroupConfirm": "Delete group \"{{title}}\"? This cannot be undone.",
+    "testBadge": "test",
+    "deleted": "Deleted",
+    "anonymized": "Anonymised",
+    "restore": "Restore",
+    "deleteModal": {
+      "title": "Delete account?",
+      "body": "{{name}}'s account will be deleted: sign-in stops working, groups pass to other members or are deleted.",
+      "restoreNote": "Restoring brings back sign-in only. Group membership is not restored."
+    },
+    "filter": {
+      "all": "All",
+      "real": "Real",
+      "guests": "Guests",
+      "test": "Test",
+      "deleted": "Deleted"
+    }
   },
   "pricing": {
     "title": "Simple pricing",

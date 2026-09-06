@@ -40,6 +40,12 @@ export const groupsApi = {
       ? mockApi.groups.removeMember(id, userId)
       : api.delete(`/groups/${id}/members/${userId}`).then(() => undefined),
 
+  /** Передача владения активному участнику. Необратима для прежнего владельца. */
+  transferOwnership: (id: string, newOwnerId: string): Promise<void> =>
+    IS_MOCK
+      ? Promise.resolve()
+      : api.post(`/groups/${id}/transfer-ownership`, { newOwnerId }).then(() => undefined),
+
   calendarSubscription: (id: string): Promise<CalendarSubscriptionResponse> =>
     IS_MOCK
       ? Promise.resolve({
