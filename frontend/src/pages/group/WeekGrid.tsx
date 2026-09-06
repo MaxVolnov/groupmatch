@@ -38,6 +38,20 @@ interface Props {
    * один и тот же жест не может значить два разных действия.
    */
   onCellActivate?: (row: number, col: number) => void
+  /**
+   * Ячейка, о которой человек сейчас спрашивает «а кто здесь свободен».
+   *
+   * Наведением на десктопе и касанием на мобильном. Отдельного жеста нет
+   * намеренно: тап уже занят — в режиме встречи он создаёт встречу, в режиме
+   * своего времени работает выделение с ручками. Обработчики висят на ячейке и
+   * ничего не перехватывают: событие всплывает дальше, к жесту на контейнере,
+   * и обе стороны получают его целиком.
+   *
+   * `byTouch` говорит, чем спросили. Пальцем панель под таблицей оказывается за
+   * нижним краем экрана, и её приходится подтягивать; мышью — не приходится, а
+   * прокрутка под курсором уводит сетку из-под него и меняет ячейку сама.
+   */
+  onCellFocus?: (row: number, col: number, byTouch: boolean) => void
 }
 
 const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
@@ -112,7 +126,7 @@ function Handle({ position, props }: { position: SelectionHandle; props?: React.
   )
 }
 
-export function WeekGrid({ grid, aggregate, highlightAt, gridProps, handles, handleProps, onCellActivate }: Props) {
+export function WeekGrid({ grid, aggregate, highlightAt, gridProps, handles, handleProps, onCellActivate, onCellFocus }: Props) {
   const { t } = useTranslation()
   const { cells, timeLabels, weekStart } = grid
 
@@ -175,6 +189,15 @@ export function WeekGrid({ grid, aggregate, highlightAt, gridProps, handles, han
                       data-row={rowIdx}
                       data-col={colIdx}
                       title={title(rowIdx, colIdx)}
+                      // Ни preventDefault, ни stopPropagation: событие обязано
+                      // дойти до жеста на контейнере. Здесь только «покажи, кто
+                      // свободен» — без побочных действий.
+                      onMouseEnter={onCellFocus ? () => onCellFocus(rowIdx, colIdx, false) : undefined}
+                      onPointerDown={
+                        onCellFocus
+                          ? (e) => onCellFocus(rowIdx, colIdx, e.pointerType === 'touch')
+                          : undefined
+                      }
                       onClick={clickable ? () => onCellActivate(rowIdx, colIdx) : undefined}
                       className={`relative border-b border-r border-gray-100 dark:border-gray-700/30 ${intensityClass(count, aggregate.max)} ${
                         clickable ? 'cursor-pointer hover:ring-2 hover:ring-gm-400 hover:ring-inset' : ''
