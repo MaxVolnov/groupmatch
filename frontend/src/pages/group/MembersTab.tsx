@@ -8,7 +8,7 @@ import { Input } from '@/components/Input'
 import { Modal } from '@/components/Modal'
 import { Skeleton } from '@/components/Skeleton'
 import { ErrorMessage } from '@/components/ErrorMessage'
-import type { GroupResponse } from '@/types'
+import type { GroupResponse, MemberResponse } from '@/types'
 
 interface Props {
   group: GroupResponse
@@ -104,6 +104,8 @@ export function MembersTab({ group, currentUserId }: Props) {
   const qc = useQueryClient()
   const isOwner = group.ownerId === currentUserId
   const [addOpen, setAddOpen] = useState(false)
+  /** Кому предлагаем передать владение; null — модалка закрыта. */
+  const [transferTarget, setTransferTarget] = useState<MemberResponse | null>(null)
   const [addUserId, setAddUserId] = useState('')
 
   const { data: members, isLoading, error } = useQuery({
@@ -123,6 +125,18 @@ export function MembersTab({ group, currentUserId }: Props) {
   const removeMember = useMutation({
     mutationFn: (userId: string) => groupsApi.removeMember(group.id, userId),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['members', group.id] }),
+  })
+
+  const transfer = useMutation({
+    mutationFn: (userId: string) => groupsApi.transferOwnership(group.id, userId),
+    onSuccess: () => {
+      // Обновляем и группу тоже: после передачи текущий пользователь перестаёт
+      // быть владельцем, и половина действий на экране должна исчезнуть.
+      qc.invalidateQueries({ queryKey: ['members', group.id] })
+      qc.invalidateQueries({ queryKey: ['group', group.id] })
+      qc.invalidateQueries({ queryKey: ['groups'] })
+      setTransferTarget(null)
+    },
   })
 
   if (isLoading) return <MembersSkeletonList />
@@ -154,14 +168,25 @@ export function MembersTab({ group, currentUserId }: Props) {
               </span>
             </div>
             {isOwner && m.userId !== currentUserId && m.role !== 'OWNER' && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => removeMember.mutate(m.userId)}
-                loading={removeMember.isPending}
-              >
-                {t('group.membersTab.ban')}
-              </Button>
+              <div className="flex shrink-0 flex-wrap justify-end gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="min-h-[44px]"
+                  onClick={() => setTransferTarget(m)}
+                >
+                  {t('group.membersTab.transferOwnership')}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="min-h-[44px]"
+                  onClick={() => removeMember.mutate(m.userId)}
+                  loading={removeMember.isPending}
+                >
+                  {t('group.membersTab.ban')}
+                </Button>
+              </div>
             )}
             {!isOwner && m.userId === currentUserId && (
               <Button
@@ -204,6 +229,42 @@ export function MembersTab({ group, currentUserId }: Props) {
             placeholder={t('group.membersTab.addMemberModal.userIdPlaceholder')}
           />
           {addMember.error && <ErrorMessage error={addMember.error} />}
+        </div>
+      </Modal>
+
+      {/*
+        Подтверждение называет имя и говорит прямо, что права будут потеряны.
+        Вернуть их себе бывший владелец не сможет — только новый владелец
+        сможет передать их обратно.
+      */}
+      <Modal
+        title={t('group.membersTab.transferModal.title')}
+        open={transferTarget !== null}
+        onClose={() => setTransferTarget(null)}
+        footer={
+          <>
+            <Button variant="secondary" className="min-h-[44px]" onClick={() => setTransferTarget(null)}>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              variant="danger"
+              className="min-h-[44px]"
+              loading={transfer.isPending}
+              onClick={() => transferTarget && transfer.mutate(transferTarget.userId)}
+            >
+              {t('group.membersTab.transferModal.confirm')}
+            </Button>
+          </>
+        }
+      >
+        <div className="flex flex-col gap-3">
+          <p className="text-sm text-gray-700 dark:text-gray-300">
+            {t('group.membersTab.transferModal.body', { name: transferTarget?.displayName })}
+          </p>
+          <p className="text-sm font-medium text-red-700 dark:text-red-400">
+            {t('group.membersTab.transferModal.irreversible')}
+          </p>
+          {transfer.error && <ErrorMessage error={transfer.error} />}
         </div>
       </Modal>
     </div>

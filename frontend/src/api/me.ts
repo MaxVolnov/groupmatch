@@ -1,6 +1,6 @@
 import { api } from './axios'
 import { IS_MOCK, mockApi } from './mock'
-import type { Language, PlanInfoResponse, UserResponse } from '@/types'
+import type { AccountDeletionPreview, Language, PlanInfoResponse, UserResponse } from '@/types'
 
 export interface UpdateMeRequest {
   displayName?: string
@@ -17,4 +17,15 @@ export const meApi = {
 
   getPlanInfo: (): Promise<PlanInfoResponse> =>
     api.get<PlanInfoResponse>('/me/plan').then((r) => r.data),
+
+  /** Что произойдёт с группами при удалении. Считает сервер: у клиента нет их состава. */
+  deletionPreview: (): Promise<AccountDeletionPreview> =>
+    api.get<AccountDeletionPreview>('/me/deletion-preview').then((r) => r.data),
+
+  /**
+   * Удаление собственного аккаунта. Пароль обязателен для всех, кроме гостей —
+   * им его никогда не выдавали.
+   */
+  deleteAccount: (password?: string): Promise<void> =>
+    api.delete('/me', { data: password ? { password } : {} }).then(() => undefined),
 }

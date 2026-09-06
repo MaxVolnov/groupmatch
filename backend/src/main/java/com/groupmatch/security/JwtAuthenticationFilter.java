@@ -39,6 +39,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final String BLACKLIST_PREFIX = "blacklist:access:";
 
+    /** Метка удалённого аккаунта; ставит RefreshTokenService.blockAccessTokens. */
+    private static final String DISABLED_USER_PREFIX = "disabled:user:";
+
     // Must match exactly the permitAll() paths in SecurityConfig — not more, not less.
     private static final Set<String> PUBLIC_PATHS = Set.of(
             "/api/v1/auth/signup",
@@ -134,8 +137,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 return;
             }
 
+            UUID tokenOwner = jwtUtils.extractUserId(jwt);
+
+            // Аккаунт удалён. Blacklist выше сюда не годится: он заведён на
+            // конкретный токен, а какие именно токены выданы человеку, сервер
+            // не знает — access-токен самодостаточен и в Redis не хранится.
+            // Без этой проверки токен, выданный до удаления, открывал API ещё
+            // до пятнадцати минут.
+            //
+            // Цена — второй поход в Redis на каждый запрос с токеном. Первый
+            // здесь уже был, сеть до Valkey внутренняя, и это дешевле, чем
+            // ходить за состоянием пользователя в базу.
+            if (Boolean.TRUE.equals(redisTemplate.hasKey(DISABLED_USER_PREFIX + tokenOwner))) {
+                log.debug("Access rejected: account disabled. userId={}", tokenOwner);
+                writeUnauthorized(response);
+                return;
+            }
+
             if (SecurityContextHolder.getContext().getAuthentication() == null) {
-                UUID userId = jwtUtils.extractUserId(jwt);
+                UUID userId = tokenOwner;
                 String email = jwtUtils.extractEmail(jwt);
                 Role role    = jwtUtils.extractRole(jwt);
                 Plan plan    = jwtUtils.extractPlan(jwt);

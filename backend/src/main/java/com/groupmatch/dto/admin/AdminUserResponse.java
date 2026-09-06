@@ -14,5 +14,11 @@ public record AdminUserResponse(
         Plan plan,
         boolean isGuest,
         boolean isBanned,
-        Instant createdAt
+        Instant createdAt,
+        /** Аккаунт smoke-теста — по домену из app.test-account-domain. */
+        boolean isTest,
+        /** Непусто — аккаунт удалён; вход закрыт. */
+        Instant deletedAt,
+        /** Непусто — данных больше нет, восстановить нельзя. */
+        Instant anonymizedAt
 ) {}

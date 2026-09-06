@@ -1,3 +1,9 @@
+/**
+ * Фильтр списка пользователей. Применяется на сервере: список постраничный, и
+ * отсев на клиенте врал бы про количество.
+ */
+export type AdminUserFilter = 'ALL' | 'REAL' | 'GUESTS' | 'TEST' | 'DELETED'
+
 export interface AdminUser {
   id: string
   email: string
@@ -7,6 +13,12 @@ export interface AdminUser {
   isGuest: boolean
   isBanned: boolean
   createdAt: string
+  /** Аккаунт smoke-теста. Считает сервер по домену — правило одно и место у него одно. */
+  isTest: boolean
+  /** Непусто — аккаунт удалён, вход закрыт. */
+  deletedAt: string | null
+  /** Непусто — данных больше нет, восстановить нельзя. */
+  anonymizedAt: string | null
 }
 
 export interface AdminUsersPage {

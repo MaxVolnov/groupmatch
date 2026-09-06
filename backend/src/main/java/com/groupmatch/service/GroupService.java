@@ -31,6 +31,7 @@ public class GroupService {
     private final GrpMemberRepository grpMemberRepository;
     private final UserRepository userRepository;
     private final AvailabilityRepository availabilityRepository;
+    private final GroupLifecycleService groupLifecycleService;
 
     @Value("${app.features.monetization-enabled}")
     private boolean monetizationEnabled;
@@ -181,7 +182,13 @@ public class GroupService {
             target.setStatus(MemberStatus.BANNED);
             availabilityRepository.deleteByGroupIdAndUserId(groupId, targetId);
         }
-        grpMemberRepository.save(target);
+        grpMemberRepository.saveAndFlush(target);
+
+        // Судьба опустевшей группы решается в одном месте на все пути ухода —
+        // отсюда и из удаления аккаунта. Здесь до неё доходит редко (владельца
+        // исключить нельзя, а значит он остаётся), но правило одно на всех, и
+        // расходиться ему нельзя.
+        groupLifecycleService.deleteIfEmpty(groupId);
     }
 
     @Transactional(readOnly = true)

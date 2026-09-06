@@ -4,7 +4,9 @@ import com.groupmatch.dto.group.AddMemberRequest;
 import com.groupmatch.dto.group.GroupRequest;
 import com.groupmatch.dto.group.GroupResponse;
 import com.groupmatch.dto.group.MemberResponse;
+import com.groupmatch.dto.group.TransferOwnershipRequest;
 import com.groupmatch.security.UserPrincipal;
+import com.groupmatch.service.GroupLifecycleService;
 import com.groupmatch.service.GroupService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,7 @@ import java.util.UUID;
 public class GroupController {
 
     private final GroupService groupService;
+    private final GroupLifecycleService groupLifecycleService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -74,5 +77,20 @@ public class GroupController {
                              @PathVariable UUID id,
                              @PathVariable UUID userId) {
         groupService.removeMember(id, principal.getId(), userId);
+    }
+
+    /**
+     * Передача владения другому активному участнику.
+     *
+     * POST, а не PATCH на группе: это не правка поля, а смена того, кто вправе
+     * править. Отдельный адрес делает право видимым в конфигурации доступа и
+     * в логах, вместо «кто-то обновил группу».
+     */
+    @PostMapping("/{id}/transfer-ownership")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void transferOwnership(@AuthenticationPrincipal UserPrincipal principal,
+                                  @PathVariable UUID id,
+                                  @Valid @RequestBody TransferOwnershipRequest req) {
+        groupLifecycleService.transferOwnership(id, principal.getId(), req.newOwnerId());
     }
 }

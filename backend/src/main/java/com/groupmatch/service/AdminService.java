@@ -12,6 +12,7 @@ import com.groupmatch.dto.admin.AdminFeedbackResponse;
 import com.groupmatch.dto.admin.AdminGroupPageResponse;
 import com.groupmatch.dto.admin.AdminGroupResponse;
 import com.groupmatch.dto.admin.AdminUserResponse;
+import com.groupmatch.dto.admin.AdminUserFilter;
 import com.groupmatch.dto.admin.AdminUsersPageResponse;
 import com.groupmatch.exception.FeedbackNotFoundException;
 import com.groupmatch.exception.ForbiddenException;
@@ -39,18 +40,29 @@ import java.util.UUID;
 public class AdminService {
 
     private final UserRepository userRepository;
+
+    /**
+     * Домен, по которому в админке опознаются аккаунты smoke-теста.
+     * В конфиге, а не константой: скрипт может переехать на другой домен, и
+     * тогда правится одно значение, а не код в двух местах.
+     */
+    @org.springframework.beans.factory.annotation.Value("${app.test-account-domain:groupmatch-test.io}")
+    private String testAccountDomain;
+
     private final FeedbackRepository feedbackRepository;
     private final GroupRepository groupRepository;
     private final GrpMemberRepository grpMemberRepository;
 
     // ── Users ─────────────────────────────────────────────────────────────────
 
-    public AdminUsersPageResponse getUsers(String search, int page, int size) {
+    public AdminUsersPageResponse getUsers(String search, AdminUserFilter filter, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<User> result = (search == null || search.isBlank())
-                ? userRepository.findAll(pageable)
-                : userRepository.findByEmailContainingIgnoreCaseOrDisplayNameContainingIgnoreCase(
-                        search, search, pageable);
+        // Пустая строка, а не null: см. предупреждение у searchWithFilter.
+        String normalizedSearch = (search == null || search.isBlank()) ? "" : search;
+        AdminUserFilter effective = filter == null ? AdminUserFilter.ALL : filter;
+
+        Page<User> result = userRepository.searchWithFilter(
+                normalizedSearch, effective.queryValue(), "@" + testAccountDomain.toLowerCase(), pageable);
         return new AdminUsersPageResponse(
                 result.getContent().stream().map(this::toDto).toList(),
                 result.getNumber(),
@@ -104,8 +116,19 @@ public class AdminService {
     private AdminUserResponse toDto(User u) {
         return new AdminUserResponse(
                 u.getId(), u.getEmail(), u.getDisplayName(),
-                u.getRole(), u.getPlan(), u.isGuest(), u.isBanned(), u.getCreatedAt()
+                u.getRole(), u.getPlan(), u.isGuest(), u.isBanned(), u.getCreatedAt(),
+                isTestAccount(u), u.getDeletedAt(), u.getAnonymizedAt()
         );
+    }
+
+    /**
+     * Признак считается на сервере, а не выводится клиентом из адреса: правило
+     * «что считать тестовым» — одно, и место у него одно. Клиент, повторивший
+     * его у себя, разошёлся бы с фильтром при первой же смене домена.
+     */
+    private boolean isTestAccount(User u) {
+        return u.getEmail() != null
+                && u.getEmail().toLowerCase().endsWith("@" + testAccountDomain.toLowerCase());
     }
 
     // ── Feedback ──────────────────────────────────────────────────────────────

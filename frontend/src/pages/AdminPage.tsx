@@ -8,7 +8,8 @@ import { Button } from '@/components/Button'
 import { Skeleton } from '@/components/Skeleton'
 import { ErrorMessage } from '@/components/ErrorMessage'
 import { BanModal } from '@/components/BanModal'
-import type { AdminFeedbackItem, AdminGroup, AdminUser } from '@/types/admin'
+import { Modal } from '@/components/Modal'
+import type { AdminFeedbackItem, AdminGroup, AdminUser, AdminUserFilter } from '@/types/admin'
 
 const TABS = ['Users', 'Feedback', 'Groups'] as const
 type Tab = typeof TABS[number]
@@ -51,8 +52,11 @@ function UsersTab({ currentUserId }: { currentUserId: string }) {
   const { t } = useTranslation()
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
+  const [filter, setFilter] = useState<AdminUserFilter>('ALL')
   const [page, setPage] = useState(0)
   const [banTarget, setBanTarget] = useState<AdminUser | null>(null)
+  /** Кого удаляем; null — подтверждение закрыто. */
+  const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null)
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -65,8 +69,8 @@ function UsersTab({ currentUserId }: { currentUserId: string }) {
   const qc = useQueryClient()
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['admin', 'users', search, page],
-    queryFn: () => adminApi.getUsers(search || undefined, page),
+    queryKey: ['admin', 'users', search, filter, page],
+    queryFn: () => adminApi.getUsers(search || undefined, filter, page),
   })
 
   const unban = useMutation({
@@ -86,6 +90,16 @@ function UsersTab({ currentUserId }: { currentUserId: string }) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
   })
 
+  const removeUser = useMutation({
+    mutationFn: (id: string) => adminApi.deleteUser(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
+  })
+
+  const restoreUser = useMutation({
+    mutationFn: (id: string) => adminApi.restoreUser(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
+  })
+
   const canActOn = (u: AdminUser) => u.id !== currentUserId && u.role !== 'ADMIN'
 
   return (
@@ -99,6 +113,27 @@ function UsersTab({ currentUserId }: { currentUserId: string }) {
           placeholder={t('admin.searchUsers')}
           className="w-full sm:w-80 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gm-500"
         />
+
+        {/*
+          Фильтр уходит на сервер параметром запроса. Отсев на клиенте врал бы
+          про количество: список постраничный, и «3 из 20» на странице ничего
+          не говорит о том, сколько таких во всей базе.
+        */}
+        <div className="mt-3 flex flex-wrap gap-1">
+          {(['ALL', 'REAL', 'GUESTS', 'TEST', 'DELETED'] as const).map((value) => (
+            <button
+              key={value}
+              onClick={() => { setFilter(value); setPage(0) }}
+              className={`min-h-[36px] rounded-lg px-3 py-1.5 text-sm transition-colors ${
+                filter === value
+                  ? 'bg-gm-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+              }`}
+            >
+              {t(`admin.filter.${value.toLowerCase()}`)}
+            </button>
+          ))}
+        </div>
       </div>
 
       {error && <ErrorMessage error={error} />}
@@ -129,7 +164,7 @@ function UsersTab({ currentUserId }: { currentUserId: string }) {
                   </tr>
                 )}
                 {data?.users.map((u) => (
-                  <tr key={u.id} className={u.isBanned ? 'opacity-50' : undefined}>
+                  <tr key={u.id} className={u.isBanned || u.deletedAt ? 'opacity-50' : undefined}>
                     <td className="px-4 py-3 text-gray-900 dark:text-gray-100 max-w-[200px] truncate">
                       {u.email}
                     </td>
@@ -138,13 +173,24 @@ function UsersTab({ currentUserId }: { currentUserId: string }) {
                       {u.isGuest && (
                         <span className="ml-1.5 text-xs text-gray-400 dark:text-gray-500">{t('admin.guestBadge')}</span>
                       )}
+                      {u.isTest && (
+                        <span className="ml-1.5 text-xs text-amber-600 dark:text-amber-500">{t('admin.testBadge')}</span>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <RoleBadge role={u.role} />
                     </td>
                     <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{u.plan}</td>
                     <td className="px-4 py-3">
-                      {u.isBanned ? (
+                      {u.anonymizedAt ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                          {t('admin.anonymized')}
+                        </span>
+                      ) : u.deletedAt ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400">
+                          {t('admin.deleted')}
+                        </span>
+                      ) : u.isBanned ? (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400">
                           {t('admin.banned')}
                         </span>
@@ -206,6 +252,32 @@ function UsersTab({ currentUserId }: { currentUserId: string }) {
                             </Button>
                           )
                         )}
+
+                        {/*
+                          Удалить — то же мягкое удаление, что и в профиле.
+                          Восстановить — только пока аккаунт не обезличен:
+                          после обезличивания возвращать нечего.
+                        */}
+                        {canActOn(u) && !u.deletedAt && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            loading={removeUser.isPending && removeUser.variables === u.id}
+                            onClick={() => setDeleteTarget(u)}
+                          >
+                            {t('admin.delete')}
+                          </Button>
+                        )}
+                        {canActOn(u) && u.deletedAt && !u.anonymizedAt && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            loading={restoreUser.isPending && restoreUser.variables === u.id}
+                            onClick={() => restoreUser.mutate(u.id)}
+                          >
+                            {t('admin.restore')}
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -244,6 +316,45 @@ function UsersTab({ currentUserId }: { currentUserId: string }) {
       )}
 
       <BanModal user={banTarget} onClose={() => setBanTarget(null)} />
+
+      {/*
+        Подтверждение удаления. Отдельно проговаривается, что восстановление
+        вернёт только вход: владение к этому моменту уже уйдёт другому
+        человеку, а группы без участников исчезнут физически.
+      */}
+      <Modal
+        title={t('admin.deleteModal.title')}
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        footer={
+          <>
+            <Button variant="secondary" className="min-h-[44px]" onClick={() => setDeleteTarget(null)}>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              variant="danger"
+              className="min-h-[44px]"
+              loading={removeUser.isPending}
+              onClick={() => {
+                if (deleteTarget) removeUser.mutate(deleteTarget.id)
+                setDeleteTarget(null)
+              }}
+            >
+              {t('admin.delete')}
+            </Button>
+          </>
+        }
+      >
+        <div className="flex flex-col gap-2">
+          <p className="text-sm text-gray-700 dark:text-gray-300">
+            {t('admin.deleteModal.body', { name: deleteTarget?.displayName })}
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {t('admin.deleteModal.restoreNote')}
+          </p>
+          {removeUser.error ? <ErrorMessage error={removeUser.error} /> : null}
+        </div>
+      </Modal>
     </div>
   )
 }

@@ -1,5 +1,7 @@
 package com.groupmatch.exception;
 
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -13,6 +15,7 @@ import java.util.Map;
 
 import static org.springframework.http.HttpStatus.*;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     
@@ -136,14 +139,24 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex,
+                                                                    HttpServletRequest request) {
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getAllErrors().forEach(error -> {
             String fieldName = ((FieldError) error).getField();
             String errorMessage = error.getDefaultMessage();
             errors.put(fieldName, errorMessage);
         });
-        
+
+        // Отказ по валидации не оставлял в логах ничего. Для регистрации это
+        // означало, что запрос с коротким паролем не отличим от запроса,
+        // который вообще не дошёл: в обоих случаях в логе пусто.
+        //
+        // Пишутся имена полей и тексты ограничений — не значения. Значение
+        // отклонённого поля (FieldError.getRejectedValue) здесь и есть пароль.
+        log.info("Validation failed: {} {} fields={}",
+                request.getMethod(), request.getRequestURI(), errors);
+
         ErrorResponse error = new ErrorResponse(
                 "validation_failed",
                 "Invalid input",
@@ -152,9 +165,27 @@ public class GlobalExceptionHandler {
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
-    
+
+    /**
+     * Всё, для чего нет своего обработчика.
+     *
+     * ⚠️ Сюда же попадают штатные ошибки Spring, у которых есть собственные
+     * коды: несуществующий путь (должен быть 404), неверный метод (405), битое
+     * тело запроса (400). Все они превращаются в 500 — это отдельная находка
+     * аудита (`docs/audit-2026-09.md`, находка 2), и чинится она не здесь.
+     *
+     * Пока это так, строка ниже будет шумной: каждый чужой сканер даст ERROR
+     * со стектрейсом. Это осознанный размен. Молчащий catch-all хуже: настоящее
+     * падение уходило в ответ строкой «An unexpected error occurred» и не
+     * оставляло следа нигде — ни стектрейса, ни даже упоминания, что что-то
+     * произошло, потому что для Spring исключение считается обработанным.
+     * Шум виден и заставит развести случаи; тишина не заставляет ничего.
+     */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
+    public ResponseEntity<ErrorResponse> handleGenericException(Exception ex, HttpServletRequest request) {
+        log.error("Unhandled exception: {} {} -> {}",
+                request.getMethod(), request.getRequestURI(), ex.getClass().getName(), ex);
+
         ErrorResponse error = new ErrorResponse(
                 "server_error",
                 "An unexpected error occurred",

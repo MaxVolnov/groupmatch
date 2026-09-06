@@ -113,8 +113,20 @@ public class RateLimitFilter extends OncePerRequestFilter {
         if (probe.isConsumed()) {
             filterChain.doFilter(request, response);
         } else {
-            log.debug("RateLimit exceeded: ip={}, path={}", ip, path);
             long retryAfterSeconds = probe.getNanosToWaitForRefill() / 1_000_000_000L;
+            // WARN, а не DEBUG. В проде уровень com.groupmatch — INFO
+            // (application-prod.yml), поэтому отказ по лимиту не оставлял в
+            // логах ни строки: снаружи человек видел ошибку регистрации, а
+            // внутри не было даже следа запроса. Именно этот случай нельзя
+            // отличить от «до приложения не дошло».
+            //
+            // Ёмкость печатается вместе с путём: у /auth/signup, /auth/guest,
+            // /auth/forgot-password, /auth/resend-verification и
+            // /auth/upgrade-guest корзина ОДНА на пять путей, и по строке
+            // должно быть видно, что человек мог исчерпать её не тем
+            // действием, на котором получил отказ.
+            log.warn("RateLimit exceeded: ip={}, path={}, capacity={}/час, retryAfter={}с",
+                    ip, path, capacity, retryAfterSeconds);
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
             response.setContentType("application/json;charset=UTF-8");
             response.setHeader("Retry-After", String.valueOf(retryAfterSeconds));

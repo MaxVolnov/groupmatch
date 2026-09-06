@@ -1,5 +1,7 @@
 package com.groupmatch.service;
 
+import com.groupmatch.util.EmailMasker;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -118,7 +120,8 @@ public class EmailService {
 
     private void send(String to, String subject, String htmlBody) {
         if (resendApiKey == null || resendApiKey.isBlank()) {
-            log.warn("RESEND_API_KEY not configured, skipping email. to={}, subject={}", to, subject);
+            log.warn("RESEND_API_KEY not configured, skipping email. to={}, subject={}",
+                    EmailMasker.mask(to), subject);
             return;
         }
         try {
@@ -137,9 +140,10 @@ public class EmailService {
                     .retrieve()
                     .toBodilessEntity();
 
-            log.info("Email sent via Resend API. to={}, subject={}", to, subject);
+            log.info("Email sent via Resend API. to={}, subject={}", EmailMasker.mask(to), subject);
         } catch (Exception e) {
-            log.error("Failed to send email via Resend API. to={}, subject={}, error={}", to, subject, e.getMessage(), e);
+            log.error("Failed to send email via Resend API. to={}, subject={}, error={}",
+                    EmailMasker.mask(to), subject, e.getMessage(), e);
             throw new RuntimeException("Failed to send email", e);
         }
     }

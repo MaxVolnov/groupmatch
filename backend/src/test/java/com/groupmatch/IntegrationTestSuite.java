@@ -5,6 +5,7 @@ import com.groupmatch.config.ActuatorAccessTest;
 import com.groupmatch.config.ActuatorHealthConfigTest;
 import com.groupmatch.config.JwtSecretGuardTest;
 import com.groupmatch.config.LoggingLevelsTest;
+import com.groupmatch.auth.AccountDeletionTest;
 import com.groupmatch.auth.AuthTest;
 import com.groupmatch.auth.GuestCleanupTest;
 import com.groupmatch.auth.GuestUpgradeTest;
@@ -15,9 +16,11 @@ import com.groupmatch.availability.AvailabilityBulkClearTest;
 import com.groupmatch.availability.AvailabilityRetimeTest;
 import com.groupmatch.availability.AvailabilitySeriesTest;
 import com.groupmatch.availability.AvailabilityTest;
+import com.groupmatch.groups.EmptyGroupCleanupTest;
 import com.groupmatch.groups.GroupErrorPathTest;
 import com.groupmatch.groups.GroupTest;
 import com.groupmatch.groups.InvitePreviewTest;
+import com.groupmatch.groups.OwnershipTransferTest;
 import com.groupmatch.groups.InviteTest;
 import com.groupmatch.groups.MemberLimitEnforcedTest;
 import com.groupmatch.groups.MemberLimitFlagTest;
@@ -34,6 +37,7 @@ import com.groupmatch.security.ClientIpResolverTest;
 import com.groupmatch.security.RateLimitBypassTest;
 import com.groupmatch.security.YooKassaWebhookVerifierTest;
 import com.groupmatch.util.CidrMatcherTest;
+import com.groupmatch.util.EmailMaskerTest;
 import com.groupmatch.util.PlanPeriodTest;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
@@ -45,6 +49,7 @@ import org.junit.platform.suite.api.Suite;
     ActuatorAccessTest.class,
     JwtSecretGuardTest.class,
     AuthTest.class,
+    AccountDeletionTest.class,
     GuestUpgradeTest.class,
     GuestCleanupTest.class,
     LocaleTest.class,
@@ -53,6 +58,8 @@ import org.junit.platform.suite.api.Suite;
     AdminTest.class,
     GroupTest.class,
     GroupErrorPathTest.class,
+    OwnershipTransferTest.class,
+    EmptyGroupCleanupTest.class,
     InviteTest.class,
     InvitePreviewTest.class,
     MemberLimitFlagTest.class,
@@ -70,6 +77,7 @@ import org.junit.platform.suite.api.Suite;
     AvailabilityRetimeTest.class,
     PaymentTest.class,
     CidrMatcherTest.class,
+    EmailMaskerTest.class,
     PlanPeriodTest.class,
     ClientIpResolverTest.class,
     RateLimitBypassTest.class,
